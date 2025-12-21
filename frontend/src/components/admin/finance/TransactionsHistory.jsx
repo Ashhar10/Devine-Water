@@ -1,7 +1,26 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiDownload } from 'react-icons/fi';
+import DataGrid from '../../common/DataGrid';
 
 const TransactionsHistory = () => {
+    // Mock transaction data
+    const transactions = useMemo(() => [
+        { id: 'TXN-2024-001', description: 'Bill Payment - John Doe', type: 'incoming', date: 'Dec 19, 2024', amount: 1500, status: 'Completed' },
+        { id: 'TXN-2024-002', description: 'Chemical Purchase', type: 'outgoing', date: 'Dec 18, 2024', amount: -3000, status: 'Completed' },
+        { id: 'TXN-2024-003', description: 'Bill Payment - Sarah Connor', type: 'incoming', date: 'Dec 17, 2024', amount: 4500, status: 'Completed' },
+        { id: 'TXN-2024-004', description: 'Equipment Repair', type: 'outgoing', date: 'Dec 16, 2024', amount: -6000, status: 'Pending' },
+        { id: 'TXN-2024-005', description: 'Bill Payment - Mike Ross', type: 'incoming', date: 'Dec 15, 2024', amount: 7500, status: 'Completed' },
+    ], []);
+
+    const columns = useMemo(() => [
+        { field: 'id', headerName: 'Transaction ID', width: 150 },
+        { field: 'description', headerName: 'Description', width: 250 },
+        { field: 'type', headerName: 'Type', width: 100 },
+        { field: 'date', headerName: 'Date', width: 130 },
+        { field: 'amount', headerName: 'Amount (PKR)', width: 130 },
+        { field: 'status', headerName: 'Status', width: 100 },
+    ], []);
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -19,47 +38,12 @@ const TransactionsHistory = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                    <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase font-medium text-gray-500 dark:text-gray-400">
-                        <tr>
-                            <th className="px-6 py-4">Transaction ID</th>
-                            <th className="px-6 py-4">Description</th>
-                            <th className="px-6 py-4">Type</th>
-                            <th className="px-6 py-4">Date</th>
-                            <th className="px-6 py-4 text-right">Amount</th>
-                            <th className="px-6 py-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                <td className="px-6 py-4 font-mono text-xs">TXN-2024-00{i}</td>
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-gray-900 dark:text-white">
-                                        {i % 2 === 0 ? 'Bill Payment - John Doe' : 'Chemical Purchase'}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`flex items-center gap-1 text-xs font-medium ${i % 2 === 0 ? 'text-green-600' : 'text-red-600'
-                                        }`}>
-                                        {i % 2 === 0 ? <FiArrowDownLeft /> : <FiArrowUpRight />}
-                                        {i % 2 === 0 ? 'Incoming' : 'Outgoing'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">Dec {20 - i}, 2024</td>
-                                <td className={`px-6 py-4 text-right font-medium ${i % 2 === 0 ? 'text-green-600' : 'text-gray-900 dark:text-white'
-                                    }`}>
-                                    {i % 2 === 0 ? '+' : '-'}₨ {i * 1500}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Completed</span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {/* Transactions Table - Using LyteNyte DataGrid */}
+            <DataGrid
+                data={transactions}
+                columns={columns}
+                height={450}
+            />
         </div>
     );
 };

@@ -46,9 +46,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
             {/* Sidebar */}
             <aside className={`
-                w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
-                h-screen fixed left-0 top-0 overflow-y-auto z-50 transition-transform duration-300 ease-in-out
-                ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+                fixed left-0 top-0 z-50 h-screen w-64 
+                bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
+                transition-transform duration-300 ease-in-out
+                ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+                md:transform-none md:translate-x-0
             `}>
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-8">

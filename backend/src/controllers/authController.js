@@ -46,8 +46,9 @@ export const login = async (req, res, next) => {
             return res.status(403).json({ message: 'Account is inactive. Please contact support.' });
         }
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        // Verify password (PLAINTEXT as per request)
+        // const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = password === user.password;
 
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });

@@ -10,18 +10,18 @@
 -- ============================================
 
 INSERT INTO users (name, email, password, role, phone, status) VALUES
-('Super Admin', 'admin@devinewater.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'SUPER_ADMIN', '+923001234567', 'active'),
-('Admin User', 'admin2@devinewater.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'ADMIN', '+923001234568', 'active'),
-('Staff User', 'user@devinewater.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'USER', '+923001234569', 'active');
+('Super Admin', 'admin@devinewater.com', 'admin123', 'SUPER_ADMIN', '+923001234567', 'active'),
+('Admin User', 'admin2@devinewater.com', 'admin123', 'ADMIN', '+923001234568', 'active'),
+('Staff User', 'user@devinewater.com', 'admin123', 'USER', '+923001234569', 'active');
 
 -- ============================================
 -- INSERT DEMO CUSTOMERS
 -- ============================================
 
 INSERT INTO customers (name, email, password, role, phone, address, cnic, connection_id, connection_type, status) VALUES
-('John Doe', 'customer@devinewater.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'CUSTOMER', '+923011234567', '123 Main Street, Karachi', '42101-1234567-1', 'CID-001', 'residential', 'active'),
-('Jane Smith', 'jane@example.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'CUSTOMER', '+923011234568', '456 Park Avenue, Lahore', '42101-7654321-2', 'CID-002', 'commercial', 'active'),
-('Ahmed Ali', 'ahmed@example.com', '$2a$10$jqCLYz4i7z1XxOCQF8y2MeJLqPvZ8sT1gH/rVHJpKqOk2i9pV7yZS', 'CUSTOMER', '+923011234569', '789 Business Road, Islamabad', '42101-9876543-3', 'CID-003', 'commercial', 'active');
+('John Doe', 'customer@devinewater.com', 'customer123', 'CUSTOMER', '+923011234567', '123 Main Street, Karachi', '42101-1234567-1', 'CID-001', 'residential', 'active'),
+('Jane Smith', 'jane@example.com', 'customer123', 'CUSTOMER', '+923011234568', '456 Park Avenue, Lahore', '42101-7654321-2', 'CID-002', 'commercial', 'active'),
+('Ahmed Ali', 'ahmed@example.com', 'customer123', 'CUSTOMER', '+923011234569', '789 Business Road, Islamabad', '42101-9876543-3', 'CID-003', 'commercial', 'active');
 
 -- ============================================
 -- SAMPLE DATA WITH UUID REFERENCES

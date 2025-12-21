@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   role VARCHAR(50) NOT NULL CHECK (role IN ('ADMIN', 'SUPER_ADMIN', 'USER')),
+  permissions JSONB DEFAULT '[]', -- Array of permission strings e.g. ["manage_users", "view_reports"]
   phone VARCHAR(20),
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -125,6 +126,63 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- VENDORS & SUPPLIERS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS vendors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(20),
+  address TEXT,
+  category VARCHAR(100), -- e.g., 'Equipment', 'Chemicals', 'Maintenance'
+  conctact_person VARCHAR(255),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- HR & EMPLOYEES
+-- ============================================
+
+-- Employee Details (Linked to Users)
+CREATE TABLE IF NOT EXISTS employees (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  cnic VARCHAR(20) UNIQUE,
+  designation VARCHAR(100),
+  department VARCHAR(100),
+  joining_date DATE,
+  salary DECIMAL(10, 2),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'on_leave', 'terminated', 'resigned')),
+  emergency_contact VARCHAR(20),
+  address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- FINANCE & EXPENDITURE
+-- ============================================
+
+-- Expenditure / Expenses
+CREATE TABLE IF NOT EXISTS expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  amount DECIMAL(10, 2) NOT NULL,
+  category VARCHAR(50) NOT NULL CHECK (category IN ('operational', 'maintenance', 'salary', 'inventory', 'marketing', 'other')),
+  expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  vendor_id UUID REFERENCES vendors(id),
+  approved_by UUID REFERENCES users(id),
+  receipt_url TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'paid')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================

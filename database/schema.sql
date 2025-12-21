@@ -1,13 +1,16 @@
 -- Devine Water Management System - Database Schema
 -- PostgreSQL Schema for Supabase
 
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- ============================================
 -- ROLES AND PERMISSIONS
 -- ============================================
 
 -- Users Table (Admin, Super Admin, User)
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
@@ -20,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Customers Table
 CREATE TABLE IF NOT EXISTS customers (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
@@ -41,8 +44,8 @@ CREATE TABLE IF NOT EXISTS customers (
 
 -- Billing Table
 CREATE TABLE IF NOT EXISTS billing (
-  id SERIAL PRIMARY KEY,
-  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   billing_period VARCHAR(20) NOT NULL, -- e.g., '2024-12'
   consumption_liters DECIMAL(10, 2) DEFAULT 0,
   tariff_rate DECIMAL(10, 2) NOT NULL,
@@ -57,9 +60,9 @@ CREATE TABLE IF NOT EXISTS billing (
 
 -- Payments Table
 CREATE TABLE IF NOT EXISTS payments (
-  id SERIAL PRIMARY KEY,
-  billing_id INTEGER NOT NULL REFERENCES billing(id) ON DELETE CASCADE,
-  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  billing_id UUID NOT NULL REFERENCES billing(id) ON DELETE CASCADE,
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   amount DECIMAL(10, 2) NOT NULL,
   payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('cash', 'bank_transfer', 'credit_card', 'mobile_wallet')),
   transaction_id VARCHAR(255),
@@ -74,13 +77,13 @@ CREATE TABLE IF NOT EXISTS payments (
 
 -- Consumption Table (Meter Readings)
 CREATE TABLE IF NOT EXISTS consumption (
-  id SERIAL PRIMARY KEY,
-  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   reading_date DATE NOT NULL,
   previous_reading DECIMAL(10, 2) NOT NULL,
   current_reading DECIMAL(10, 2) NOT NULL,
   consumption_liters DECIMAL(10, 2) GENERATED ALWAYS AS (current_reading - previous_reading) STORED,
-  recorded_by INTEGER REFERENCES users(id),
+  recorded_by UUID REFERENCES users(id),
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -92,14 +95,14 @@ CREATE TABLE IF NOT EXISTS consumption (
 
 -- Complaints Table
 CREATE TABLE IF NOT EXISTS complaints (
-  id SERIAL PRIMARY KEY,
-  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   category VARCHAR(50) NOT NULL CHECK (category IN ('billing', 'supply', 'quality', 'connection', 'other')),
   priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
   status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed', 'rejected')),
-  assigned_to INTEGER REFERENCES users(id),
+  assigned_to UUID REFERENCES users(id),
   resolution TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,9 +115,9 @@ CREATE TABLE IF NOT EXISTS complaints (
 
 -- Notifications Table
 CREATE TABLE IF NOT EXISTS notifications (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER, -- Can be NULL for system notifications
-  customer_id INTEGER,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID, -- Can be NULL for system notifications
+  customer_id UUID,
   title VARCHAR(255) NOT NULL,
   message TEXT NOT NULL,
   type VARCHAR(50) NOT NULL CHECK (type IN ('info', 'warning', 'success', 'error')),
@@ -130,12 +133,12 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Activity Logs Table
 CREATE TABLE IF NOT EXISTS activity_logs (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  customer_id INTEGER REFERENCES customers(id),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  customer_id UUID REFERENCES customers(id),
   action VARCHAR(255) NOT NULL,
   entity VARCHAR(100) NOT NULL, -- e.g., 'customer', 'billing', 'user'
-  entity_id INTEGER,
+  entity_id UUID,
   description TEXT,
   ip_address VARCHAR(45),
   user_agent TEXT,
@@ -148,7 +151,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 
 -- System Settings Table
 CREATE TABLE IF NOT EXISTS settings (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   setting_key VARCHAR(100) UNIQUE NOT NULL,
   setting_value TEXT,
   description TEXT,

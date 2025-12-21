@@ -1,4 +1,4 @@
-import '../customer/dashboard/CustomerDashboard.css';
+import '../dashboard/CustomerDashboard.css';
 
 export const WaterConsumption = () => {
     return (

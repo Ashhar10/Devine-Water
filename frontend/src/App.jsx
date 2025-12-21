@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Login } from '@/components/auth/Login';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
+import Layout from '@/components/common/Layout';
 
 // Dashboards
 import { CustomerDashboard } from '@/components/customer/dashboard/CustomerDashboard';
@@ -23,6 +24,10 @@ import { UserManagement } from '@/components/admin/users/UserManagement';
 import { BillingManagement } from '@/components/admin/billing/BillingManagement';
 import { ComplaintManagement } from '@/components/admin/complaints/ComplaintManagement';
 import { ActivityLogs } from '@/components/admin/activity-logs/ActivityLogs';
+import VendorManagement from '@/components/admin/vendors/VendorManagement';
+import EmployeeManagement from '@/components/admin/employees/EmployeeManagement';
+import ExpenditureTracking from '@/components/admin/finance/ExpenditureTracking';
+import TransactionsHistory from '@/components/admin/finance/TransactionsHistory';
 
 // User Routes (Limited Admin)
 import { ViewCustomers } from '@/components/user/customers/ViewCustomers';
@@ -42,131 +47,166 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-                        {/* Customer Routes */}
-                        <Route
-                            path="/customer/dashboard"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
-                                    <CustomerDashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/customer/billing"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
-                                    <BillingHistory />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/customer/consumption"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
-                                    <WaterConsumption />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/customer/complaints"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
-                                    <ComplaintsList />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/customer/profile"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
-                                    <CustomerProfile />
-                                </ProtectedRoute>
-                            }
-                        />
+                        {/* Protected Routes Layout */}
+                        <Route element={<Layout />}>
+                            {/* Customer Routes */}
+                            <Route
+                                path="/customer/dashboard"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
+                                        <CustomerDashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/customer/billing"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
+                                        <BillingHistory />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/customer/consumption"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
+                                        <WaterConsumption />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/customer/complaints"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
+                                        <ComplaintsList />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/customer/profile"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.CUSTOMER]}>
+                                        <CustomerProfile />
+                                    </ProtectedRoute>
+                                }
+                            />
 
-                        {/* Admin Routes */}
-                        <Route
-                            path="/admin/dashboard"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <AdminDashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/customers"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <CustomerManagement />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/users"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <UserManagement />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/billing"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <BillingManagement />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/complaints"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <ComplaintManagement />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/activity-logs"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
-                                    <ActivityLogs />
-                                </ProtectedRoute>
-                            }
-                        />
+                            {/* Admin Routes */}
+                            <Route
+                                path="/admin/dashboard"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <AdminDashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/customers"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <CustomerManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/users"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <UserManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/billing"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <BillingManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/complaints"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <ComplaintManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/activity-logs"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <ActivityLogs />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/vendors"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <VendorManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/employees"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <EmployeeManagement />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/finance/expenditure"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <ExpenditureTracking />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/finance/transactions"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.ADMIN, config.roles.SUPER_ADMIN]}>
+                                        <TransactionsHistory />
+                                    </ProtectedRoute>
+                                }
+                            />
 
-                        {/* User Routes (Limited Admin) */}
-                        <Route
-                            path="/user/dashboard"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.USER]}>
-                                    <UserDashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/user/customers"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.USER]}>
-                                    <ViewCustomers />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/user/billing"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.USER]}>
-                                    <ViewBilling />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/user/complaints"
-                            element={
-                                <ProtectedRoute allowedRoles={[config.roles.USER]}>
-                                    <ViewComplaints />
-                                </ProtectedRoute>
-                            }
-                        />
+                            {/* User Routes (Limited Admin) */}
+                            <Route
+                                path="/user/dashboard"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.USER]}>
+                                        <UserDashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/user/customers"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.USER]}>
+                                        <ViewCustomers />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/user/billing"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.USER]}>
+                                        <ViewBilling />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/user/complaints"
+                                element={
+                                    <ProtectedRoute allowedRoles={[config.roles.USER]}>
+                                        <ViewComplaints />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Route>
 
                         {/* Default Routes */}
                         <Route path="/" element={<Navigate to="/login" replace />} />

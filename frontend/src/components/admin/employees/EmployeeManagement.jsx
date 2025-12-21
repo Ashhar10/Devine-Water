@@ -6,7 +6,6 @@ import {
     FiDollarSign, FiCalendar, FiCheckSquare
 } from 'react-icons/fi';
 import Modal from '../../common/Modal';
-import DataGrid from '../../common/DataGrid';
 
 const EmployeeManagement = () => {
     const [employees, setEmployees] = useState([]);
@@ -51,19 +50,53 @@ const EmployeeManagement = () => {
                 </button>
             </div>
 
-            {/* Employee List - Using LyteNyte DataGrid */}
-            <DataGrid
-                data={employees}
-                columns={[
-                    { field: 'name', headerName: 'Employee', width: 200 },
-                    { field: 'designation', headerName: 'Role', width: 150 },
-                    { field: 'department', headerName: 'Department', width: 150 },
-                    { field: 'status', headerName: 'Status', width: 100 },
-                    { field: 'joiningDate', headerName: 'Joined', width: 120 },
-                    { field: 'email', headerName: 'Email', width: 200 },
-                ]}
-                height={400}
-            />
+            {/* Employee List */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                    <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase font-medium text-gray-500 dark:text-gray-400">
+                        <tr>
+                            <th className="px-6 py-4">Employee</th>
+                            <th className="px-6 py-4">Role & Dept</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Joined</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {employees.map((emp) => (
+                            <tr key={emp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold">
+                                            {emp.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-gray-900 dark:text-white">{emp.name}</div>
+                                            <div className="text-xs text-gray-500">{emp.email}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="font-medium">{emp.designation}</div>
+                                    <div className="text-xs text-gray-500">{emp.department}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${emp.status === 'active'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                        }`}>
+                                        {emp.status.replace('_', ' ')}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">{emp.joiningDate}</td>
+                                <td className="px-6 py-4 text-right">
+                                    <button className="text-primary-600 hover:text-primary-700 font-medium">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
             {/* Add Employee Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Employee">

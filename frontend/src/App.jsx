@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Login from './components/Auth/Login';
-import AdminDashboard from './components/Admin/Dashboard';
-import CustomerDashboard from './components/Customer/Dashboard';
-import SupplierDashboard from './components/Supplier/Dashboard';
-import ShopkeeperDashboard from './components/Shopkeeper/Dashboard';
+import Login from './components/Auth/Login.jsx';
+import AdminDashboard from './components/Admin/Dashboard.jsx';
+import CustomerDashboard from './components/Customer/Dashboard.jsx';
+import SupplierDashboard from './components/Supplier/Dashboard.jsx';
+import ShopkeeperDashboard from './components/Shopkeeper/Dashboard.jsx';
 
 function App() {
     const { user, loading } = useAuth();

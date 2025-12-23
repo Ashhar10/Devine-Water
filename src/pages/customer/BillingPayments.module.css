@@ -1,0 +1,214 @@
+/* BillingPayments Page Styles */
+
+.billing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+/* Current Bill */
+.currentBill {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.billHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.billTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.billPeriod {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.billAmount {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    justify-content: center;
+    padding: var(--space-lg) 0;
+}
+
+.currency {
+    font-size: var(--text-xl);
+    color: var(--text-muted);
+}
+
+.amount {
+    font-family: var(--font-display);
+    font-size: var(--text-5xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.billDetails {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xl);
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border-radius: var(--radius-lg);
+}
+
+.detailItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.detailItem svg {
+    color: var(--text-muted);
+}
+
+/* History Section */
+.historySection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.sectionTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Timeline */
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    position: relative;
+    padding-left: var(--space-xl);
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--glass-border);
+}
+
+.timelineItem {
+    position: relative;
+}
+
+.timelineDot {
+    position: absolute;
+    left: calc(-1 * var(--space-xl) - 1px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.timelineDot.paid {
+    background: var(--success);
+    color: var(--bg-deep-space);
+    box-shadow: 0 0 10px var(--success-glow);
+}
+
+.timelineDot.pending {
+    background: var(--warning);
+    color: var(--bg-deep-space);
+    box-shadow: 0 0 10px var(--warning-glow);
+}
+
+/* Bill Card */
+.billCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md) !important;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.cardInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.billMonth {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.billId {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.cardAmount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-xs);
+}
+
+.cardPrice {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--glass-border);
+}
+
+.cardDate {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.downloadBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.downloadBtn:hover {
+    background: var(--primary-cyan);
+    color: var(--bg-deep-space);
+    border-color: var(--primary-cyan);
+}

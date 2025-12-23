@@ -1,0 +1,224 @@
+/* CustomerDashboard Page Styles */
+
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Welcome Section */
+.welcome {
+    text-align: center;
+    margin-bottom: var(--space-md);
+}
+
+.greeting {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Usage Card */
+.usageCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-xl) !important;
+}
+
+.usageHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.usageIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-cyan-subtle);
+    color: var(--primary-cyan);
+    border-radius: var(--radius-lg);
+}
+
+.usageLabel {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.usageCircle {
+    position: relative;
+    width: 180px;
+    height: 180px;
+}
+
+.progressRing {
+    width: 100%;
+    height: 100%;
+}
+
+.usageValue {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.currentUsage {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    color: var(--primary-cyan);
+}
+
+.usageUnit {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.usageFooter {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+/* Bill Card */
+.billCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.billHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.billIcon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--warning-subtle);
+    color: var(--warning);
+    border-radius: var(--radius-lg);
+}
+
+.billInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.billLabel {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.dueDate {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.billAmount {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--space-xs);
+}
+
+.currency {
+    font-size: var(--text-xl);
+    color: var(--text-muted);
+}
+
+.amount {
+    font-family: var(--font-display);
+    font-size: var(--text-5xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Quick Actions */
+.quickActions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+}
+
+.actionCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-lg) var(--space-md) !important;
+    cursor: pointer;
+}
+
+.actionIcon {
+    color: var(--primary-cyan);
+}
+
+.actionLabel {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Activity Card */
+.activityCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.sectionTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.activityList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.activityItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+}
+
+.activityText {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+}
+
+.activityDate {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}

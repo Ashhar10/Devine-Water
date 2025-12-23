@@ -1,0 +1,55 @@
+/* DataChart Component Styles */
+
+.chartCard {
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    margin-bottom: var(--space-lg);
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.chartWrapper {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Custom Tooltip */
+.tooltip {
+    background: var(--bg-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    box-shadow: var(--glass-shadow);
+}
+
+.tooltipLabel {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-sm) 0;
+}
+
+.tooltipValue {
+    font-size: var(--text-sm);
+    margin: 0;
+    margin-top: var(--space-xs);
+}
+
+.tooltipValue strong {
+    font-weight: 700;
+}

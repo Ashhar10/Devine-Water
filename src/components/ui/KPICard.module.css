@@ -1,0 +1,141 @@
+/* KPICard Component Styles */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-height: 140px;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.iconWrapper {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+}
+
+.valueContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.value {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.unit {
+    font-size: var(--text-xl);
+    font-weight: 500;
+    margin-left: var(--space-xs);
+    opacity: 0.7;
+}
+
+.trend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.trendIcon {
+    font-size: var(--text-base);
+}
+
+.trendUp {
+    color: var(--success);
+}
+
+.trendDown {
+    color: var(--error);
+}
+
+/* Color variants */
+.color-cyan {
+    color: var(--primary-cyan);
+}
+
+.color-cyan .iconWrapper {
+    color: var(--primary-cyan);
+    border-color: var(--primary-cyan-glow);
+    background: var(--primary-cyan-subtle);
+}
+
+.color-teal {
+    color: var(--primary-teal);
+}
+
+.color-teal .iconWrapper {
+    color: var(--primary-teal);
+    border-color: var(--primary-teal-glow);
+    background: rgba(0, 255, 200, 0.1);
+}
+
+.color-success {
+    color: var(--success);
+}
+
+.color-success .iconWrapper {
+    color: var(--success);
+    border-color: var(--success-glow);
+    background: var(--success-subtle);
+}
+
+.color-warning {
+    color: var(--warning);
+}
+
+.color-warning .iconWrapper {
+    color: var(--warning);
+    border-color: var(--warning-glow);
+    background: var(--warning-subtle);
+}
+
+.color-income {
+    color: var(--income);
+}
+
+.color-income .iconWrapper {
+    color: var(--income);
+    border-color: var(--income-glow);
+    background: rgba(0, 229, 160, 0.1);
+}
+
+.color-expense {
+    color: var(--expense);
+}
+
+.color-expense .iconWrapper {
+    color: var(--expense);
+    border-color: var(--expense-glow);
+    background: rgba(255, 107, 107, 0.1);
+}
+
+@media (max-width: 640px) {
+    .value {
+        font-size: var(--text-3xl);
+    }
+}

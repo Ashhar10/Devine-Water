@@ -3,7 +3,7 @@ import axios from 'axios';
 // Use environment variable in production, proxy in development
 const API_URL = import.meta.env.VITE_API_URL ||
     (import.meta.env.PROD
-        ? 'https://water-management-api.onrender.com/api'  // Replace with your Render URL
+        ? 'https://devine-water.onrender.com/api'
         : '/api');
 
 const api = axios.create({

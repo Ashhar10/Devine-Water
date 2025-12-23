@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 // Use environment variable in production, local in development
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') ||
     (import.meta.env.PROD
-        ? 'https://water-management-api.onrender.com'  // Replace with your Render URL
+        ? 'https://devine-water.onrender.com'
         : 'http://localhost:5000');
 
 const socket = io(SOCKET_URL, {

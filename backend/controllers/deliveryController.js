@@ -1,22 +1,26 @@
-const Delivery = require('../models/Delivery');
-const Order = require('../models/Order');
+const { prisma } = require('../config/db');
 
 // Get deliveries
 exports.getDeliveries = async (req, res) => {
     try {
-        let query = {};
+        const where = {};
 
         if (req.user.role === 'supplier') {
-            query.supplierId = req.userId;
+            where.supplierId = req.userId;
         }
 
-        const deliveries = await Delivery.find(query)
-            .populate({
-                path: 'orderId',
-                populate: { path: 'customerId', select: 'fullName phone address' }
-            })
-            .populate('supplierId', 'fullName phone')
-            .sort({ deliveryDate: -1 });
+        const deliveries = await prisma.delivery.findMany({
+            where,
+            include: {
+                order: {
+                    include: {
+                        customer: { select: { id: true, fullName: true, phone: true, address: true } }
+                    }
+                },
+                supplier: { select: { id: true, fullName: true, phone: true } }
+            },
+            orderBy: { deliveryDate: 'desc' }
+        });
 
         res.json(deliveries);
     } catch (error) {
@@ -33,19 +37,23 @@ exports.updateDeliveryStatus = async (req, res) => {
         const updateData = { status };
         if (status === 'completed') {
             updateData.completedAt = new Date();
-
-            // Update order status
-            const delivery = await Delivery.findById(id);
-            if (delivery) {
-                await Order.findByIdAndUpdate(delivery.orderId, { status: 'delivered' });
-            }
         }
 
-        const delivery = await Delivery.findByIdAndUpdate(id, updateData, { new: true })
-            .populate('orderId supplierId');
+        const delivery = await prisma.delivery.update({
+            where: { id },
+            data: updateData,
+            include: {
+                order: true,
+                supplier: true
+            }
+        });
 
-        if (!delivery) {
-            return res.status(404).json({ message: 'Delivery not found' });
+        // Update order status if delivery completed
+        if (status === 'completed') {
+            await prisma.order.update({
+                where: { id: delivery.orderId },
+                data: { status: 'delivered' }
+            });
         }
 
         // Emit real-time update
@@ -55,6 +63,9 @@ exports.updateDeliveryStatus = async (req, res) => {
 
         res.json(delivery);
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Delivery not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -64,9 +75,11 @@ exports.getSupplierDeliveries = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const deliveries = await Delivery.find({ supplierId: id })
-            .populate('orderId')
-            .sort({ deliveryDate: -1 });
+        const deliveries = await prisma.delivery.findMany({
+            where: { supplierId: id },
+            include: { order: true },
+            orderBy: { deliveryDate: 'desc' }
+        });
 
         res.json(deliveries);
     } catch (error) {

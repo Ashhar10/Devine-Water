@@ -1,22 +1,30 @@
-const Order = require('../models/Order');
+const { prisma } = require('../config/db');
 
 // Get orders (filtered by role)
 exports.getOrders = async (req, res) => {
     try {
-        let query = {};
+        const where = {};
 
         // Filter based on role
         if (req.user.role === 'customer') {
-            query.customerId = req.userId;
+            where.customerId = req.userId;
         } else if (req.user.role === 'supplier') {
-            query.supplierId = req.userId;
+            where.supplierId = req.userId;
         }
         // Admin sees all orders
 
-        const orders = await Order.find(query)
-            .populate('customerId', 'fullName phone address')
-            .populate('supplierId', 'fullName phone')
-            .sort({ orderDate: -1 });
+        const orders = await prisma.order.findMany({
+            where,
+            include: {
+                customer: {
+                    select: { id: true, fullName: true, phone: true, address: true }
+                },
+                supplier: {
+                    select: { id: true, fullName: true, phone: true }
+                }
+            },
+            orderBy: { orderDate: 'desc' }
+        });
 
         res.json(orders);
     } catch (error) {
@@ -29,41 +37,54 @@ exports.createOrder = async (req, res) => {
     try {
         const { quantity, deliveryDate, address, notes } = req.body;
 
-        const order = await Order.create({
-            customerId: req.userId,
-            quantity,
-            deliveryDate,
-            address,
-            notes
+        const order = await prisma.order.create({
+            data: {
+                customerId: req.userId,
+                quantity,
+                deliveryDate: new Date(deliveryDate),
+                address,
+                notes
+            },
+            include: {
+                customer: {
+                    select: { id: true, fullName: true, phone: true, address: true }
+                }
+            }
         });
 
-        const populatedOrder = await Order.findById(order._id)
-            .populate('customerId', 'fullName phone address');
-
-        // Emit real-time event (Socket.IO will be configured in server.js)
+        // Emit real-time event
         if (req.app.get('io')) {
-            req.app.get('io').emit('newOrder', populatedOrder);
+            req.app.get('io').emit('newOrder', order);
         }
 
-        res.status(201).json(populatedOrder);
+        res.status(201).json(order);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-// Update order  (Admin)
+// Update order (Admin)
 exports.updateOrder = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
 
-        const order = await Order.findByIdAndUpdate(id, updates, { new: true })
-            .populate('customerId', 'fullName phone address')
-            .populate('supplierId', 'fullName phone');
-
-        if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
+        if (updates.deliveryDate) {
+            updates.deliveryDate = new Date(updates.deliveryDate);
         }
+
+        const order = await prisma.order.update({
+            where: { id },
+            data: updates,
+            include: {
+                customer: {
+                    select: { id: true, fullName: true, phone: true, address: true }
+                },
+                supplier: {
+                    select: { id: true, fullName: true, phone: true }
+                }
+            }
+        });
 
         // Emit real-time update
         if (req.app.get('io')) {
@@ -72,6 +93,9 @@ exports.updateOrder = async (req, res) => {
 
         res.json(order);
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Order not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -82,18 +106,23 @@ exports.assignOrder = async (req, res) => {
         const { id } = req.params;
         const { supplierId } = req.body;
 
-        const order = await Order.findByIdAndUpdate(
-            id,
-            { supplierId, status: 'assigned' },
-            { new: true }
-        ).populate('customerId supplierId');
-
-        if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
-        }
+        const order = await prisma.order.update({
+            where: { id },
+            data: {
+                supplierId,
+                status: 'assigned'
+            },
+            include: {
+                customer: true,
+                supplier: true
+            }
+        });
 
         res.json(order);
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Order not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -103,18 +132,16 @@ exports.cancelOrder = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const order = await Order.findByIdAndUpdate(
-            id,
-            { status: 'cancelled' },
-            { new: true }
-        );
-
-        if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
-        }
+        const order = await prisma.order.update({
+            where: { id },
+            data: { status: 'cancelled' }
+        });
 
         res.json(order);
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Order not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

@@ -1,20 +1,26 @@
-const FinanceIncoming = require('../models/FinanceIncoming');
-const FinanceOutgoing = require('../models/FinanceOutgoing');
+const { prisma } = require('../config/db');
 
 // Get incoming transactions
 exports.getIncoming = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        let query = {};
+        const where = {};
 
         if (startDate && endDate) {
-            query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+            where.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
         }
 
-        const incoming = await FinanceIncoming.find(query)
-            .populate('customerId', 'fullName')
-            .populate('shopkeeperId', 'fullName')
-            .sort({ date: -1 });
+        const incoming = await prisma.financeIncoming.findMany({
+            where,
+            include: {
+                customer: { select: { id: true, fullName: true } },
+                shopkeeper: { select: { id: true, fullName: true } }
+            },
+            orderBy: { date: 'desc' }
+        });
 
         res.json(incoming);
     } catch (error) {
@@ -25,11 +31,15 @@ exports.getIncoming = async (req, res) => {
 // Add incoming transaction
 exports.addIncoming = async (req, res) => {
     try {
-        const transaction = await FinanceIncoming.create(req.body);
-        const populated = await FinanceIncoming.findById(transaction._id)
-            .populate('customerId shopkeeperId');
+        const transaction = await prisma.financeIncoming.create({
+            data: req.body,
+            include: {
+                customer: true,
+                shopkeeper: true
+            }
+        });
 
-        res.status(201).json(populated);
+        res.status(201).json(transaction);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -39,17 +49,23 @@ exports.addIncoming = async (req, res) => {
 exports.getOutgoing = async (req, res) => {
     try {
         const { startDate, endDate, category } = req.query;
-        let query = {};
+        const where = {};
 
         if (startDate && endDate) {
-            query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+            where.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
         }
 
         if (category) {
-            query.category = category;
+            where.category = category;
         }
 
-        const outgoing = await FinanceOutgoing.find(query).sort({ date: -1 });
+        const outgoing = await prisma.financeOutgoing.findMany({
+            where,
+            orderBy: { date: 'desc' }
+        });
 
         res.json(outgoing);
     } catch (error) {
@@ -60,7 +76,9 @@ exports.getOutgoing = async (req, res) => {
 // Add expense
 exports.addExpense = async (req, res) => {
     try {
-        const expense = await FinanceOutgoing.create(req.body);
+        const expense = await prisma.financeOutgoing.create({
+            data: req.body
+        });
         res.status(201).json(expense);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -74,31 +92,47 @@ exports.getReports = async (req, res) => {
         const dateFilter = {};
 
         if (startDate && endDate) {
-            dateFilter.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+            dateFilter.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
         }
 
-        // Total incoming
-        const incomingAgg = await FinanceIncoming.aggregate([
-            { $match: dateFilter },
-            { $group: { _id: '$source', total: { $sum: '$amount' } } }
-        ]);
+        // Aggregate incoming by source
+        const incomingAgg = await prisma.financeIncoming.groupBy({
+            by: ['source'],
+            where: dateFilter,
+            _sum: { amount: true }
+        });
 
-        // Total outgoing by category
-        const outgoingAgg = await FinanceOutgoing.aggregate([
-            { $match: dateFilter },
-            { $group: { _id: '$category', total: { $sum: '$amount' } } }
-        ]);
+        // Aggregate outgoing by category
+        const outgoingAgg = await prisma.financeOutgoing.groupBy({
+            by: ['category'],
+            where: dateFilter,
+            _sum: { amount: true }
+        });
 
-        const totalIncoming = incomingAgg.reduce((sum, item) => sum + item.total, 0);
-        const totalOutgoing = outgoingAgg.reduce((sum, item) => sum + item.total, 0);
+        const totalIncoming = incomingAgg.reduce((sum, item) => sum + Number(item._sum.amount || 0), 0);
+        const totalOutgoing = outgoingAgg.reduce((sum, item) => sum + Number(item._sum.amount || 0), 0);
+
+        // Format response
+        const incomingBreakdown = incomingAgg.map(item => ({
+            _id: item.source,
+            total: Number(item._sum.amount || 0)
+        }));
+
+        const outgoingBreakdown = outgoingAgg.map(item => ({
+            _id: item.category,
+            total: Number(item._sum.amount || 0)
+        }));
 
         res.json({
             incoming: {
-                breakdown: incomingAgg,
+                breakdown: incomingBreakdown,
                 total: totalIncoming
             },
             outgoing: {
-                breakdown: outgoingAgg,
+                breakdown: outgoingBreakdown,
                 total: totalOutgoing
             },
             netProfit: totalIncoming - totalOutgoing

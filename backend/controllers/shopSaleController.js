@@ -1,18 +1,21 @@
-const ShopSale = require('../models/ShopSale');
-const FinanceIncoming = require('../models/FinanceIncoming');
+const { prisma } = require('../config/db');
 
 // Get sales
 exports.getSales = async (req, res) => {
     try {
-        let query = {};
+        const where = {};
 
         if (req.user.role === 'shopkeeper') {
-            query.shopkeeperId = req.userId;
+            where.shopkeeperId = req.userId;
         }
 
-        const sales = await ShopSale.find(query)
-            .populate('shopkeeperId', 'fullName')
-            .sort({ date: -1 });
+        const sales = await prisma.shopSale.findMany({
+            where,
+            include: {
+                shopkeeper: { select: { id: true, fullName: true } }
+            },
+            orderBy: { date: 'desc' }
+        });
 
         res.json(sales);
     } catch (error) {
@@ -25,26 +28,30 @@ exports.recordSale = async (req, res) => {
     try {
         const { quantity, cashReceived, totalAmount } = req.body;
 
-        const sale = await ShopSale.create({
-            shopkeeperId: req.userId,
-            quantity,
-            cashReceived,
-            changeReturned: cashReceived - totalAmount,
-            totalAmount
+        const sale = await prisma.shopSale.create({
+            data: {
+                shopkeeperId: req.userId,
+                quantity,
+                cashReceived,
+                changeReturned: cashReceived - totalAmount,
+                totalAmount
+            },
+            include: {
+                shopkeeper: { select: { id: true, fullName: true } }
+            }
         });
 
         // Also add to finance incoming
-        await FinanceIncoming.create({
-            source: 'shop_sale',
-            amount: totalAmount,
-            shopkeeperId: req.userId,
-            description: `Shop sale - ${quantity} units`
+        await prisma.financeIncoming.create({
+            data: {
+                source: 'shop_sale',
+                amount: totalAmount,
+                shopkeeperId: req.userId,
+                description: `Shop sale - ${quantity} units`
+            }
         });
 
-        const populated = await ShopSale.findById(sale._id)
-            .populate('shopkeeperId', 'fullName');
-
-        res.status(201).json(populated);
+        res.status(201).json(sale);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -55,18 +62,25 @@ exports.getDailySales = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
-        let query = {
-            date: { $gte: today }
+        const where = {
+            date: { gte: today, lt: tomorrow }
         };
 
         if (req.user.role === 'shopkeeper') {
-            query.shopkeeperId = req.userId;
+            where.shopkeeperId = req.userId;
         }
 
-        const sales = await ShopSale.find(query).populate('shopkeeperId', 'fullName');
+        const sales = await prisma.shopSale.findMany({
+            where,
+            include: {
+                shopkeeper: { select: { id: true, fullName: true } }
+            }
+        });
 
-        const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+        const totalSales = sales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
         const totalQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
 
         res.json({

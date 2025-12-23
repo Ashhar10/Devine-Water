@@ -1,34 +1,37 @@
-const Order = require('../models/Order');
-const FinanceIncoming = require('../models/FinanceIncoming');
-const FinanceOutgoing = require('../models/FinanceOutgoing');
-const Delivery = require('../models/Delivery');
-const User = require('../models/User');
+const { prisma } = require('../config/db');
 
 // Admin dashboard
 exports.getAdminDashboard = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
         // Orders statistics
-        const totalOrders = await Order.countDocuments();
-        const pendingOrders = await Order.countDocuments({ status: 'pending' });
-        const todayOrders = await Order.countDocuments({ orderDate: { $gte: today } });
+        const [totalOrders, pendingOrders, todayOrders] = await Promise.all([
+            prisma.order.count(),
+            prisma.order.count({ where: { status: 'pending' } }),
+            prisma.order.count({ where: { orderDate: { gte: today, lt: tomorrow } } })
+        ]);
 
         // Finance statistics
-        const totalIncome = await FinanceIncoming.aggregate([
-            { $group: { _id: null, total: { $sum: '$amount' } } }
+        const [totalIncomeResult, totalExpensesResult] = await Promise.all([
+            prisma.financeIncoming.aggregate({ _sum: { amount: true } }),
+            prisma.financeOutgoing.aggregate({ _sum: { amount: true } })
         ]);
-        const totalExpenses = await FinanceOutgoing.aggregate([
-            { $group: { _id: null, total: { $sum: '$amount' } } }
-        ]);
+
+        const totalIncome = Number(totalIncomeResult._sum.amount || 0);
+        const totalExpenses = Number(totalExpensesResult._sum.amount || 0);
 
         // User statistics
-        const totalCustomers = await User.countDocuments({ role: 'customer' });
-        const totalSuppliers = await User.countDocuments({ role: 'supplier' });
+        const [totalCustomers, totalSuppliers] = await Promise.all([
+            prisma.user.count({ where: { role: 'customer' } }),
+            prisma.user.count({ where: { role: 'supplier' } })
+        ]);
 
         // Pending deliveries
-        const pendingDeliveries = await Delivery.countDocuments({ status: 'pending' });
+        const pendingDeliveries = await prisma.delivery.count({ where: { status: 'pending' } });
 
         res.json({
             orders: {
@@ -37,9 +40,9 @@ exports.getAdminDashboard = async (req, res) => {
                 today: todayOrders
             },
             finance: {
-                totalIncome: totalIncome[0]?.total || 0,
-                totalExpenses: totalExpenses[0]?.total || 0,
-                netProfit: (totalIncome[0]?.total || 0) - (totalExpenses[0]?.total || 0)
+                totalIncome,
+                totalExpenses,
+                netProfit: totalIncome - totalExpenses
             },
             users: {
                 customers: totalCustomers,
@@ -57,15 +60,20 @@ exports.getAdminDashboard = async (req, res) => {
 // Customer dashboard
 exports.getCustomerDashboard = async (req, res) => {
     try {
-        const orders = await Order.find({ customerId: req.userId })
-            .sort({ orderDate: -1 })
-            .limit(10);
+        const [orders, payments] = await Promise.all([
+            prisma.order.findMany({
+                where: { customerId: req.userId },
+                orderBy: { orderDate: 'desc' },
+                take: 10
+            }),
+            prisma.financeIncoming.findMany({
+                where: { customerId: req.userId },
+                orderBy: { date: 'desc' },
+                take: 5
+            })
+        ]);
 
-        const payments = await FinanceIncoming.find({ customerId: req.userId })
-            .sort({ date: -1 })
-            .limit(5);
-
-        const totalSpent = payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const totalSpent = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
 
         res.json({
             recentOrders: orders,
@@ -82,19 +90,31 @@ exports.getSupplierDashboard = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const todayDeliveries = await Delivery.find({
-            supplierId: req.userId,
-            deliveryDate: { $gte: today }
-        }).populate({
-            path: 'orderId',
-            populate: { path: 'customerId', select: 'fullName phone address' }
-        });
-
-        const pendingDeliveries = await Delivery.find({
-            supplierId: req.userId,
-            status: 'pending'
-        }).populate('orderId');
+        const [todayDeliveries, pendingDeliveries] = await Promise.all([
+            prisma.delivery.findMany({
+                where: {
+                    supplierId: req.userId,
+                    deliveryDate: { gte: today, lt: tomorrow }
+                },
+                include: {
+                    order: {
+                        include: {
+                            customer: { select: { id: true, fullName: true, phone: true, address: true } }
+                        }
+                    }
+                }
+            }),
+            prisma.delivery.findMany({
+                where: {
+                    supplierId: req.userId,
+                    status: 'pending'
+                },
+                include: { order: true }
+            })
+        ]);
 
         res.json({
             todayDeliveries,

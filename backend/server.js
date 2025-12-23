@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const connectDB = require('./config/db');
+const { connectDB } = require('./config/db');
 
 // Initialize app
 const app = express();
@@ -50,7 +50,7 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Water Management API is running' });
+    res.json({ status: 'OK', message: 'Water Management API is running (Supabase/PostgreSQL)' });
 });
 
 // Socket.IO connection
@@ -73,4 +73,5 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📡 WebSocket server ready`);
+    console.log(`🗄️  Database: Supabase (PostgreSQL)`);
 });

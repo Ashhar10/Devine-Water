@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const ActivityLog = require('../models/ActivityLog');
+const { prisma } = require('../config/db');
 
 // Login
 exports.login = async (req, res) => {
@@ -9,7 +8,7 @@ exports.login = async (req, res) => {
         const { username, password } = req.body;
 
         // Find user
-        const user = await User.findOne({ username });
+        const user = await prisma.user.findUnique({ where: { username } });
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
@@ -27,23 +26,25 @@ exports.login = async (req, res) => {
 
         // Generate token
         const token = jwt.sign(
-            { userId: user._id, role: user.role },
+            { userId: user.id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
         // Log activity
-        await ActivityLog.create({
-            userId: user._id,
-            action: 'login',
-            entity: 'auth',
-            ipAddress: req.ip
+        await prisma.activityLog.create({
+            data: {
+                userId: user.id,
+                action: 'login',
+                entity: 'auth',
+                ipAddress: req.ip
+            }
         });
 
         res.json({
             token,
             user: {
-                id: user._id,
+                id: user.id,
                 username: user.username,
                 email: user.email,
                 role: user.role,
@@ -58,7 +59,20 @@ exports.login = async (req, res) => {
 // Get current user
 exports.getCurrentUser = async (req, res) => {
     try {
-        const user = await User.findById(req.userId).select('-password');
+        const user = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                fullName: true,
+                phone: true,
+                address: true,
+                isActive: true,
+                createdAt: true
+            }
+        });
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -68,11 +82,13 @@ exports.getCurrentUser = async (req, res) => {
 // Logout
 exports.logout = async (req, res) => {
     try {
-        await ActivityLog.create({
-            userId: req.userId,
-            action: 'logout',
-            entity: 'auth',
-            ipAddress: req.ip
+        await prisma.activityLog.create({
+            data: {
+                userId: req.userId,
+                action: 'logout',
+                entity: 'auth',
+                ipAddress: req.ip
+            }
         });
         res.json({ message: 'Logged out successfully' });
     } catch (error) {

@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   // admin, customer, supplier, shopkeeper
+  fullName  String   @map("full_name")
+  phone     String
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ordersAsCustomer   Order[]           @relation("CustomerOrders")
+  ordersAsSupplier   Order[]           @relation("SupplierOrders")
+  financeIncoming    FinanceIncoming[] @relation("CustomerPayments")
+  financeShopSales   FinanceIncoming[] @relation("ShopkeeperSales")
+  deliveries         Delivery[]
+  routes             Route[]
+  shopSales          ShopSale[]
+  activityLogs       ActivityLog[]
+
+  @@map("users")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  customerId   String    @map("customer_id")
+  quantity     Int
+  orderDate    DateTime  @default(now()) @map("order_date")
+  deliveryDate DateTime  @map("delivery_date")
+  status       String    @default("pending") // pending, assigned, delivered, cancelled
+  supplierId   String?   @map("supplier_id")
+  address      String
+  notes        String?
+
+  // Relations
+  customer   User       @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  supplier   User?      @relation("SupplierOrders", fields: [supplierId], references: [id], onDelete: SetNull)
+  deliveries Delivery[]
+
+  @@map("orders")
+}
+
+model  FinanceIncoming {
+  id            String   @id @default(uuid())
+  source        String   // customer_payment, shop_sale, monthly_billing
+  amount        Decimal  @db.Decimal(10, 2)
+  date          DateTime @default(now())
+  customerId    String?  @map("customer_id")
+  shopkeeperId  String?  @map("shopkeeper_id")
+  description   String?
+  paymentMethod String   @default("cash") @map("payment_method") // cash, card, online, other
+
+  // Relations
+  customer   User? @relation("CustomerPayments", fields: [customerId], references: [id], onDelete: SetNull)
+  shopkeeper User? @relation("ShopkeeperSales", fields: [shopkeeperId], references: [id], onDelete: SetNull)
+
+  @@map("finance_incoming")
+}
+
+model FinanceOutgoing {
+  id          String   @id @default(uuid())
+  category    String   // electricity, chemicals, maintenance, water, fuel, other
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime @default(now())
+  description String
+  receipt     String?
+
+  @@map("finance_outgoing")
+}
+
+model Delivery {
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  supplierId   String    @map("supplier_id")
+  deliveryDate DateTime  @map("delivery_date")
+  status       String    @default("pending") // pending, in_progress, completed
+  route        String?
+  completedAt  DateTime? @map("completed_at")
+
+  // Relations
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplier User  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("deliveries")
+}
+
+model Route {
+  id         String   @id @default(uuid())
+  date       DateTime
+  supplierId String   @map("supplier_id")
+  status     String   @default("scheduled") // scheduled, in_progress, completed
+
+  // Relations
+  supplier       User            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  routeCustomers RouteCustomer[]
+
+  @@map("routes")
+}
+
+model RouteCustomer {
+  id         String  @id @default(uuid())
+  routeId    String  @map("route_id")
+  customerId String  @map("customer_id")
+  address    String?
+  time       String?
+
+  // Relations
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@map("route_customers")
+}
+
+model ShopSale {
+  id             String   @id @default(uuid())
+  shopkeeperId   String   @map("shopkeeper_id")
+  quantity       Int
+  cashReceived   Decimal  @map("cash_received") @db.Decimal(10, 2)
+  changeReturned Decimal  @default(0) @map("change_returned") @db.Decimal(10, 2)
+  totalAmount    Decimal  @map("total_amount") @db.Decimal(10, 2)
+  date           DateTime @default(now())
+
+  // Relations
+  shopkeeper User @relation(fields: [shopkeeperId], references: [id], onDelete: Cascade)
+
+  @@map("shop_sales")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  action    String   // create, update, delete, login, logout
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   String?
+  timestamp DateTime @default(now())
+  ipAddress String?  @map("ip_address")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}

@@ -1,10 +1,22 @@
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const { prisma } = require('../config/db');
 
 // Get all users (Admin only)
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find().select('-password');
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                fullName: true,
+                phone: true,
+                address: true,
+                isActive: true,
+                createdAt: true
+            }
+        });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -17,7 +29,12 @@ exports.createUser = async (req, res) => {
         const { username, email, password, role, fullName, phone, address } = req.body;
 
         // Check if user exists
-        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [{ username }, { email }]
+            }
+        });
+
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -26,20 +43,30 @@ exports.createUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const user = await User.create({
-            username,
-            email,
-            password: hashedPassword,
-            role,
-            fullName,
-            phone,
-            address
+        const user = await prisma.user.create({
+            data: {
+                username,
+                email,
+                password: hashedPassword,
+                role,
+                fullName,
+                phone,
+                address
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                fullName: true,
+                phone: true,
+                address: true,
+                isActive: true,
+                createdAt: true
+            }
         });
 
-        const userResponse = user.toObject();
-        delete userResponse.password;
-
-        res.status(201).json(userResponse);
+        res.status(201).json(user);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -56,14 +83,27 @@ exports.updateUser = async (req, res) => {
             updates.password = await bcrypt.hash(updates.password, 10);
         }
 
-        const user = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        const user = await prisma.user.update({
+            where: { id },
+            data: updates,
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                fullName: true,
+                phone: true,
+                address: true,
+                isActive: true,
+                createdAt: true
+            }
+        });
 
         res.json(user);
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'User not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -73,14 +113,15 @@ exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const user = await User.findByIdAndDelete(id);
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        await prisma.user.delete({
+            where: { id }
+        });
 
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'User not found' });
+        }
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

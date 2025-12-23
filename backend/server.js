@@ -19,7 +19,25 @@ const io = new Server(server, {
 connectDB();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://devine-water.vercel.app',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

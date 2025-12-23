@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-// Use environment variable in production, proxy in development
-const API_URL = import.meta.env.VITE_API_URL ||
-    (import.meta.env.PROD
-        ? 'https://devine-water.onrender.com/api'
-        : '/api');
+// API URL - always use absolute URL for Render backend in production
+const API_URL = import.meta.env.MODE === 'production'
+    ? 'https://devine-water.onrender.com/api'
+    : '/api';
+
+console.log('🔧 API_URL:', API_URL, 'MODE:', import.meta.env.MODE);
 
 const api = axios.create({
     baseURL: API_URL,

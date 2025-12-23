@@ -46,7 +46,7 @@ function ShopkeeperDashboard() {
             <div className="grid grid-3" style={{ marginBottom: '2rem' }}>
                 <div className="card">
                     <h3 style={{ color: 'var(--accent-primary)' }}>Today's Sales</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>₹{dailySales.summary.totalSales}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>Rs {dailySales.summary.totalSales}</p>
                 </div>
                 <div className="card">
                     <h3 style={{ color: 'var(--success)' }}>Units Sold</h3>
@@ -101,9 +101,9 @@ function ShopkeeperDashboard() {
                                 <tr key={sale._id}>
                                     <td>{new Date(sale.date).toLocaleTimeString()}</td>
                                     <td>{sale.quantity}</td>
-                                    <td>₹{sale.totalAmount}</td>
-                                    <td>₹{sale.cashReceived}</td>
-                                    <td>₹{sale.changeReturned}</td>
+                                    <td>Rs {sale.totalAmount}</td>
+                                    <td>Rs {sale.cashReceived}</td>
+                                    <td>Rs {sale.changeReturned}</td>
                                 </tr>
                             ))}
                         </tbody>

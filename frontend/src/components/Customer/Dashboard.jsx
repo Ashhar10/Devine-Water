@@ -40,7 +40,7 @@ function CustomerDashboard() {
                 </div>
                 <div className="card">
                     <h3 style={{ color: 'var(--success)' }}>Total Spent</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>₹{dashboard.totalSpent}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>Rs {dashboard.totalSpent}</p>
                 </div>
                 <div className="card" style={{ textAlign: 'center' }}>
                     <button className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2rem' }} onClick={() => setShowOrderForm(true)}>

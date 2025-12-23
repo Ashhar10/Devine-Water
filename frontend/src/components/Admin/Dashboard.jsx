@@ -23,15 +23,15 @@ function DashboardHome() {
                 </div>
                 <div className="card">
                     <h3 style={{ color: 'var(--success)', marginBottom: '0.5rem' }}>Total Income</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>₹{stats.finance.totalIncome.toFixed(2)}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>Rs {stats.finance.totalIncome.toFixed(2)}</p>
                 </div>
                 <div className="card">
                     <h3 style={{ color: 'var(--error)', marginBottom: '0.5rem' }}>Total Expenses</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>₹{stats.finance.totalExpenses.toFixed(2)}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>Rs {stats.finance.totalExpenses.toFixed(2)}</p>
                 </div>
                 <div className="card">
                     <h3 style={{ color: 'var(--warning)', marginBottom: '0.5rem' }}>Net Profit</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>₹{stats.finance.netProfit.toFixed(2)}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700' }}>Rs {stats.finance.netProfit.toFixed(2)}</p>
                 </div>
             </div>
         </div>
@@ -89,21 +89,21 @@ function Finance() {
             <div className="grid grid-2" style={{ marginTop: '2rem' }}>
                 <div className="card">
                     <h2 style={{ color: 'var(--success)', marginBottom: '1rem' }}>Incoming Money</h2>
-                    <p style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1rem' }}>₹{report.incoming.total}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1rem' }}>Rs {report.incoming.total}</p>
                     {report.incoming.breakdown.map(item => (
                         <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span>{item._id}</span>
-                            <span>₹{item.total}</span>
+                            <span>Rs {item.total}</span>
                         </div>
                     ))}
                 </div>
                 <div className="card">
                     <h2 style={{ color: 'var(--error)', marginBottom: '1rem' }}>Outgoing Money</h2>
-                    <p style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1rem' }}>₹{report.outgoing.total}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1rem' }}>Rs {report.outgoing.total}</p>
                     {report.outgoing.breakdown.map(item => (
                         <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span>{item._id}</span>
-                            <span>₹{item.total}</span>
+                            <span>Rs {item.total}</span>
                         </div>
                     ))}
                 </div>

@@ -1,52 +1,76 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Download, Calendar, TrendingUp, Droplets, DollarSign, Users } from 'lucide-react'
+import { Download, Calendar, Droplets, DollarSign, Users } from 'lucide-react'
+import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import DataChart from '../../components/charts/DataChart'
 import styles from './Reports.module.css'
 
-// Mock data for different time periods
-const monthlyData = [
-    { name: 'Jan', water: 42500, revenue: 425000, customers: 1180 },
-    { name: 'Feb', water: 45200, revenue: 452000, customers: 1195 },
-    { name: 'Mar', water: 48900, revenue: 489000, customers: 1210 },
-    { name: 'Apr', water: 46300, revenue: 463000, customers: 1225 },
-    { name: 'May', water: 52100, revenue: 521000, customers: 1235 },
-    { name: 'Jun', water: 55800, revenue: 558000, customers: 1247 },
-]
-
-const yearlyData = [
-    { name: '2020', water: 480000, revenue: 4800000, customers: 980 },
-    { name: '2021', water: 520000, revenue: 5200000, customers: 1050 },
-    { name: '2022', water: 580000, revenue: 5800000, customers: 1120 },
-    { name: '2023', water: 620000, revenue: 6200000, customers: 1180 },
-    { name: '2024', water: 550000, revenue: 5500000, customers: 1247 },
-]
-
 function Reports() {
-    const [timeRange, setTimeRange] = useState('monthly')
-    const data = timeRange === 'monthly' ? monthlyData : yearlyData
+    // Get real data from store
+    const waterProduction = useDataStore(state => state.waterProduction)
+    const transactions = useDataStore(state => state.transactions)
+    const customers = useDataStore(state => state.customers)
+
+    // Transform water production data for chart
+    const chartData = useMemo(() => {
+        if (waterProduction.length === 0) {
+            return []
+        }
+        return waterProduction.map(wp => ({
+            name: new Date(wp.date).toLocaleString('default', { month: 'short' }),
+            water: wp.produced,
+            consumed: wp.consumed
+        }))
+    }, [waterProduction])
+
+    // Calculate revenue from transactions
+    const revenueData = useMemo(() => {
+        const monthly = {}
+        transactions.forEach(t => {
+            if (t.type === 'income') {
+                const month = new Date(t.createdAt).toLocaleString('default', { month: 'short' })
+                monthly[month] = (monthly[month] || 0) + t.amount
+            }
+        })
+        return Object.entries(monthly).map(([name, revenue]) => ({ name, revenue }))
+    }, [transactions])
+
+    // Calculate totals
+    const totals = useMemo(() => {
+        const totalWater = waterProduction.reduce((sum, wp) => sum + wp.produced, 0)
+        const totalRevenue = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + t.amount, 0)
+        const activeCustomers = customers.filter(c => c.status === 'active').length
+
+        return { totalWater, totalRevenue, activeCustomers }
+    }, [waterProduction, transactions, customers])
+
+    // Format numbers
+    const formatNumber = (num) => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+        return num.toString()
+    }
 
     const summaryStats = [
         {
             label: 'Total Water Produced',
-            value: timeRange === 'monthly' ? '290.8K L' : '2.75M L',
-            change: '+12.5%',
+            value: `${formatNumber(totals.totalWater)} L`,
             icon: Droplets,
             color: 'cyan'
         },
         {
             label: 'Total Revenue',
-            value: timeRange === 'monthly' ? 'Rs 2.91M' : 'Rs 27.5M',
-            change: '+18.2%',
+            value: `Rs ${formatNumber(totals.totalRevenue)}`,
             icon: DollarSign,
             color: 'income'
         },
         {
-            label: 'Customer Growth',
-            value: timeRange === 'monthly' ? '+67' : '+267',
-            change: '+5.7%',
+            label: 'Active Customers',
+            value: totals.activeCustomers.toString(),
             icon: Users,
             color: 'success'
         },
@@ -56,20 +80,7 @@ function Reports() {
         <div className={styles.reports}>
             {/* Header */}
             <div className={styles.header}>
-                <div className={styles.timeToggle}>
-                    <button
-                        className={`${styles.toggleBtn} ${timeRange === 'monthly' ? styles.active : ''}`}
-                        onClick={() => setTimeRange('monthly')}
-                    >
-                        Monthly
-                    </button>
-                    <button
-                        className={`${styles.toggleBtn} ${timeRange === 'yearly' ? styles.active : ''}`}
-                        onClick={() => setTimeRange('yearly')}
-                    >
-                        Yearly
-                    </button>
-                </div>
+                <h2 className={styles.title}>Reports</h2>
                 <div className={styles.actions}>
                     <Button variant="ghost" icon={Calendar} size="sm">
                         Custom Range
@@ -96,7 +107,6 @@ function Reports() {
                             <div className={styles.statInfo}>
                                 <span className={styles.statLabel}>{stat.label}</span>
                                 <span className={styles.statValue}>{stat.value}</span>
-                                <span className={styles.statChange}>{stat.change}</span>
                             </div>
                         </GlassCard>
                     </motion.div>
@@ -107,12 +117,13 @@ function Reports() {
             <section className={styles.mainChart}>
                 <DataChart
                     title="Water Production Overview"
-                    subtitle={`${timeRange === 'monthly' ? 'Last 6 months' : 'Last 5 years'} performance`}
-                    data={data}
+                    subtitle={chartData.length > 0 ? `${chartData.length} months of data` : 'No data available'}
+                    data={chartData}
                     type="area"
-                    dataKeys={['water']}
-                    colors={['#00d4ff']}
+                    dataKeys={['water', 'consumed']}
+                    colors={['#00d4ff', '#00ffc8']}
                     height={350}
+                    showLegend
                 />
             </section>
 
@@ -121,21 +132,29 @@ function Reports() {
                 <DataChart
                     title="Revenue Trend"
                     subtitle="Financial performance"
-                    data={data}
+                    data={revenueData}
                     type="line"
                     dataKeys={['revenue']}
                     colors={['#00e5a0']}
                     height={250}
                 />
-                <DataChart
-                    title="Customer Growth"
-                    subtitle="Active customers over time"
-                    data={data}
-                    type="bar"
-                    dataKeys={['customers']}
-                    colors={['#00ffc8']}
-                    height={250}
-                />
+                <GlassCard className={styles.statsCard}>
+                    <h3>Quick Summary</h3>
+                    <div className={styles.quickStats}>
+                        <div className={styles.quickStat}>
+                            <span className={styles.quickLabel}>Total Customers</span>
+                            <span className={styles.quickValue}>{customers.length}</span>
+                        </div>
+                        <div className={styles.quickStat}>
+                            <span className={styles.quickLabel}>Active Customers</span>
+                            <span className={styles.quickValue}>{totals.activeCustomers}</span>
+                        </div>
+                        <div className={styles.quickStat}>
+                            <span className={styles.quickLabel}>Data Points</span>
+                            <span className={styles.quickValue}>{waterProduction.length}</span>
+                        </div>
+                    </div>
+                </GlassCard>
             </section>
         </div>
     )

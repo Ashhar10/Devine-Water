@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Droplets, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
@@ -9,7 +9,6 @@ import styles from './WaterUsage.module.css'
 function WaterUsage() {
     const [timeRange, setTimeRange] = useState('monthly')
 
-    const waterProduction = useDataStore(state => state.waterProduction)
     const customers = useDataStore(state => state.customers)
     const bills = useDataStore(state => state.bills)
 
@@ -18,25 +17,18 @@ function WaterUsage() {
     const customerBills = bills.filter(b => b.customerId === currentCustomer?.id)
 
     // Transform bills to usage data
-    const monthlyUsage = customerBills.map(bill => ({
-        name: bill.month.split(' ')[0].substring(0, 3),
-        usage: bill.usageLiters,
-        cost: bill.amount,
-    })).slice(0, 6).reverse()
+    const monthlyUsage = useMemo(() => {
+        if (customerBills.length === 0) return []
+        return customerBills.map(bill => ({
+            name: bill.month?.split(' ')[0]?.substring(0, 3) || 'N/A',
+            usage: bill.usageLiters || 0,
+            cost: bill.amount || 0,
+        })).slice(0, 6).reverse()
+    }, [customerBills])
 
-    // Simulated daily usage
-    const dailyUsage = [
-        { name: 'Mon', usage: 42 },
-        { name: 'Tue', usage: 38 },
-        { name: 'Wed', usage: 45 },
-        { name: 'Thu', usage: 40 },
-        { name: 'Fri', usage: 48 },
-        { name: 'Sat', usage: 52 },
-        { name: 'Sun', usage: 35 },
-    ]
-
-    const currentMonth = monthlyUsage[monthlyUsage.length - 1] || { usage: 285, cost: 2850 }
-    const previousMonth = monthlyUsage[monthlyUsage.length - 2] || { usage: 250, cost: 2500 }
+    // Calculate current and previous month stats
+    const currentMonth = monthlyUsage[monthlyUsage.length - 1] || { usage: 0, cost: 0 }
+    const previousMonth = monthlyUsage[monthlyUsage.length - 2] || { usage: 0, cost: 0 }
     const usageChange = previousMonth.usage > 0
         ? ((currentMonth.usage - previousMonth.usage) / previousMonth.usage) * 100
         : 0
@@ -68,30 +60,12 @@ function WaterUsage() {
                 </GlassCard>
             </div>
 
-            {/* Time Range Toggle */}
-            <div className={styles.toggleWrapper}>
-                <div className={styles.toggle}>
-                    <button
-                        className={`${styles.toggleBtn} ${timeRange === 'daily' ? styles.active : ''}`}
-                        onClick={() => setTimeRange('daily')}
-                    >
-                        Daily
-                    </button>
-                    <button
-                        className={`${styles.toggleBtn} ${timeRange === 'monthly' ? styles.active : ''}`}
-                        onClick={() => setTimeRange('monthly')}
-                    >
-                        Monthly
-                    </button>
-                </div>
-            </div>
-
             {/* Usage Chart */}
             <GlassCard className={styles.chartCard}>
                 <DataChart
-                    title={timeRange === 'daily' ? 'Daily Usage (This Week)' : 'Monthly Usage'}
-                    subtitle="Water consumption in liters"
-                    data={timeRange === 'daily' ? dailyUsage : monthlyUsage}
+                    title="Monthly Usage"
+                    subtitle={monthlyUsage.length > 0 ? "Water consumption in liters" : "No usage data available"}
+                    data={monthlyUsage}
                     type="area"
                     dataKeys={['usage']}
                     colors={['#00d4ff']}
@@ -102,34 +76,38 @@ function WaterUsage() {
             {/* Usage Breakdown */}
             <GlassCard className={styles.breakdownCard}>
                 <h3 className={styles.sectionTitle}>Monthly Breakdown</h3>
-                <div className={styles.breakdown}>
-                    {monthlyUsage.slice().reverse().map((month, index) => (
-                        <motion.div
-                            key={month.name}
-                            className={styles.breakdownItem}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <div className={styles.breakdownLeft}>
-                                <Calendar size={16} className={styles.calendarIcon} />
-                                <span className={styles.monthName}>{month.name} 2024</span>
-                            </div>
-                            <div className={styles.breakdownRight}>
-                                <div className={styles.usageBar}>
-                                    <motion.div
-                                        className={styles.usageProgress}
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(month.usage / 300) * 100}%` }}
-                                        transition={{ delay: index * 0.1, duration: 0.5 }}
-                                    />
+                {monthlyUsage.length === 0 ? (
+                    <p className={styles.noData}>No billing data available</p>
+                ) : (
+                    <div className={styles.breakdown}>
+                        {monthlyUsage.slice().reverse().map((month, index) => (
+                            <motion.div
+                                key={month.name}
+                                className={styles.breakdownItem}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <div className={styles.breakdownLeft}>
+                                    <Calendar size={16} className={styles.calendarIcon} />
+                                    <span className={styles.monthName}>{month.name}</span>
                                 </div>
-                                <span className={styles.usageValue}>{month.usage}L</span>
-                                <span className={styles.costValue}>Rs {month.cost}</span>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
+                                <div className={styles.breakdownRight}>
+                                    <div className={styles.usageBar}>
+                                        <motion.div
+                                            className={styles.usageProgress}
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min((month.usage / 500) * 100, 100)}%` }}
+                                            transition={{ delay: index * 0.1, duration: 0.5 }}
+                                        />
+                                    </div>
+                                    <span className={styles.usageValue}>{month.usage}L</span>
+                                    <span className={styles.costValue}>Rs {month.cost}</span>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </GlassCard>
 
             {/* Tips */}

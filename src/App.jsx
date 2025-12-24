@@ -15,6 +15,8 @@ import Reports from './pages/admin/Reports'
 import Customers from './pages/admin/Customers'
 import UserManagement from './pages/admin/UserManagement'
 import Products from './pages/admin/Products'
+import Vendors from './pages/admin/Vendors'
+import Delivery from './pages/admin/Delivery'
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard'
@@ -98,10 +100,12 @@ function App() {
             }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<Products />} />
-                <Route path="finance" element={<FinanceModule />} />
-                <Route path="orders" element={<OrdersBilling />} />
-                <Route path="reports" element={<Reports />} />
                 <Route path="customers" element={<Customers />} />
+                <Route path="orders" element={<OrdersBilling />} />
+                <Route path="vendors" element={<Vendors />} />
+                <Route path="delivery" element={<Delivery />} />
+                <Route path="finance" element={<FinanceModule />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="users" element={<UserManagement />} />
             </Route>
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     Droplets,
@@ -16,21 +17,49 @@ import DataChart from '../../components/charts/DataChart'
 import styles from './AdminDashboard.module.css'
 
 function AdminDashboard() {
-    // Get data from store
-    const stats = useDataStore(state => state.getDashboardStats())
+    // Get raw data from store - stable references
+    const customers = useDataStore(state => state.customers)
     const orders = useDataStore(state => state.orders)
     const waterProduction = useDataStore(state => state.waterProduction)
     const transactions = useDataStore(state => state.transactions)
 
+    // Compute stats with useMemo to avoid recalculation
+    const stats = useMemo(() => {
+        const activeCustomers = customers.filter(c => c.status === 'active').length
+        const todayStr = new Date().toISOString().split('T')[0]
+        const todayOrders = orders.filter(o => o.createdAt.startsWith(todayStr)).length
+        const pendingOrders = orders.filter(o => o.status === 'pending').length
+
+        const totalProduction = waterProduction.reduce((acc, r) => ({
+            produced: acc.produced + r.produced,
+            consumed: acc.consumed + r.consumed,
+        }), { produced: 0, consumed: 0 })
+
+        const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+        const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+
+        return {
+            totalCustomers: activeCustomers,
+            totalOrders: orders.length,
+            pendingOrders,
+            todayOrders,
+            totalWaterProduced: totalProduction.produced,
+            totalWaterConsumed: totalProduction.consumed,
+            revenue: income,
+            expenses: expenses,
+            profit: income - expenses,
+        }
+    }, [customers, orders, waterProduction, transactions])
+
     // Transform water production data for chart
-    const waterFlowData = waterProduction.map(wp => ({
+    const waterFlowData = useMemo(() => waterProduction.map(wp => ({
         name: new Date(wp.date).toLocaleString('default', { month: 'short' }),
         produced: wp.produced,
         consumed: wp.consumed,
-    }))
+    })), [waterProduction])
 
     // Group transactions by month for revenue chart
-    const getMonthlyRevenue = () => {
+    const revenueData = useMemo(() => {
         const monthly = {}
         transactions.forEach(t => {
             const month = new Date(t.createdAt).toLocaleString('default', { month: 'short' })
@@ -39,19 +68,17 @@ function AdminDashboard() {
             else monthly[month].expenses += t.amount
         })
         return Object.entries(monthly).map(([name, data]) => ({ name, ...data }))
-    }
-
-    const revenueData = getMonthlyRevenue()
+    }, [transactions])
 
     // Get recent orders (last 5)
-    const recentOrders = orders.slice(0, 5).map(order => ({
+    const recentOrders = useMemo(() => orders.slice(0, 5).map(order => ({
         ...order,
         date: new Date(order.createdAt).toLocaleString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
         })
-    }))
+    })), [orders])
 
     return (
         <div className={styles.dashboard}>

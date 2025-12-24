@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     TrendingUp,
@@ -35,35 +35,54 @@ function FinanceModule() {
     const [showExpenseModal, setShowExpenseModal] = useState(false)
     const [formData, setFormData] = useState({ category: '', amount: '', description: '' })
 
+    // Get raw transactions from store - stable reference
     const transactions = useDataStore(state => state.transactions)
     const addTransaction = useDataStore(state => state.addTransaction)
-    const { income, expenses, profit } = useDataStore(state => state.getFinanceSummary())
 
-    const incomeTransactions = transactions.filter(t => t.type === 'income')
-    const expenseTransactions = transactions.filter(t => t.type === 'expense')
+    // Compute financial summary with useMemo
+    const { income, expenses, profit, incomeTransactions, expenseTransactions } = useMemo(() => {
+        const incTrx = transactions.filter(t => t.type === 'income')
+        const expTrx = transactions.filter(t => t.type === 'expense')
+        const inc = incTrx.reduce((sum, t) => sum + t.amount, 0)
+        const exp = expTrx.reduce((sum, t) => sum + t.amount, 0)
+
+        return {
+            income: inc,
+            expenses: exp,
+            profit: inc - exp,
+            incomeTransactions: incTrx,
+            expenseTransactions: expTrx,
+        }
+    }, [transactions])
 
     // Group income by week for chart
-    const incomeData = incomeTransactions.slice(0, 4).map((t, i) => ({
-        name: `Week ${i + 1}`,
-        income: t.amount,
-    }))
+    const incomeData = useMemo(() => {
+        return incomeTransactions.slice(0, 4).map((t, i) => ({
+            name: `Week ${i + 1}`,
+            income: t.amount,
+        }))
+    }, [incomeTransactions])
 
     // Group expenses by category
-    const expensesByCategory = expenseTransactions.reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount
-        return acc
-    }, {})
+    const { expenseCategories, totalExpenses } = useMemo(() => {
+        const byCategory = expenseTransactions.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount
+            return acc
+        }, {})
 
-    const totalExpenses = Object.values(expensesByCategory).reduce((a, b) => a + b, 0)
+        const total = Object.values(byCategory).reduce((a, b) => a + b, 0)
 
-    const expenseCategories = Object.entries(expensesByCategory).map(([name, amount]) => ({
-        id: name.toLowerCase(),
-        name,
-        icon: expenseIcons[name] || Wrench,
-        amount,
-        color: expenseColors[name] || '#00d4ff',
-        percentage: Math.round((amount / totalExpenses) * 100),
-    }))
+        const categories = Object.entries(byCategory).map(([name, amount]) => ({
+            id: name.toLowerCase(),
+            name,
+            icon: expenseIcons[name] || Wrench,
+            amount,
+            color: expenseColors[name] || '#00d4ff',
+            percentage: total > 0 ? Math.round((amount / total) * 100) : 0,
+        }))
+
+        return { expenseCategories: categories, totalExpenses: total }
+    }, [expenseTransactions])
 
     const handleAddIncome = (e) => {
         e.preventDefault()

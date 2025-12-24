@@ -205,9 +205,9 @@ INSERT INTO water_production (record_id, date, produced, consumed) VALUES
 
 -- Insert support tickets
 INSERT INTO support_tickets (ticket_id, customer_id, subject, message, status, admin_reply, created_at)
-SELECT 'TKT-001', id, 'Water quality issue', 'The water seems cloudy today.', 'resolved', 'We have checked and resolved the issue. Please try again.', '2024-12-20' FROM customers WHERE customer_id = 'CUS-001'
+SELECT 'TKT-001', id, 'Water quality issue', 'The water seems cloudy today.', 'resolved', 'We have checked and resolved the issue. Please try again.', '2024-12-20'::TIMESTAMP FROM customers WHERE customer_id = 'CUS-001'
 UNION ALL
-SELECT 'TKT-002', id, 'Delivery delayed', 'My order is delayed by 2 days.', 'in_progress', NULL, '2024-12-22' FROM customers WHERE customer_id = 'CUS-001';
+SELECT 'TKT-002', id, 'Delivery delayed', 'My order is delayed by 2 days.', 'in_progress', NULL, '2024-12-22'::TIMESTAMP FROM customers WHERE customer_id = 'CUS-001';
 
 -- =====================================================
 -- VERIFY SEED DATA

@@ -188,11 +188,11 @@ INSERT INTO transactions (transaction_id, type, category, amount, description, c
 
 -- Insert bills
 INSERT INTO bills (bill_id, customer_id, month, amount, usage_liters, status, due_date, created_at)
-SELECT 'INV-001', id, 'December 2024', 2850, 285, 'pending', '2024-12-31', '2024-12-01' FROM customers WHERE customer_id = 'CUS-001'
+SELECT 'INV-001', id, 'December 2024', 2850, 285, 'pending', '2024-12-31'::DATE, '2024-12-01'::TIMESTAMP FROM customers WHERE customer_id = 'CUS-001'
 UNION ALL
-SELECT 'INV-002', id, 'November 2024', 2500, 250, 'paid', '2024-11-30', '2024-11-01' FROM customers WHERE customer_id = 'CUS-001'
+SELECT 'INV-002', id, 'November 2024', 2500, 250, 'paid', '2024-11-30'::DATE, '2024-11-01'::TIMESTAMP FROM customers WHERE customer_id = 'CUS-001'
 UNION ALL
-SELECT 'INV-003', id, 'December 2024', 1800, 180, 'pending', '2024-12-31', '2024-12-01' FROM customers WHERE customer_id = 'CUS-002';
+SELECT 'INV-003', id, 'December 2024', 1800, 180, 'pending', '2024-12-31'::DATE, '2024-12-01'::TIMESTAMP FROM customers WHERE customer_id = 'CUS-002';
 
 -- Insert water production data
 INSERT INTO water_production (record_id, date, produced, consumed) VALUES

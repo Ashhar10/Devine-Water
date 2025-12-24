@@ -32,8 +32,8 @@ const defaultUser = {
 export const useDataStore = create(
     persist(
         (set, get) => ({
-            // Initial state - empty arrays (no mock data)
-            currentUser: defaultUser,
+            // Initial state - null user requires login
+            currentUser: null,
             customers: [],
             orders: [],
             transactions: [],

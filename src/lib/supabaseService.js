@@ -482,16 +482,26 @@ export const updateTicketInDb = async (ticketId, status, adminReply = null) => {
 // USER AUTHENTICATION (Custom - not Supabase Auth)
 // =====================================================
 
-export const loginUser = async (email, password) => {
+export const loginUser = async (identifier, password) => {
     if (!isSupabaseConfigured()) return null
 
-    const { data, error } = await supabase
+    // Check if identifier is email or phone
+    const isEmail = identifier.includes('@')
+
+    // Try to find user by email or phone
+    let query = supabase
         .from('users')
         .select('*')
-        .eq('email', email.toLowerCase())
         .eq('password', password)
         .eq('status', 'active')
-        .single()
+
+    if (isEmail) {
+        query = query.eq('email', identifier.toLowerCase())
+    } else {
+        query = query.eq('phone', identifier)
+    }
+
+    const { data, error } = await query.single()
 
     if (error || !data) {
         console.error('Login failed:', error?.message || 'Invalid credentials')

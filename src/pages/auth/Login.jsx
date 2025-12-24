@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Droplets, Mail, Lock, LogIn } from 'lucide-react'
+import { Droplets, User, Lock, LogIn } from 'lucide-react'
 import { loginUser } from '../../lib/supabaseService'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -12,7 +12,7 @@ function Login() {
     const navigate = useNavigate()
     const setCurrentUser = useDataStore(state => state.setCurrentUser)
 
-    const [email, setEmail] = useState('')
+    const [identifier, setIdentifier] = useState('') // Can be email or phone
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -23,8 +23,8 @@ function Login() {
         setLoading(true)
 
         try {
-            // Login against users table in database
-            const user = await loginUser(email, password)
+            // Login with email or phone
+            const user = await loginUser(identifier, password)
 
             if (user) {
                 setCurrentUser(user)
@@ -36,7 +36,7 @@ function Login() {
                     navigate('/admin')
                 }
             } else {
-                setError('Invalid email or password')
+                setError('Invalid credentials. Please check your email/phone and password.')
             }
         } catch (err) {
             setError(err.message || 'Login failed. Please try again.')
@@ -81,12 +81,12 @@ function Login() {
 
                     <form onSubmit={handleSubmit} className={styles.form}>
                         <div className={styles.inputGroup}>
-                            <Mail size={18} className={styles.inputIcon} />
+                            <User size={18} className={styles.inputIcon} />
                             <input
-                                type="email"
-                                placeholder="Email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                type="text"
+                                placeholder="Email or Phone Number"
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                                 className={styles.input}
                                 required
                             />

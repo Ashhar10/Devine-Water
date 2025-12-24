@@ -361,3 +361,107 @@
     border-color: var(--primary-cyan);
     box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
 }
+
+/* Directions Button */
+.directionsBtn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--bg-deep-space);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.directionsBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--primary-cyan-glow);
+}
+
+/* Address Input with Location Button */
+.addressInput {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.addressInput input {
+    flex: 1;
+}
+
+.locationBtn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--primary-cyan);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.locationBtn:hover {
+    background: var(--primary-cyan);
+    border-color: var(--primary-cyan);
+    color: var(--bg-deep-space);
+}
+
+.locationBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Input with icon */
+.inputWithIcon {
+    position: relative;
+}
+
+.inputWithIcon .inputIcon {
+    position: absolute;
+    left: var(--space-md);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.inputWithIcon input {
+    padding-left: 44px;
+}
+
+/* Hints and small text */
+.inputHint {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.coordsText {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--success);
+}

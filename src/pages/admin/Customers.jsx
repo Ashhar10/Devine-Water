@@ -3,14 +3,16 @@ import { motion } from 'framer-motion'
 import {
     Search,
     Plus,
-    MoreVertical,
     Phone,
     MapPin,
     Calendar,
     Droplets,
     X,
     Edit,
-    Trash
+    Trash,
+    Lock,
+    Navigation,
+    Crosshair
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -22,12 +24,22 @@ function Customers() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingCustomer, setEditingCustomer] = useState(null)
-    const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' })
+    const [gettingLocation, setGettingLocation] = useState(false)
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        password: '',
+        latitude: null,
+        longitude: null
+    })
 
     const customers = useDataStore(state => state.customers)
     const addCustomer = useDataStore(state => state.addCustomer)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
+    const addUser = useDataStore(state => state.addUser)
 
     const filteredCustomers = customers.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,16 +53,92 @@ function Customers() {
         inactive: customers.filter(c => c.status === 'inactive').length,
     }
 
-    const handleSubmit = (e) => {
+    // Get current location
+    const getCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser')
+            return
+        }
+
+        setGettingLocation(true)
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                }))
+                setGettingLocation(false)
+                // Also get address from coordinates (reverse geocoding)
+                fetchAddressFromCoords(position.coords.latitude, position.coords.longitude)
+            },
+            (error) => {
+                console.error('Location error:', error)
+                alert('Unable to get location. Please enable location services.')
+                setGettingLocation(false)
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        )
+    }
+
+    // Reverse geocoding to get address
+    const fetchAddressFromCoords = async (lat, lng) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+            )
+            const data = await response.json()
+            if (data.display_name) {
+                setFormData(prev => ({ ...prev, address: data.display_name }))
+            }
+        } catch (error) {
+            console.error('Geocoding error:', error)
+        }
+    }
+
+    // Open Google Maps directions
+    const openDirections = (customer) => {
+        if (customer.latitude && customer.longitude) {
+            window.open(
+                `https://www.google.com/maps/dir/?api=1&destination=${customer.latitude},${customer.longitude}`,
+                '_blank'
+            )
+        } else if (customer.address) {
+            window.open(
+                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(customer.address)}`,
+                '_blank'
+            )
+        } else {
+            alert('No location available for this customer')
+        }
+    }
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
+
         if (editingCustomer) {
             updateCustomer(editingCustomer.id, formData)
         } else {
-            addCustomer(formData)
+            // Add customer
+            const newCustomer = await addCustomer(formData)
+
+            // Also create user account for customer login
+            if (formData.password) {
+                await addUser({
+                    name: formData.name,
+                    email: formData.email || `${formData.phone.replace(/\s+/g, '')}@customer.local`,
+                    phone: formData.phone,
+                    password: formData.password,
+                    role: 'customer',
+                    designation: 'Customer',
+                    customerId: newCustomer?.uuid
+                })
+            }
         }
+
         setShowAddModal(false)
         setEditingCustomer(null)
-        setFormData({ name: '', email: '', phone: '', address: '' })
+        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null })
     }
 
     const handleEdit = (customer) => {
@@ -60,6 +148,9 @@ function Customers() {
             email: customer.email || '',
             phone: customer.phone,
             address: customer.address,
+            password: '',
+            latitude: customer.latitude || null,
+            longitude: customer.longitude || null
         })
         setShowAddModal(true)
     }
@@ -68,6 +159,12 @@ function Customers() {
         if (window.confirm('Are you sure you want to delete this customer?')) {
             deleteCustomer(id)
         }
+    }
+
+    const resetForm = () => {
+        setShowAddModal(false)
+        setEditingCustomer(null)
+        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null })
     }
 
     return (
@@ -156,13 +253,21 @@ function Customers() {
                                 <div className={styles.stat}>
                                     <span className={styles.statCurrency}>Rs</span>
                                     <div>
-                                        <span className={styles.statNumber}>{customer.totalSpent.toLocaleString()}</span>
+                                        <span className={styles.statNumber}>{customer.totalSpent?.toLocaleString() || 0}</span>
                                         <span className={styles.statText}>Total Spent</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className={styles.cardFooter}>
+                                <button
+                                    className={styles.directionsBtn}
+                                    onClick={() => openDirections(customer)}
+                                    title="Get Directions"
+                                >
+                                    <Navigation size={16} />
+                                    <span>Directions</span>
+                                </button>
                                 <div className={styles.actionBtns}>
                                     <button className={styles.actionBtn} onClick={() => handleEdit(customer)}>
                                         <Edit size={16} />
@@ -179,17 +284,17 @@ function Customers() {
 
             {/* Add/Edit Modal */}
             {showAddModal && (
-                <div className={styles.modalOverlay} onClick={() => { setShowAddModal(false); setEditingCustomer(null); }}>
+                <div className={styles.modalOverlay} onClick={resetForm}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</h3>
-                            <button className={styles.closeBtn} onClick={() => { setShowAddModal(false); setEditingCustomer(null); }}>
+                            <button className={styles.closeBtn} onClick={resetForm}>
                                 <X size={20} />
                             </button>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>
-                                <label>Full Name</label>
+                                <label>Full Name *</label>
                                 <input
                                     type="text"
                                     value={formData.name}
@@ -208,7 +313,7 @@ function Customers() {
                                 />
                             </div>
                             <div className={styles.formGroup}>
-                                <label>Phone Number</label>
+                                <label>Phone Number *</label>
                                 <input
                                     type="tel"
                                     value={formData.phone}
@@ -217,16 +322,53 @@ function Customers() {
                                     required
                                 />
                             </div>
+
+                            {/* Password field for new customers */}
+                            {!editingCustomer && (
+                                <div className={styles.formGroup}>
+                                    <label>Login Password *</label>
+                                    <div className={styles.inputWithIcon}>
+                                        <Lock size={16} className={styles.inputIcon} />
+                                        <input
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            placeholder="Password for customer login"
+                                            required
+                                            minLength={6}
+                                        />
+                                    </div>
+                                    <small className={styles.inputHint}>Customer will use phone + this password to login</small>
+                                </div>
+                            )}
+
                             <div className={styles.formGroup}>
-                                <label>Address</label>
-                                <input
-                                    type="text"
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    placeholder="Enter full address"
-                                    required
-                                />
+                                <label>Address *</label>
+                                <div className={styles.addressInput}>
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        placeholder="Enter full address"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.locationBtn}
+                                        onClick={getCurrentLocation}
+                                        disabled={gettingLocation}
+                                        title="Get current location"
+                                    >
+                                        <Crosshair size={18} className={gettingLocation ? styles.spinning : ''} />
+                                    </button>
+                                </div>
+                                {formData.latitude && formData.longitude && (
+                                    <small className={styles.coordsText}>
+                                        📍 {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                                    </small>
+                                )}
                             </div>
+
                             <Button type="submit" variant="primary" fullWidth>
                                 {editingCustomer ? 'Update Customer' : 'Add Customer'}
                             </Button>

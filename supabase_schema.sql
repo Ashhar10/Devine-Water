@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS customers (
     email TEXT,
     phone TEXT NOT NULL,
     address TEXT NOT NULL,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
     total_orders INTEGER DEFAULT 0,
     total_spent DECIMAL(12, 2) DEFAULT 0,

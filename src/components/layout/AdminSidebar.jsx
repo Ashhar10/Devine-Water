@@ -6,6 +6,7 @@ import {
     ShoppingCart,
     BarChart3,
     Users,
+    UserCog,
     Droplets,
     ChevronLeft,
     ChevronRight
@@ -18,6 +19,7 @@ const navItems = [
     { path: '/admin/orders', icon: ShoppingCart, label: 'Orders & Billing' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
+    { path: '/admin/users', icon: UserCog, label: 'User Management' },
 ]
 
 function AdminSidebar({ collapsed, onToggle }) {

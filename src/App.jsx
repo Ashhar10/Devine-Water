@@ -13,6 +13,7 @@ import FinanceModule from './pages/admin/FinanceModule'
 import OrdersBilling from './pages/admin/OrdersBilling'
 import Reports from './pages/admin/Reports'
 import Customers from './pages/admin/Customers'
+import UserManagement from './pages/admin/UserManagement'
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard'
@@ -99,6 +100,7 @@ function App() {
                 <Route path="orders" element={<OrdersBilling />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="customers" element={<Customers />} />
+                <Route path="users" element={<UserManagement />} />
             </Route>
 
             {/* Customer Routes - Protected */}

@@ -14,7 +14,10 @@ import {
     payBillInDb,
     addWaterProductionToDb,
     addTicketToDb,
-    updateTicketInDb
+    updateTicketInDb,
+    addUserToDb,
+    updateUserInDb,
+    deleteUserFromDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -40,6 +43,7 @@ export const useDataStore = create(
             bills: [],
             waterProduction: [],
             supportTickets: [],
+            users: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -63,6 +67,7 @@ export const useDataStore = create(
                         bills: data?.bills || [],
                         waterProduction: data?.waterProduction || [],
                         supportTickets: data?.supportTickets || [],
+                        users: data?.users || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -471,6 +476,63 @@ export const useDataStore = create(
                 }
             },
 
+            // ===== USER MANAGEMENT ACTIONS =====
+            getUsers: () => get().users,
+
+            addUser: async (data) => {
+                const newUser = {
+                    ...data,
+                    id: `USR-${generateId()}`,
+                    status: 'active',
+                    createdAt: new Date().toISOString().split('T')[0],
+                }
+
+                // Optimistic update
+                set(state => ({ users: [...state.users, newUser] }))
+
+                try {
+                    const dbUser = await addUserToDb(data)
+                    if (dbUser) {
+                        set(state => ({
+                            users: state.users.map(u =>
+                                u.id === newUser.id ? dbUser : u
+                            )
+                        }))
+                        return dbUser
+                    }
+                } catch (error) {
+                    console.error('Failed to add user to DB:', error)
+                }
+
+                return newUser
+            },
+
+            updateUser: async (id, data) => {
+                set(state => ({
+                    users: state.users.map(u =>
+                        u.id === id ? { ...u, ...data } : u
+                    )
+                }))
+
+                try {
+                    await updateUserInDb(id, data)
+                } catch (error) {
+                    console.error('Failed to update user in DB:', error)
+                }
+            },
+
+            deleteUser: async (id) => {
+                set(state => ({
+                    users: state.users.filter(u => u.id !== id)
+                }))
+
+                try {
+                    await deleteUserFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete user from DB:', error)
+                }
+            },
+
             // ===== RESET =====
             resetStore: () => set({
                 customers: [],
@@ -479,6 +541,7 @@ export const useDataStore = create(
                 bills: [],
                 waterProduction: [],
                 supportTickets: [],
+                users: [],
                 isInitialized: false
             }),
         }),

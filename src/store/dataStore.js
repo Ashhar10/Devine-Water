@@ -44,6 +44,10 @@ export const useDataStore = create(
             waterProduction: [],
             supportTickets: [],
             users: [],
+            products: [],
+            areas: [],
+            vendors: [],
+            banks: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -68,6 +72,10 @@ export const useDataStore = create(
                         waterProduction: data?.waterProduction || [],
                         supportTickets: data?.supportTickets || [],
                         users: data?.users || [],
+                        products: data?.products || [],
+                        areas: data?.areas || [],
+                        vendors: data?.vendors || [],
+                        banks: data?.banks || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -82,6 +90,10 @@ export const useDataStore = create(
                         bills: [],
                         waterProduction: [],
                         supportTickets: [],
+                        products: [],
+                        areas: [],
+                        vendors: [],
+                        banks: [],
                         isLoading: false,
                         isInitialized: true,
                         error: error.message

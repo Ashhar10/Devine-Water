@@ -9,17 +9,24 @@ import {
     UserCog,
     Droplets,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Package,
+    Truck,
+    Store,
+    MapPin
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
 
 const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { path: '/admin/finance', icon: Wallet, label: 'Finance' },
-    { path: '/admin/orders', icon: ShoppingCart, label: 'Orders & Billing' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
+    { path: '/admin/products', icon: Package, label: 'Products' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
-    { path: '/admin/users', icon: UserCog, label: 'User Management' },
+    { path: '/admin/orders', icon: ShoppingCart, label: 'Orders & Billing' },
+    { path: '/admin/vendors', icon: Store, label: 'Vendors' },
+    { path: '/admin/delivery', icon: Truck, label: 'Delivery' },
+    { path: '/admin/finance', icon: Wallet, label: 'Finance' },
+    { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
+    { path: '/admin/users', icon: UserCog, label: 'Staff & Users' },
 ]
 
 function AdminSidebar({ collapsed, onToggle }) {

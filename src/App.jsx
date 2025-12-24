@@ -14,6 +14,7 @@ import OrdersBilling from './pages/admin/OrdersBilling'
 import Reports from './pages/admin/Reports'
 import Customers from './pages/admin/Customers'
 import UserManagement from './pages/admin/UserManagement'
+import Products from './pages/admin/Products'
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard'
@@ -96,6 +97,7 @@ function App() {
                 </ProtectedRoute>
             }>
                 <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<Products />} />
                 <Route path="finance" element={<FinanceModule />} />
                 <Route path="orders" element={<OrdersBilling />} />
                 <Route path="reports" element={<Reports />} />

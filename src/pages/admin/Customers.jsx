@@ -12,13 +12,17 @@ import {
     Trash,
     Lock,
     Navigation,
-    Crosshair
+    Crosshair,
+    Wallet,
+    Package
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './Customers.module.css'
+
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 function Customers() {
     const [searchTerm, setSearchTerm] = useState('')
@@ -32,14 +36,32 @@ function Customers() {
         address: '',
         password: '',
         latitude: null,
-        longitude: null
+        longitude: null,
+        areaId: '',
+        deliveryDays: [],
+        requiredBottles: 1,
+        securityDeposit: 0,
+        securityRemarks: '',
+        openingBalance: 0,
+        openingBottles: 0
     })
 
     const customers = useDataStore(state => state.customers)
+    const areas = useDataStore(state => state.areas)
     const addCustomer = useDataStore(state => state.addCustomer)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
     const addUser = useDataStore(state => state.addUser)
+
+    // Toggle delivery day
+    const toggleDeliveryDay = (day) => {
+        setFormData(prev => ({
+            ...prev,
+            deliveryDays: prev.deliveryDays.includes(day)
+                ? prev.deliveryDays.filter(d => d !== day)
+                : [...prev.deliveryDays, day]
+        }))
+    }
 
     const filteredCustomers = customers.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,6 +73,8 @@ function Customers() {
         total: customers.length,
         active: customers.filter(c => c.status === 'active').length,
         inactive: customers.filter(c => c.status === 'inactive').length,
+        totalDeposits: customers.reduce((sum, c) => sum + (c.securityDeposit || 0), 0),
+        totalOutstanding: customers.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
     }
 
     // Get current location
@@ -138,7 +162,7 @@ function Customers() {
 
         setShowAddModal(false)
         setEditingCustomer(null)
-        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null })
+        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null, areaId: '', deliveryDays: [], requiredBottles: 1, securityDeposit: 0, securityRemarks: '', openingBalance: 0, openingBottles: 0 })
     }
 
     const handleEdit = (customer) => {
@@ -150,7 +174,14 @@ function Customers() {
             address: customer.address,
             password: '',
             latitude: customer.latitude || null,
-            longitude: customer.longitude || null
+            longitude: customer.longitude || null,
+            areaId: customer.areaId || '',
+            deliveryDays: customer.deliveryDays || [],
+            requiredBottles: customer.requiredBottles || 1,
+            securityDeposit: customer.securityDeposit || 0,
+            securityRemarks: customer.securityRemarks || '',
+            openingBalance: customer.openingBalance || 0,
+            openingBottles: customer.openingBottles || 0
         })
         setShowAddModal(true)
     }
@@ -164,7 +195,7 @@ function Customers() {
     const resetForm = () => {
         setShowAddModal(false)
         setEditingCustomer(null)
-        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null })
+        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null, areaId: '', deliveryDays: [], requiredBottles: 1, securityDeposit: 0, securityRemarks: '', openingBalance: 0, openingBottles: 0 })
     }
 
     return (
@@ -367,6 +398,94 @@ function Customers() {
                                         📍 {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                                     </small>
                                 )}
+                            </div>
+
+                            {/* Area Selection */}
+                            <div className={styles.formGroup}>
+                                <label>Delivery Area</label>
+                                <select
+                                    value={formData.areaId}
+                                    onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
+                                >
+                                    <option value="">Select Area</option>
+                                    {areas.map(area => (
+                                        <option key={area.id} value={area.uuid}>{area.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Delivery Days */}
+                            <div className={styles.formGroup}>
+                                <label>Delivery Days</label>
+                                <div className={styles.daysGrid}>
+                                    {DAYS_OF_WEEK.map(day => (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            className={`${styles.dayBtn} ${formData.deliveryDays.includes(day) ? styles.selected : ''}`}
+                                            onClick={() => toggleDeliveryDay(day)}
+                                        >
+                                            {day.slice(0, 3)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Required Bottles */}
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Required Bottles</label>
+                                    <input
+                                        type="number"
+                                        value={formData.requiredBottles}
+                                        onChange={(e) => setFormData({ ...formData, requiredBottles: parseInt(e.target.value) || 1 })}
+                                        min="1"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Opening Bottles</label>
+                                    <input
+                                        type="number"
+                                        value={formData.openingBottles}
+                                        onChange={(e) => setFormData({ ...formData, openingBottles: parseInt(e.target.value) || 0 })}
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Security Deposit */}
+                            <div className={styles.formSection}>
+                                <h4><Wallet size={16} /> Security Deposit</h4>
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Deposit Amount (Rs)</label>
+                                        <input
+                                            type="number"
+                                            value={formData.securityDeposit}
+                                            onChange={(e) => setFormData({ ...formData, securityDeposit: parseFloat(e.target.value) || 0 })}
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Opening Balance (Rs)</label>
+                                        <input
+                                            type="number"
+                                            value={formData.openingBalance}
+                                            onChange={(e) => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0 })}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Deposit Remarks</label>
+                                    <input
+                                        type="text"
+                                        value={formData.securityRemarks}
+                                        onChange={(e) => setFormData({ ...formData, securityRemarks: e.target.value })}
+                                        placeholder="e.g., 2 bottles security"
+                                    />
+                                </div>
                             </div>
 
                             <Button type="submit" variant="primary" fullWidth>

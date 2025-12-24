@@ -465,3 +465,79 @@
     font-size: var(--text-xs);
     color: var(--success);
 }
+
+/* Form Row */
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+/* Delivery Days Grid */
+.daysGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.dayBtn {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.dayBtn:hover {
+    border-color: var(--primary-cyan);
+    color: var(--primary-cyan);
+}
+
+.dayBtn.selected {
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
+    border-color: var(--primary-cyan);
+    color: var(--bg-deep-space);
+    font-weight: 600;
+}
+
+/* Form Section */
+.formSection {
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.formSection h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: 0 0 var(--space-md) 0;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.formSection .formGroup {
+    margin-bottom: var(--space-md);
+}
+
+.formSection .formGroup:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .daysGrid {
+        justify-content: center;
+    }
+}

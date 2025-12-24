@@ -479,6 +479,131 @@ export const updateTicketInDb = async (ticketId, status, adminReply = null) => {
 }
 
 // =====================================================
+// USER AUTHENTICATION (Custom - not Supabase Auth)
+// =====================================================
+
+export const loginUser = async (email, password) => {
+    if (!isSupabaseConfigured()) return null
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('password', password)
+        .eq('status', 'active')
+        .single()
+
+    if (error || !data) {
+        console.error('Login failed:', error?.message || 'Invalid credentials')
+        return null
+    }
+
+    return {
+        id: data.user_id,
+        uuid: data.id,
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        designation: data.designation,
+        phone: data.phone,
+        customerId: data.customer_id
+    }
+}
+
+export const fetchUsers = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch users')
+
+    return data?.map(u => ({
+        id: u.user_id,
+        uuid: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        designation: u.designation,
+        phone: u.phone,
+        status: u.status,
+        customerId: u.customer_id,
+        createdAt: u.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addUserToDb = async (userData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const userId = generateId('USR')
+
+    const { data, error } = await supabase
+        .from('users')
+        .insert({
+            user_id: userId,
+            email: userData.email.toLowerCase(),
+            password: userData.password,
+            name: userData.name,
+            role: userData.role,
+            designation: userData.designation || null,
+            phone: userData.phone || null,
+            status: 'active',
+            customer_id: userData.customerId || null
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add user')
+
+    return {
+        id: data.user_id,
+        uuid: data.id,
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        designation: data.designation,
+        phone: data.phone,
+        status: data.status,
+        customerId: data.customer_id,
+        createdAt: data.created_at?.split('T')[0]
+    }
+}
+
+export const updateUserInDb = async (userId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = {}
+    if (updates.email) dbUpdates.email = updates.email.toLowerCase()
+    if (updates.password) dbUpdates.password = updates.password
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.role) dbUpdates.role = updates.role
+    if (updates.designation !== undefined) dbUpdates.designation = updates.designation
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone
+    if (updates.status) dbUpdates.status = updates.status
+    dbUpdates.updated_at = new Date().toISOString()
+
+    const { error } = await supabase
+        .from('users')
+        .update(dbUpdates)
+        .eq('user_id', userId)
+
+    if (error) handleError(error, 'update user')
+}
+
+export const deleteUserFromDb = async (userId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('user_id', userId)
+
+    if (error) handleError(error, 'delete user')
+}
+
+// =====================================================
 // INITIALIZE ALL DATA
 // =====================================================
 
@@ -489,13 +614,14 @@ export const initializeAllData = async () => {
     }
 
     try {
-        const [customers, orders, transactions, bills, waterProduction, supportTickets] = await Promise.all([
+        const [customers, orders, transactions, bills, waterProduction, supportTickets, users] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),
             fetchTransactions(),
             fetchBills(),
             fetchWaterProduction(),
-            fetchSupportTickets()
+            fetchSupportTickets(),
+            fetchUsers()
         ])
 
         return {
@@ -504,7 +630,8 @@ export const initializeAllData = async () => {
             transactions,
             bills,
             waterProduction,
-            supportTickets
+            supportTickets,
+            users
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

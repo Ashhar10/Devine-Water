@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Droplets, Mail, Lock, LogIn, User } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { Droplets, Mail, Lock, LogIn } from 'lucide-react'
+import { loginUser } from '../../lib/supabaseService'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -12,10 +12,8 @@ function Login() {
     const navigate = useNavigate()
     const setCurrentUser = useDataStore(state => state.setCurrentUser)
 
-    const [isLogin, setIsLogin] = useState(true)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [name, setName] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -25,67 +23,26 @@ function Login() {
         setLoading(true)
 
         try {
-            if (supabase) {
-                // Real Supabase authentication
-                if (isLogin) {
-                    const { data, error } = await supabase.auth.signInWithPassword({
-                        email,
-                        password
-                    })
+            // Login against users table in database
+            const user = await loginUser(email, password)
 
-                    if (error) throw error
+            if (user) {
+                setCurrentUser(user)
 
-                    setCurrentUser({
-                        id: data.user.id,
-                        email: data.user.email,
-                        name: data.user.user_metadata?.name || email.split('@')[0],
-                        role: data.user.user_metadata?.role || 'admin'
-                    })
+                // Route based on role
+                if (user.role === 'customer') {
+                    navigate('/customer')
                 } else {
-                    const { data, error } = await supabase.auth.signUp({
-                        email,
-                        password,
-                        options: {
-                            data: { name, role: 'admin' }
-                        }
-                    })
-
-                    if (error) throw error
-
-                    setCurrentUser({
-                        id: data.user.id,
-                        email: data.user.email,
-                        name: name,
-                        role: 'admin'
-                    })
+                    navigate('/admin')
                 }
             } else {
-                // Demo mode - no Supabase configured
-                setCurrentUser({
-                    id: 'demo-user',
-                    email: email,
-                    name: name || email.split('@')[0],
-                    role: 'admin'
-                })
+                setError('Invalid email or password')
             }
-
-            navigate('/admin')
         } catch (err) {
-            setError(err.message || 'Authentication failed')
+            setError(err.message || 'Login failed. Please try again.')
         } finally {
             setLoading(false)
         }
-    }
-
-    // Quick demo login
-    const handleDemoLogin = () => {
-        setCurrentUser({
-            id: 'demo-admin',
-            email: 'admin@devinewater.pk',
-            name: 'Admin User',
-            role: 'admin'
-        })
-        navigate('/admin')
     }
 
     return (
@@ -110,9 +67,7 @@ function Login() {
                         <h1 className={styles.logoText}>Devine Water</h1>
                     </div>
 
-                    <p className={styles.subtitle}>
-                        {isLogin ? 'Sign in to your account' : 'Create a new account'}
-                    </p>
+                    <p className={styles.subtitle}>Sign in to your account</p>
 
                     {error && (
                         <motion.div
@@ -125,20 +80,6 @@ function Login() {
                     )}
 
                     <form onSubmit={handleSubmit} className={styles.form}>
-                        {!isLogin && (
-                            <div className={styles.inputGroup}>
-                                <User size={18} className={styles.inputIcon} />
-                                <input
-                                    type="text"
-                                    placeholder="Full Name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className={styles.input}
-                                    required={!isLogin}
-                                />
-                            </div>
-                        )}
-
                         <div className={styles.inputGroup}>
                             <Mail size={18} className={styles.inputIcon} />
                             <input
@@ -160,7 +101,6 @@ function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className={styles.input}
                                 required
-                                minLength={6}
                             />
                         </div>
 
@@ -171,31 +111,12 @@ function Login() {
                             className={styles.submitBtn}
                             disabled={loading}
                         >
-                            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                            {loading ? 'Signing in...' : 'Sign In'}
                         </Button>
                     </form>
 
-                    <div className={styles.divider}>
-                        <span>or</span>
-                    </div>
-
-                    <Button
-                        variant="ghost"
-                        onClick={handleDemoLogin}
-                        className={styles.demoBtn}
-                    >
-                        Continue as Demo Admin
-                    </Button>
-
-                    <p className={styles.toggleText}>
-                        {isLogin ? "Don't have an account? " : "Already have an account? "}
-                        <button
-                            type="button"
-                            onClick={() => setIsLogin(!isLogin)}
-                            className={styles.toggleBtn}
-                        >
-                            {isLogin ? 'Sign Up' : 'Sign In'}
-                        </button>
+                    <p className={styles.helpText}>
+                        Contact your administrator if you don't have an account
                     </p>
                 </GlassCard>
             </motion.div>

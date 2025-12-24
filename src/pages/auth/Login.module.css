@@ -188,3 +188,10 @@
     color: var(--accent-teal);
     text-decoration: underline;
 }
+
+.helpText {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 20px;
+}

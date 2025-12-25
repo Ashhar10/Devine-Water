@@ -237,7 +237,9 @@
 
 .modal {
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modalHeader {
@@ -306,6 +308,12 @@
     box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
 }
 
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
 .totalDisplay {
     font-family: var(--font-display);
     font-size: var(--text-2xl);
@@ -315,4 +323,45 @@
     background: var(--glass-bg);
     border-radius: var(--radius-lg);
     text-align: center;
+}
+
+/* Order Summary */
+.orderSummary {
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-sm) 0;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.summaryRow.total {
+    margin-top: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--glass-border);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.summaryRow.total span:last-child {
+    color: var(--primary-cyan);
+    font-family: var(--font-display);
+}
+
+.discount {
+    color: var(--success);
+}
+
+@media (max-width: 640px) {
+    .formRow {
+        grid-template-columns: 1fr;
+    }
 }

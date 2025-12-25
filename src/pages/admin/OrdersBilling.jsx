@@ -20,13 +20,29 @@ function OrdersBilling() {
     const [filterStatus, setFilterStatus] = useState('all')
     const [showNewOrderModal, setShowNewOrderModal] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
-    const [newOrder, setNewOrder] = useState({ customerId: '', quantity: 1 })
+    const [newOrder, setNewOrder] = useState({
+        customerId: '',
+        productId: '',
+        quantity: 1,
+        returnQuantity: 0,
+        salesmanId: '',
+        discount: 0,
+        notes: ''
+    })
 
     const orders = useDataStore(state => state.orders)
     const customers = useDataStore(state => state.customers)
+    const products = useDataStore(state => state.products)
+    const users = useDataStore(state => state.users)
     const addOrder = useDataStore(state => state.addOrder)
     const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
     const updateOrderPayment = useDataStore(state => state.updateOrderPayment)
+
+    // Get salesmen (staff/admin)
+    const salesmen = users.filter(u => u.role === 'admin' || u.role === 'staff')
+
+    // Get selected product for price calculation
+    const selectedProduct = products.find(p => p.id === newOrder.productId)
 
     const filteredOrders = orders
         .filter(o => filterStatus === 'all' || o.status === filterStatus)
@@ -42,16 +58,29 @@ function OrdersBilling() {
     const handleCreateOrder = (e) => {
         e.preventDefault()
         const customer = customers.find(c => c.id === newOrder.customerId)
-        if (!customer) return
+        const product = products.find(p => p.id === newOrder.productId)
+        if (!customer || !product) return
+
+        const subtotal = parseInt(newOrder.quantity) * product.price
+        const total = subtotal - (parseFloat(newOrder.discount) || 0)
 
         addOrder({
             customerId: newOrder.customerId,
-            items: [{ name: 'Water Bottle 19L', qty: parseInt(newOrder.quantity), price: 500 }],
-            total: parseInt(newOrder.quantity) * 500,
+            salesmanId: newOrder.salesmanId || null,
+            items: [{
+                name: product.name,
+                productId: product.id,
+                qty: parseInt(newOrder.quantity),
+                returnQty: parseInt(newOrder.returnQuantity) || 0,
+                price: product.price
+            }],
+            total: total,
+            discount: parseFloat(newOrder.discount) || 0,
+            notes: newOrder.notes
         })
 
         setShowNewOrderModal(false)
-        setNewOrder({ customerId: '', quantity: 1 })
+        setNewOrder({ customerId: '', productId: '', quantity: 1, returnQuantity: 0, salesmanId: '', discount: 0, notes: '' })
     }
 
     const handleStatusChange = (orderId, newStatus) => {
@@ -213,7 +242,7 @@ function OrdersBilling() {
                         </div>
                         <form onSubmit={handleCreateOrder}>
                             <div className={styles.formGroup}>
-                                <label>Customer</label>
+                                <label>Customer *</label>
                                 <select
                                     value={newOrder.customerId}
                                     onChange={(e) => setNewOrder({ ...newOrder, customerId: e.target.value })}
@@ -221,26 +250,100 @@ function OrdersBilling() {
                                 >
                                     <option value="">Select customer</option>
                                     {customers.filter(c => c.status === 'active').map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                        <option key={c.id} value={c.id}>{c.name} - {c.phone}</option>
                                     ))}
                                 </select>
                             </div>
+
                             <div className={styles.formGroup}>
-                                <label>Quantity (19L Bottles)</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={newOrder.quantity}
-                                    onChange={(e) => setNewOrder({ ...newOrder, quantity: e.target.value })}
+                                <label>Product *</label>
+                                <select
+                                    value={newOrder.productId}
+                                    onChange={(e) => setNewOrder({ ...newOrder, productId: e.target.value })}
                                     required
-                                />
+                                >
+                                    <option value="">Select product</option>
+                                    {products.filter(p => p.status === 'active').map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
+                                    ))}
+                                </select>
                             </div>
-                            <div className={styles.formGroup}>
-                                <label>Total Amount</label>
-                                <div className={styles.totalDisplay}>
-                                    Rs {(parseInt(newOrder.quantity || 0) * 500).toLocaleString()}
+
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Sold Quantity *</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={newOrder.quantity}
+                                        onChange={(e) => setNewOrder({ ...newOrder, quantity: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Return Bottles</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newOrder.returnQuantity}
+                                        onChange={(e) => setNewOrder({ ...newOrder, returnQuantity: e.target.value })}
+                                        placeholder="Empty bottles"
+                                    />
                                 </div>
                             </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Salesman</label>
+                                <select
+                                    value={newOrder.salesmanId}
+                                    onChange={(e) => setNewOrder({ ...newOrder, salesmanId: e.target.value })}
+                                >
+                                    <option value="">Select salesman</option>
+                                    {salesmen.map(s => (
+                                        <option key={s.id} value={s.uuid}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Discount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newOrder.discount}
+                                        onChange={(e) => setNewOrder({ ...newOrder, discount: e.target.value })}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Notes</label>
+                                    <input
+                                        type="text"
+                                        value={newOrder.notes}
+                                        onChange={(e) => setNewOrder({ ...newOrder, notes: e.target.value })}
+                                        placeholder="Any notes..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.orderSummary}>
+                                <div className={styles.summaryRow}>
+                                    <span>Subtotal:</span>
+                                    <span>Rs {((parseInt(newOrder.quantity) || 0) * (selectedProduct?.price || 0)).toLocaleString()}</span>
+                                </div>
+                                {parseFloat(newOrder.discount) > 0 && (
+                                    <div className={styles.summaryRow}>
+                                        <span>Discount:</span>
+                                        <span className={styles.discount}>- Rs {parseFloat(newOrder.discount).toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className={`${styles.summaryRow} ${styles.total}`}>
+                                    <span>Total:</span>
+                                    <span>Rs {(((parseInt(newOrder.quantity) || 0) * (selectedProduct?.price || 0)) - (parseFloat(newOrder.discount) || 0)).toLocaleString()}</span>
+                                </div>
+                            </div>
+
                             <Button type="submit" variant="primary" fullWidth>
                                 Create Order
                             </Button>

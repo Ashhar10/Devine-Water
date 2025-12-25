@@ -413,25 +413,22 @@ INSERT INTO areas (area_id, name, description) VALUES
 
 -- =====================================================
 -- SEED DATA - Admin User
+-- NOTE: Skip if users table already exists with data
 -- =====================================================
-INSERT INTO users (user_id, email, password, name, role, designation, phone, permissions, status) VALUES
-('USR-001', 'admin@devinewater.pk', 'admin123', 'System Admin', 'admin', 'Administrator', '+92 300 1111111', 
-'{
-    "products": {"add": true, "edit": true, "delete": true, "stock": true},
-    "customers": {"add": true, "edit": true, "delete": true, "ledger": true, "payments": true},
-    "orders": {"add": true, "edit": true, "delete": true},
-    "vendors": {"add": true, "edit": true, "delete": true, "ledger": true},
-    "employees": {"add": true, "edit": true, "delete": true, "areas": true},
-    "finance": {"banks": true, "investments": true, "expenditures": true},
-    "reports": {"sales": true, "delivery": true, "stock": true},
-    "settings": {"users": true, "roles": true}
-}'::jsonb, 'active');
+-- INSERT INTO users only if table is empty:
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users LIMIT 1) THEN
+        INSERT INTO users (user_id, email, password, name, role, designation, phone, status) VALUES
+        ('USR-001', 'admin@devinewater.pk', 'admin123', 'System Admin', 'admin', 'Administrator', '+92 300 1111111', 'active');
+    END IF;
+END $$;
 
 -- =====================================================
 -- VERIFY TABLES
 -- =====================================================
+SELECT 'Schema setup complete!' as message;
+
 SELECT 'areas' as table_name, COUNT(*) as count FROM areas
 UNION ALL
-SELECT 'products', COUNT(*) FROM products
-UNION ALL
-SELECT 'users', COUNT(*) FROM users;
+SELECT 'products', COUNT(*) FROM products;

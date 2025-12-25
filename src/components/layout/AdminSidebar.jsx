@@ -13,7 +13,8 @@ import {
     Package,
     Truck,
     Store,
-    MapPin
+    MapPin,
+    Banknote
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
 
@@ -24,6 +25,7 @@ const navItems = [
     { path: '/admin/orders', icon: ShoppingCart, label: 'Orders & Billing' },
     { path: '/admin/vendors', icon: Store, label: 'Vendors' },
     { path: '/admin/delivery', icon: Truck, label: 'Delivery' },
+    { path: '/admin/payments', icon: Banknote, label: 'Payments' },
     { path: '/admin/finance', icon: Wallet, label: 'Finance' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/users', icon: UserCog, label: 'Staff & Users' },

@@ -128,6 +128,7 @@ export const fetchOrders = async () => {
         .from('orders')
         .select(`
             *,
+            customers (name),
             order_items (*)
         `)
         .order('created_at', { ascending: false })
@@ -138,7 +139,7 @@ export const fetchOrders = async () => {
         id: o.order_id,
         uuid: o.id,
         customerId: o.customer_id,
-        customerName: o.customer_name,
+        customerName: o.customers?.name || 'Unknown', // Get from customer relationship
         items: o.order_items?.map(item => ({
             name: item.name,
             qty: item.quantity,
@@ -156,13 +157,12 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
 
     const orderId = generateId('ORD')
 
-    // Insert order
+    // Insert order (customer_name is not a column - it comes from customer relationship)
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
             order_id: orderId,
             customer_id: customerUuid,
-            customer_name: customerName,
             total: orderData.total,
             status: 'pending',
             payment_status: 'pending'

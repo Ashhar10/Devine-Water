@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
+import MobileNav from './MobileNav'
 import TopHeader from './TopHeader'
 import styles from './AdminLayout.module.css'
 
@@ -10,34 +11,70 @@ const pageTitles = {
     '/admin/orders': { title: 'Orders & Billing', subtitle: 'Manage customer orders and invoices' },
     '/admin/reports': { title: 'Reports', subtitle: 'Analytics and insights' },
     '/admin/customers': { title: 'Customers', subtitle: 'Manage customer accounts' },
+    '/admin/products': { title: 'Products', subtitle: 'Manage your product inventory' },
+    '/admin/vendors': { title: 'Vendors', subtitle: 'Manage your suppliers' },
+    '/admin/delivery': { title: 'Delivery', subtitle: 'Plan delivery routes' },
+    '/admin/payments': { title: 'Payments', subtitle: 'Track payments and collections' },
+    '/admin/users': { title: 'Staff & Users', subtitle: 'Manage user accounts' },
 }
 
 function AdminLayout() {
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // Start collapsed
+    const [isMobile, setIsMobile] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const location = useLocation()
+
+    // Detect mobile screen
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileMenuOpen(false)
+    }, [location.pathname])
 
     const currentPage = pageTitles[location.pathname] || { title: 'Admin', subtitle: '' }
 
     return (
         <div className={styles.layout}>
-            <AdminSidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-            />
+            {/* Desktop Sidebar - hidden on mobile */}
+            {!isMobile && (
+                <AdminSidebar
+                    collapsed={sidebarCollapsed}
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                />
+            )}
 
-            <div className={`${styles.main} ${sidebarCollapsed ? styles.collapsed : ''}`}>
+            <div className={`${styles.main} ${!isMobile && sidebarCollapsed ? styles.collapsed : ''} ${isMobile ? styles.mobile : ''}`}>
                 <TopHeader
                     title={currentPage.title}
                     subtitle={currentPage.subtitle}
-                    onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    onMenuClick={() => isMobile ? setMobileMenuOpen(true) : setSidebarCollapsed(!sidebarCollapsed)}
+                    isMobile={isMobile}
                 />
 
                 <main className={styles.content}>
                     <Outlet />
                 </main>
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            {isMobile && (
+                <MobileNav
+                    isOpen={mobileMenuOpen}
+                    onClose={() => setMobileMenuOpen(false)}
+                    onOpen={() => setMobileMenuOpen(true)}
+                />
+            )}
         </div>
     )
 }
 
 export default AdminLayout
+

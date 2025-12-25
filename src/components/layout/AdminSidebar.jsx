@@ -46,13 +46,13 @@ function AdminSidebar({ collapsed, onToggle }) {
         }
     }
 
-    // Close sidebar after 2 seconds when mouse leaves
+    // Close sidebar after 0.5 seconds when mouse leaves
     const handleMouseLeave = () => {
         // Only set timeout if sidebar is open
         if (!collapsed) {
             closeTimeoutRef.current = setTimeout(() => {
                 onToggle()
-            }, 2000) // 2 second delay
+            }, 500) // 0.5 second delay
         }
     }
 

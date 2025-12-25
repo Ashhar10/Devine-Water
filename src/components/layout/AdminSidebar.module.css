@@ -71,12 +71,13 @@
     gap: 4px;
     overflow-y: auto;
     overflow-x: hidden;
+    padding: 0 4px;
 }
 
 .navItem {
     display: block;
     text-decoration: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     transition: all 0.2s ease;
 }
 
@@ -84,16 +85,16 @@
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    padding: 12px 14px;
+    padding: 14px 16px;
     color: var(--text-muted);
     transition: all 0.2s ease;
     white-space: nowrap;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
 }
 
 /* Collapsed state - center the icon box */
 .collapsed .navItemInner {
-    padding: 12px;
+    padding: 14px;
     justify-content: center;
 }
 
@@ -107,11 +108,14 @@
     color: var(--primary-cyan);
 }
 
-/* Icon wrapper for centering */
+/* Icon - larger size */
 .navIcon {
     flex-shrink: 0;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.2s ease;
 }
 

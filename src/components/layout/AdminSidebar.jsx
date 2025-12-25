@@ -82,7 +82,7 @@ function AdminSidebar({ collapsed, onToggle }) {
                         }
                     >
                         <div className={styles.navItemInner}>
-                            <item.icon size={20} className={styles.navIcon} />
+                            <item.icon size={24} className={styles.navIcon} />
                             <span className={styles.navLabel}>{item.label}</span>
                         </div>
                     </NavLink>

@@ -317,6 +317,32 @@
     margin: 0;
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.clearBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.clearBtn:hover {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: var(--bg-deep-space);
+}
+
 .closeBtn {
     width: 36px;
     height: 36px;

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -14,7 +14,8 @@ import {
     Navigation,
     Crosshair,
     Wallet,
-    Package
+    Package,
+    RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -23,28 +24,32 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './Customers.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const CACHE_KEY = 'devine_customer_form_cache'
+
+const getEmptyFormData = () => ({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    password: '',
+    latitude: null,
+    longitude: null,
+    areaId: '',
+    deliveryDays: [],
+    requiredBottles: 1,
+    securityDeposit: 0,
+    securityRemarks: '',
+    openingBalance: 0,
+    openingBottles: 0
+})
 
 function Customers() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingCustomer, setEditingCustomer] = useState(null)
     const [gettingLocation, setGettingLocation] = useState(false)
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        password: '',
-        latitude: null,
-        longitude: null,
-        areaId: '',
-        deliveryDays: [],
-        requiredBottles: 1,
-        securityDeposit: 0,
-        securityRemarks: '',
-        openingBalance: 0,
-        openingBottles: 0
-    })
+    const [hasCachedData, setHasCachedData] = useState(false)
+    const [formData, setFormData] = useState(getEmptyFormData())
 
     const customers = useDataStore(state => state.customers)
     const areas = useDataStore(state => state.areas)
@@ -52,6 +57,58 @@ function Customers() {
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
     const addUser = useDataStore(state => state.addUser)
+
+    // Check for cached data on mount
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+            try {
+                const parsedCache = JSON.parse(cached)
+                // Check if cache has meaningful data
+                if (parsedCache.name || parsedCache.phone || parsedCache.address) {
+                    setHasCachedData(true)
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [])
+
+    // Save form data to cache whenever it changes (only when modal is open)
+    useEffect(() => {
+        if (showAddModal && !editingCustomer) {
+            // Only cache for new customers, not edits
+            const hasData = formData.name || formData.phone || formData.address
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(formData))
+                setHasCachedData(true)
+            }
+        }
+    }, [formData, showAddModal, editingCustomer])
+
+    // Restore cached data when opening modal for new customer
+    const openAddModal = () => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+            try {
+                const parsedCache = JSON.parse(cached)
+                setFormData(parsedCache)
+            } catch (e) {
+                setFormData(getEmptyFormData())
+            }
+        } else {
+            setFormData(getEmptyFormData())
+        }
+        setEditingCustomer(null)
+        setShowAddModal(true)
+    }
+
+    // Clear cache
+    const clearCache = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setFormData(getEmptyFormData())
+        setHasCachedData(false)
+    }
 
     // Toggle delivery day
     const toggleDeliveryDay = (day) => {
@@ -162,7 +219,10 @@ function Customers() {
 
         setShowAddModal(false)
         setEditingCustomer(null)
-        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null, areaId: '', deliveryDays: [], requiredBottles: 1, securityDeposit: 0, securityRemarks: '', openingBalance: 0, openingBottles: 0 })
+        // Clear cache on successful save
+        localStorage.removeItem(CACHE_KEY)
+        setHasCachedData(false)
+        setFormData(getEmptyFormData())
     }
 
     const handleEdit = (customer) => {
@@ -195,7 +255,7 @@ function Customers() {
     const resetForm = () => {
         setShowAddModal(false)
         setEditingCustomer(null)
-        setFormData({ name: '', email: '', phone: '', address: '', password: '', latitude: null, longitude: null, areaId: '', deliveryDays: [], requiredBottles: 1, securityDeposit: 0, securityRemarks: '', openingBalance: 0, openingBottles: 0 })
+        setFormData(getEmptyFormData())
     }
 
     return (
@@ -212,8 +272,8 @@ function Customers() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
-                    Add Customer
+                <Button variant="primary" icon={Plus} onClick={openAddModal}>
+                    Add Customer {hasCachedData && '(Draft)'}
                 </Button>
             </div>
 
@@ -319,9 +379,21 @@ function Customers() {
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</h3>
-                            <button className={styles.closeBtn} onClick={resetForm}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions}>
+                                {!editingCustomer && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearCache}
+                                        title="Clear form"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>

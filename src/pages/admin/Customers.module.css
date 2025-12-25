@@ -287,15 +287,19 @@
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: var(--z-modal);
-    padding: var(--space-lg);
+    padding: var(--space-xl);
+    overflow-y: auto;
 }
 
 .modal {
     width: 100%;
-    max-width: 400px;
+    max-width: 520px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    margin: auto;
 }
 
 .modalHeader {
@@ -334,7 +338,7 @@
 }
 
 .formGroup {
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-md);
 }
 
 .formGroup label {
@@ -342,22 +346,24 @@
     font-size: var(--text-sm);
     font-weight: 500;
     color: var(--text-secondary);
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-xs);
 }
 
-.formGroup input {
+.formGroup input,
+.formGroup select {
     width: 100%;
-    padding: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     outline: none;
     transition: all var(--transition-fast);
 }
 
-.formGroup input:focus {
+.formGroup input:focus,
+.formGroup select:focus {
     border-color: var(--primary-cyan);
     box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
 }

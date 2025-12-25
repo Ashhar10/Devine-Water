@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useRef } from 'react'
 import {
     LayoutDashboard,
     Wallet,
@@ -32,12 +33,39 @@ const navItems = [
 ]
 
 function AdminSidebar({ collapsed, onToggle }) {
+    const closeTimeoutRef = useRef(null)
+
+    // Open sidebar on hover
+    const handleMouseEnter = () => {
+        // Clear any pending close timeout
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
+        // Open if collapsed
+        if (collapsed) {
+            onToggle()
+        }
+    }
+
+    // Close sidebar after 2 seconds when mouse leaves
+    const handleMouseLeave = () => {
+        // Only set timeout if sidebar is open
+        if (!collapsed) {
+            closeTimeoutRef.current = setTimeout(() => {
+                onToggle()
+            }, 2000) // 2 second delay
+        }
+    }
+
     return (
         <motion.aside
             className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
         >
             {/* Logo */}
             <div className={styles.logo}>
@@ -92,3 +120,4 @@ function AdminSidebar({ collapsed, onToggle }) {
 }
 
 export default AdminSidebar
+

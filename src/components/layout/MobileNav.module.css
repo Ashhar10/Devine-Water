@@ -1,4 +1,4 @@
-/* Mobile Navigation Styles */
+/* Mobile Navigation - Horizontal Scroll Menu */
 
 /* Floating Menu Button */
 .menuButton {
@@ -17,7 +17,7 @@
     color: var(--bg-deep-space);
     cursor: pointer;
     box-shadow: 0 4px 20px var(--primary-cyan-glow);
-    z-index: 1000;
+    z-index: 1002;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -29,137 +29,61 @@
     transform: translateX(-50%) scale(0.95);
 }
 
-.menuButton.hidden {
-    transform: translateX(-50%) scale(0);
-    opacity: 0;
-    pointer-events: none;
+.menuButton.menuOpen {
+    bottom: 90px;
+    background: var(--error);
+    box-shadow: 0 4px 20px var(--error-glow);
 }
 
-/* Overlay */
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 1001;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.overlay.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* Bottom Sheet */
-.bottomSheet {
+/* Horizontal Menu Bar */
+.menuBar {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: var(--bg-surface);
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
-    z-index: 1002;
+    border-top: 1px solid var(--glass-border);
+    z-index: 1001;
     transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 80vh;
-    overflow-y: auto;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 
-.bottomSheet.open {
+.menuBar.visible {
     transform: translateY(0);
 }
 
-/* Handle */
-.handle {
+/* Scrollable Nav Container */
+.navScroll {
     display: flex;
-    justify-content: center;
-    padding: 12px 0 8px;
-}
-
-.handleBar {
-    width: 40px;
-    height: 4px;
-    background: var(--glass-border);
-    border-radius: 2px;
-}
-
-/* Sheet Header */
-.sheetHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px 16px;
-    border-bottom: 1px solid var(--glass-border);
-    margin-bottom: 16px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.brandIcon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
-    border-radius: 10px;
-    color: var(--bg-deep-space);
-}
-
-.brand span {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.closeButton {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 10px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.closeButton:hover {
-    background: var(--error);
-    border-color: var(--error);
-    color: white;
-}
-
-/* Navigation Grid */
-.navGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 12px 16px;
     gap: 8px;
-    padding: 0 16px 24px;
 }
 
+.navScroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Nav Items */
 .navItem {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 16px 8px;
+    gap: 4px;
+    padding: 10px 16px;
+    min-width: 72px;
     background: var(--glass-bg);
     border: 1px solid transparent;
-    border-radius: 16px;
+    border-radius: 12px;
     text-decoration: none;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .navItem:active {
@@ -167,19 +91,15 @@
 }
 
 .navIcon {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-elevated);
-    border-radius: 12px;
+    border-radius: 10px;
     color: var(--text-muted);
     transition: all 0.2s ease;
-}
-
-.navItem:hover .navIcon {
-    color: var(--text-primary);
 }
 
 .navItem.active {
@@ -193,36 +113,13 @@
 }
 
 .navLabel {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 10px;
+    font-weight: 600;
     color: var(--text-muted);
     text-align: center;
+    white-space: nowrap;
 }
 
 .navItem.active .navLabel {
     color: var(--primary-cyan);
-    font-weight: 600;
-}
-
-/* Tablet adjustments */
-@media (min-width: 480px) {
-    .navGrid {
-        grid-template-columns: repeat(5, 1fr);
-    }
-}
-
-/* Landscape phone */
-@media (max-height: 500px) {
-    .bottomSheet {
-        max-height: 90vh;
-    }
-
-    .navItem {
-        padding: 10px 6px;
-    }
-
-    .navIcon {
-        width: 36px;
-        height: 36px;
-    }
 }

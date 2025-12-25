@@ -11,13 +11,12 @@ import {
     BarChart3,
     UserCog,
     Menu,
-    X,
-    Droplets
+    X
 } from 'lucide-react'
 import styles from './MobileNav.module.css'
 
 const navItems = [
-    { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/admin', icon: LayoutDashboard, label: 'Home', end: true },
     { path: '/admin/products', icon: Package, label: 'Products' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
     { path: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
@@ -29,49 +28,21 @@ const navItems = [
     { path: '/admin/users', icon: UserCog, label: 'Users' },
 ]
 
-// Quick access items for bottom bar (most used)
-const quickNavItems = navItems.slice(0, 4)
-
 function MobileNav({ isOpen, onClose, onOpen }) {
     return (
         <>
-            {/* Floating Menu Button - shows when menu is closed */}
+            {/* Floating Menu Button - center bottom */}
             <button
-                className={`${styles.menuButton} ${isOpen ? styles.hidden : ''}`}
-                onClick={onOpen}
-                aria-label="Open menu"
+                className={`${styles.menuButton} ${isOpen ? styles.menuOpen : ''}`}
+                onClick={isOpen ? onClose : onOpen}
+                aria-label={isOpen ? "Close menu" : "Open menu"}
             >
-                <Menu size={24} />
+                {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Bottom Sheet Overlay */}
-            <div
-                className={`${styles.overlay} ${isOpen ? styles.visible : ''}`}
-                onClick={onClose}
-            />
-
-            {/* Bottom Sheet Menu */}
-            <div className={`${styles.bottomSheet} ${isOpen ? styles.open : ''}`}>
-                {/* Handle bar */}
-                <div className={styles.handle}>
-                    <div className={styles.handleBar} />
-                </div>
-
-                {/* Header */}
-                <div className={styles.sheetHeader}>
-                    <div className={styles.brand}>
-                        <div className={styles.brandIcon}>
-                            <Droplets size={20} />
-                        </div>
-                        <span>Devine Water</span>
-                    </div>
-                    <button className={styles.closeButton} onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Navigation Grid */}
-                <nav className={styles.navGrid}>
+            {/* Horizontal Scroll Menu Bar */}
+            <div className={`${styles.menuBar} ${isOpen ? styles.visible : ''}`}>
+                <nav className={styles.navScroll}>
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -95,3 +66,4 @@ function MobileNav({ isOpen, onClose, onOpen }) {
 }
 
 export default MobileNav
+

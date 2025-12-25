@@ -79,9 +79,8 @@ function UserManagement() {
     }
 
     const handleDelete = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            await deleteUser(userId)
-        }
+        // Delete without confirmation (can add custom modal later)
+        await deleteUser(userId)
     }
 
     const getRoleIcon = (role) => {

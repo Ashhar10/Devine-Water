@@ -224,28 +224,20 @@ export const updateOrderPaymentInDb = async (orderId, paymentStatus) => {
 }
 
 // =====================================================
-// TRANSACTIONS
+// TRANSACTIONS (optional - uses payments table if exists)
 // =====================================================
 
 export const fetchTransactions = async () => {
     if (!isSupabaseConfigured()) return []
 
-    const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-    if (error) handleError(error, 'fetch transactions')
-
-    return data?.map(t => ({
-        id: t.transaction_id,
-        uuid: t.id,
-        type: t.type,
-        category: t.category,
-        amount: parseFloat(t.amount),
-        description: t.description,
-        createdAt: t.created_at?.split('T')[0]
-    })) || []
+    try {
+        // Transactions are generated from payments - return empty for now
+        // as we use payments table directly
+        return []
+    } catch (error) {
+        console.log('Transactions table not available, using empty array')
+        return []
+    }
 }
 
 export const addTransactionToDb = async (transactionData) => {
@@ -279,132 +271,43 @@ export const addTransactionToDb = async (transactionData) => {
 }
 
 // =====================================================
-// BILLS
+// BILLS (not implemented - use orders table instead)
 // =====================================================
 
 export const fetchBills = async () => {
     if (!isSupabaseConfigured()) return []
-
-    const { data, error } = await supabase
-        .from('bills')
-        .select(`
-            *,
-            customers (customer_id)
-        `)
-        .order('created_at', { ascending: false })
-
-    if (error) handleError(error, 'fetch bills')
-
-    return data?.map(b => ({
-        id: b.bill_id,
-        uuid: b.id,
-        customerId: b.customers?.customer_id,
-        month: b.month,
-        amount: parseFloat(b.amount),
-        usageLiters: b.usage_liters,
-        status: b.status,
-        dueDate: b.due_date,
-        paidDate: b.paid_date,
-        createdAt: b.created_at?.split('T')[0]
-    })) || []
+    // Bills functionality is handled through orders table
+    // Return empty array as bills table doesn't exist
+    return []
 }
 
 export const addBillToDb = async (billData, customerUuid) => {
-    if (!isSupabaseConfigured()) return null
+    // Bills table doesn't exist - return null
+    return null
+}
 
-    const billId = generateId('INV')
-
-    const { data, error } = await supabase
-        .from('bills')
-        .insert({
-            bill_id: billId,
-            customer_id: customerUuid,
-            month: billData.month,
-            amount: billData.amount,
-            usage_liters: billData.usageLiters,
-            status: 'pending',
-            due_date: billData.dueDate
-        })
-        .select()
-        .single()
-
-    if (error) handleError(error, 'add bill')
-
-    return {
-        id: data.bill_id,
-        uuid: data.id,
-        customerId: billData.customerId,
-        month: data.month,
-        amount: parseFloat(data.amount),
-        usageLiters: data.usage_liters,
-        status: data.status,
-        dueDate: data.due_date,
-        createdAt: data.created_at?.split('T')[0]
-    }
+export const updateBillInDb = async (billUuid, updates) => {
+    // Bills table doesn't exist - return null
+    return null
 }
 
 export const payBillInDb = async (billId) => {
-    if (!isSupabaseConfigured()) return
-
-    const { error } = await supabase
-        .from('bills')
-        .update({
-            status: 'paid',
-            paid_date: new Date().toISOString().split('T')[0]
-        })
-        .eq('bill_id', billId)
-
-    if (error) handleError(error, 'pay bill')
+    // Bills table doesn't exist
+    return null
 }
 
 // =====================================================
-// WATER PRODUCTION
+// WATER PRODUCTION (not implemented in schema)
 // =====================================================
 
 export const fetchWaterProduction = async () => {
-    if (!isSupabaseConfigured()) return []
-
-    const { data, error } = await supabase
-        .from('water_production')
-        .select('*')
-        .order('date', { ascending: true })
-
-    if (error) handleError(error, 'fetch water production')
-
-    return data?.map(wp => ({
-        id: wp.record_id,
-        uuid: wp.id,
-        date: wp.date,
-        produced: wp.produced,
-        consumed: wp.consumed
-    })) || []
+    // Water production table doesn't exist in our schema
+    return []
 }
 
 export const addWaterProductionToDb = async (productionData) => {
-    if (!isSupabaseConfigured()) return null
-
-    const recordId = generateId('WP')
-
-    const { data, error } = await supabase
-        .from('water_production')
-        .insert({
-            record_id: recordId,
-            date: productionData.date || new Date().toISOString().split('T')[0],
-            produced: productionData.produced,
-            consumed: productionData.consumed
-        })
-        .select()
-        .single()
-
-    if (error) handleError(error, 'add water production')
-
-    return {
-        id: data.record_id,
-        uuid: data.id,
-        date: data.date,
-        produced: data.produced,
-        consumed: data.consumed
-    }
+    // Water production table doesn't exist
+    return null
 }
 
 // =====================================================

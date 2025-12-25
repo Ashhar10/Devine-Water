@@ -137,7 +137,7 @@ function Customers() {
     // Get current location
     const getCurrentLocation = () => {
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser')
+            console.log('Geolocation is not supported by your browser')
             return
         }
 
@@ -155,7 +155,6 @@ function Customers() {
             },
             (error) => {
                 console.error('Location error:', error)
-                alert('Unable to get location. Please enable location services.')
                 setGettingLocation(false)
             },
             { enableHighAccuracy: true, timeout: 10000 }
@@ -190,7 +189,7 @@ function Customers() {
                 '_blank'
             )
         } else {
-            alert('No location available for this customer')
+            console.log('No location available for this customer')
         }
     }
 
@@ -247,9 +246,8 @@ function Customers() {
     }
 
     const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this customer?')) {
-            deleteCustomer(id)
-        }
+        // Delete without confirmation (can add custom modal later)
+        deleteCustomer(id)
     }
 
     const resetForm = () => {

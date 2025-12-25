@@ -12,7 +12,8 @@
     flex-direction: column;
     padding: var(--space-lg);
     z-index: var(--z-sticky);
-    transition: width var(--transition-base);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
 .collapsed {
@@ -26,11 +27,13 @@
     gap: var(--space-md);
     padding: var(--space-md);
     margin-bottom: var(--space-xl);
+    overflow: hidden;
 }
 
 .logoIcon {
     width: 44px;
     height: 44px;
+    min-width: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -46,6 +49,13 @@
     font-weight: 700;
     color: var(--text-primary);
     white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.collapsed .logoText {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Navigation */
@@ -54,13 +64,15 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .navItem {
     display: block;
     text-decoration: none;
     border-radius: var(--radius-lg);
-    transition: background var(--transition-fast);
+    transition: all 0.2s ease;
 }
 
 .navItemInner {
@@ -69,7 +81,14 @@
     gap: var(--space-md);
     padding: var(--space-md) var(--space-lg);
     color: var(--text-secondary);
-    transition: color var(--transition-fast);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Collapsed state - center icons */
+.collapsed .navItemInner {
+    justify-content: center;
+    padding: var(--space-md);
 }
 
 .navItem:hover .navItemInner {
@@ -91,11 +110,20 @@
 
 .navIcon {
     flex-shrink: 0;
+    min-width: 20px;
 }
 
 .navLabel {
     font-weight: 500;
     white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.collapsed .navLabel {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
 }
 
 /* Collapse toggle */
@@ -114,13 +142,19 @@
     border-radius: 50%;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.sidebar:hover .toggleBtn {
+    opacity: 1;
 }
 
 .toggleBtn:hover {
     background: var(--primary-cyan);
     color: var(--bg-deep-space);
     border-color: var(--primary-cyan);
+    transform: translateY(-50%) scale(1.1);
 }
 
 /* Responsive */

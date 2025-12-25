@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useRef } from 'react'
 import {
     LayoutDashboard,
@@ -14,7 +13,6 @@ import {
     Package,
     Truck,
     Store,
-    MapPin,
     Banknote
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
@@ -59,38 +57,22 @@ function AdminSidebar({ collapsed, onToggle }) {
     }
 
     return (
-        <motion.aside
+        <aside
             className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
             {/* Logo */}
             <div className={styles.logo}>
-                <motion.div
-                    className={styles.logoIcon}
-                    whileHover={{ rotate: 180 }}
-                    transition={{ duration: 0.5 }}
-                >
+                <div className={styles.logoIcon}>
                     <Droplets size={28} />
-                </motion.div>
-                {!collapsed && (
-                    <motion.span
-                        className={styles.logoText}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                    >
-                        Devine Water
-                    </motion.span>
-                )}
+                </div>
+                <span className={styles.logoText}>Devine Water</span>
             </div>
 
             {/* Navigation */}
             <nav className={styles.nav}>
-                {navItems.map((item, index) => (
+                {navItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
@@ -99,14 +81,10 @@ function AdminSidebar({ collapsed, onToggle }) {
                             `${styles.navItem} ${isActive ? styles.active : ''}`
                         }
                     >
-                        <motion.div
-                            className={styles.navItemInner}
-                            whileHover={{ x: 4 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
+                        <div className={styles.navItemInner}>
                             <item.icon size={20} className={styles.navIcon} />
-                            {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
-                        </motion.div>
+                            <span className={styles.navLabel}>{item.label}</span>
+                        </div>
                     </NavLink>
                 ))}
             </nav>
@@ -115,9 +93,10 @@ function AdminSidebar({ collapsed, onToggle }) {
             <button className={styles.toggleBtn} onClick={onToggle}>
                 {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
-        </motion.aside>
+        </aside>
     )
 }
 
 export default AdminSidebar
+
 

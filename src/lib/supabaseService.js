@@ -394,38 +394,49 @@ export const updateTicketInDb = async (ticketId, status, adminReply = null) => {
 export const loginUser = async (identifier, password) => {
     if (!isSupabaseConfigured()) return null
 
-    // Check if identifier is email or phone
-    const isEmail = identifier.includes('@')
+    try {
+        // Check if identifier is email or phone
+        const isEmail = identifier.includes('@')
 
-    // Try to find user by email or phone
-    let query = supabase
-        .from('users')
-        .select('*')
-        .eq('password', password)
-        .eq('status', 'active')
+        // Fetch user by email or phone (without password in query)
+        let query = supabase
+            .from('users')
+            .select('*')
+            .eq('status', 'active')
 
-    if (isEmail) {
-        query = query.eq('email', identifier.toLowerCase())
-    } else {
-        query = query.eq('phone', identifier)
-    }
+        if (isEmail) {
+            query = query.eq('email', identifier.toLowerCase())
+        } else {
+            query = query.eq('phone', identifier)
+        }
 
-    const { data, error } = await query.single()
+        const { data, error } = await query.single()
 
-    if (error || !data) {
-        console.error('Login failed:', error?.message || 'Invalid credentials')
+        if (error || !data) {
+            console.error('Login failed:', error?.message || 'User not found')
+            return null
+        }
+
+        // Verify password (client-side comparison for now)
+        // TODO: Implement proper password hashing with bcrypt on backend
+        if (data.password !== password) {
+            console.error('Login failed: Invalid password')
+            return null
+        }
+
+        return {
+            id: data.user_id,
+            uuid: data.id,
+            email: data.email,
+            name: data.name,
+            role: data.role,
+            designation: data.designation,
+            phone: data.phone,
+            customerId: data.customer_id
+        }
+    } catch (err) {
+        console.error('Login error:', err)
         return null
-    }
-
-    return {
-        id: data.user_id,
-        uuid: data.id,
-        email: data.email,
-        name: data.name,
-        role: data.role,
-        designation: data.designation,
-        phone: data.phone,
-        customerId: data.customer_id
     }
 }
 

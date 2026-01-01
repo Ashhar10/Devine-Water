@@ -152,10 +152,7 @@
     color: #ffffff;
     text-align: center;
     position: relative;
-    text-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(6, 182, 212, 0.4),
-        0 0 40px rgba(6, 182, 212, 0.2);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     padding-bottom: 12px;
 }

@@ -77,10 +77,10 @@
 .logoText {
     font-size: 1.75rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: var(--accent-cyan);
+    color: #000;
+    padding: 4px 12px;
+    border-radius: 4px;
 }
 
 .subtitle {

@@ -16,6 +16,7 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Products.module.css'
 
 const BOTTLE_TYPES = ['19L', '6L', '1.5L', '500ML', '330ML', 'Custom']
@@ -27,6 +28,8 @@ function Products() {
     const [editingProduct, setEditingProduct] = useState(null)
     const [selectedProduct, setSelectedProduct] = useState(null)
     const [stockMovement, setStockMovement] = useState({ type: 'in', quantity: 0, remarks: '' })
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [productToDelete, setProductToDelete] = useState(null)
     const [formData, setFormData] = useState({
         name: '',
         bottleType: '19L',
@@ -115,10 +118,15 @@ function Products() {
         setShowStockModal(true)
     }
 
-    const handleDelete = async (product) => {
-        if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+    const handleDelete = (product) => {
+        setProductToDelete(product)
+        setShowDeleteDialog(true)
+    }
+
+    const confirmDelete = async () => {
+        if (productToDelete) {
             try {
-                await deleteProduct(product.id)
+                await deleteProduct(productToDelete.id)
             } catch (error) {
                 console.error('Failed to delete product:', error)
             }
@@ -440,6 +448,18 @@ function Products() {
                     </GlassCard>
                 </div>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onConfirm={confirmDelete}
+                title="Delete Product"
+                message={`Are you sure you want to delete "${productToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+            />
         </div>
     )
 }

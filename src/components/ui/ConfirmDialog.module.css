@@ -1,0 +1,147 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.dialog {
+    width: 100%;
+    max-width: 440px;
+    padding: 32px 28px !important;
+    position: relative;
+    text-align: center;
+}
+
+.closeBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeBtn:hover {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+}
+
+.iconWrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    position: relative;
+}
+
+.iconWrapper::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    opacity: 0.2;
+    filter: blur(12px);
+}
+
+.iconWrapper.danger {
+    background: rgba(255, 71, 87, 0.15);
+    color: #ff4757;
+}
+
+.iconWrapper.danger::before {
+    background: #ff4757;
+}
+
+.iconWrapper.warning {
+    background: rgba(255, 165, 0, 0.15);
+    color: #ffa500;
+}
+
+.iconWrapper.warning::before {
+    background: #ffa500;
+}
+
+.iconWrapper.info {
+    background: rgba(0, 212, 255, 0.15);
+    color: var(--accent-cyan);
+}
+
+.iconWrapper.info::before {
+    background: var(--accent-cyan);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.message {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.cancelBtn,
+.confirmBtn {
+    flex: 1;
+    max-width: 160px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .dialog {
+        padding: 28px 24px !important;
+    }
+
+    .title {
+        font-size: 1.25rem;
+    }
+
+    .message {
+        font-size: 0.9rem;
+    }
+
+    .iconWrapper {
+        width: 56px;
+        height: 56px;
+    }
+
+    .iconWrapper svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .actions {
+        flex-direction: column-reverse;
+    }
+
+    .cancelBtn,
+    .confirmBtn {
+        max-width: 100%;
+    }
+}

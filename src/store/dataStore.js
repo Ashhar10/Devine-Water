@@ -545,6 +545,97 @@ export const useDataStore = create(
                 }
             },
 
+            // ===== PRODUCT MANAGEMENT ACTIONS =====
+            getProducts: () => get().products,
+
+            getProductById: (id) => get().products.find(p => p.id === id),
+
+            addProduct: async (data) => {
+                const newProduct = {
+                    ...data,
+                    id: `PRD-${generateId()}`,
+                    status: 'active',
+                    createdAt: new Date().toISOString().split('T')[0],
+                }
+
+                // Optimistic update
+                set(state => ({ products: [...state.products, newProduct] }))
+
+                // TODO: Add database persistence when product table is created
+                // try {
+                //     const dbProduct = await addProductToDb(data)
+                //     if (dbProduct) {
+                //         set(state => ({
+                //             products: state.products.map(p =>
+                //                 p.id === newProduct.id ? dbProduct : p
+                //             )
+                //         }))
+                //         return dbProduct
+                //     }
+                // } catch (error) {
+                //     console.error('Failed to add product to DB:', error)
+                // }
+
+                return newProduct
+            },
+
+            updateProduct: async (id, data) => {
+                set(state => ({
+                    products: state.products.map(p =>
+                        p.id === id ? { ...p, ...data } : p
+                    )
+                }))
+
+                // TODO: Add database persistence when product table is created
+                // try {
+                //     await updateProductInDb(id, data)
+                // } catch (error) {
+                //     console.error('Failed to update product in DB:', error)
+                // }
+            },
+
+            deleteProduct: async (id) => {
+                set(state => ({
+                    products: state.products.filter(p => p.id !== id)
+                }))
+
+                // TODO: Add database persistence when product table is created
+                // try {
+                //     await deleteProductFromDb(id)
+                // } catch (error) {
+                //     console.error('Failed to delete product from DB:', error)
+                // }
+            },
+
+            updateProductStock: async (id, quantity, type, remarks = '') => {
+                const product = get().products.find(p => p.id === id)
+                if (!product) return
+
+                const newStock = type === 'in'
+                    ? product.currentStock + quantity
+                    : product.currentStock - quantity
+
+                // Prevent negative stock
+                if (newStock < 0) {
+                    console.error('Stock cannot be negative')
+                    return
+                }
+
+                set(state => ({
+                    products: state.products.map(p =>
+                        p.id === id ? { ...p, currentStock: newStock } : p
+                    )
+                }))
+
+                // TODO: Add stock movement logging and database persistence
+                // try {
+                //     await updateProductStockInDb(id, newStock)
+                //     await addStockMovementToDb({ productId: id, quantity, type, remarks })
+                // } catch (error) {
+                //     console.error('Failed to update stock in DB:', error)
+                // }
+            },
+
             // ===== RESET =====
             resetStore: () => set({
                 customers: [],

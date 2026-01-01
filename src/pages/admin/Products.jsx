@@ -37,6 +37,10 @@ function Products() {
     })
 
     const products = useDataStore(state => state.products)
+    const addProduct = useDataStore(state => state.addProduct)
+    const updateProduct = useDataStore(state => state.updateProduct)
+    const deleteProduct = useDataStore(state => state.deleteProduct)
+    const updateProductStock = useDataStore(state => state.updateProductStock)
 
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,18 +56,45 @@ function Products() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        // TODO: Connect to store actions
-        console.log('Submitting product:', formData)
-        resetForm()
+
+        try {
+            if (editingProduct) {
+                // Update existing product
+                await updateProduct(editingProduct.id, {
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    purchasePrice: parseFloat(formData.purchasePrice) || 0,
+                })
+            } else {
+                // Add new product
+                await addProduct({
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    purchasePrice: parseFloat(formData.purchasePrice) || 0,
+                })
+            }
+            resetForm()
+        } catch (error) {
+            console.error('Failed to save product:', error)
+        }
     }
 
     const handleStockUpdate = async (e) => {
         e.preventDefault()
-        // TODO: Connect to stock movement action
-        console.log('Stock update:', selectedProduct, stockMovement)
-        setShowStockModal(false)
-        setSelectedProduct(null)
-        setStockMovement({ type: 'in', quantity: 0, remarks: '' })
+
+        try {
+            await updateProductStock(
+                selectedProduct.id,
+                stockMovement.quantity,
+                stockMovement.type,
+                stockMovement.remarks
+            )
+            setShowStockModal(false)
+            setSelectedProduct(null)
+            setStockMovement({ type: 'in', quantity: 0, remarks: '' })
+        } catch (error) {
+            console.error('Failed to update stock:', error)
+        }
     }
 
     const handleEdit = (product) => {
@@ -82,6 +113,16 @@ function Products() {
     const openStockModal = (product) => {
         setSelectedProduct(product)
         setShowStockModal(true)
+    }
+
+    const handleDelete = async (product) => {
+        if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+            try {
+                await deleteProduct(product.id)
+            } catch (error) {
+                console.error('Failed to delete product:', error)
+            }
+        }
     }
 
     const resetForm = () => {
@@ -215,7 +256,10 @@ function Products() {
                                     <button className={styles.actionBtn} onClick={() => handleEdit(product)}>
                                         <Edit size={16} />
                                     </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`}>
+                                    <button
+                                        className={`${styles.actionBtn} ${styles.danger}`}
+                                        onClick={() => handleDelete(product)}
+                                    >
                                         <Trash size={16} />
                                     </button>
                                 </div>

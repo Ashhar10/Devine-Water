@@ -1,0 +1,28 @@
+{
+  "name": "devine-water",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ashhar10/Devine-Water.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ashhar10/Devine-Water/issues"
+  },
+  "homepage": "https://github.com/Ashhar10/Devine-Water#readme",
+  "description": ""
+}

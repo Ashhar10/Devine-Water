@@ -1,0 +1,1179 @@
+/**
+ * Supabase Service Layer
+ * All database operations for Devine Water
+ */
+import { supabase, isSupabaseConfigured } from './supabase'
+
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
+const generateId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+
+const handleError = (error, operation) => {
+    console.error(`Supabase ${operation} error:`, error)
+    throw new Error(`Failed to ${operation}: ${error.message}`)
+}
+
+// =====================================================
+// CUSTOMERS
+// =====================================================
+
+export const fetchCustomers = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch customers')
+
+    return data?.map(c => ({
+        id: c.customer_id,
+        uuid: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        address: c.address,
+        latitude: c.latitude ? parseFloat(c.latitude) : null,
+        longitude: c.longitude ? parseFloat(c.longitude) : null,
+        status: c.status,
+        totalOrders: c.total_orders,
+        totalSpent: parseFloat(c.total_spent),
+        createdAt: c.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addCustomerToDb = async (customerData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const customerId = generateId('CUS')
+
+    const { data, error } = await supabase
+        .from('customers')
+        .insert({
+            customer_id: customerId,
+            name: customerData.name,
+            email: customerData.email || null,
+            phone: customerData.phone,
+            address: customerData.address,
+            latitude: customerData.latitude || null,
+            longitude: customerData.longitude || null,
+            status: 'active',
+            total_orders: 0,
+            total_spent: 0
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add customer')
+
+    return {
+        id: data.customer_id,
+        uuid: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        latitude: data.latitude ? parseFloat(data.latitude) : null,
+        longitude: data.longitude ? parseFloat(data.longitude) : null,
+        status: data.status,
+        totalOrders: data.total_orders,
+        totalSpent: parseFloat(data.total_spent),
+        createdAt: data.created_at?.split('T')[0]
+    }
+}
+
+export const updateCustomerInDb = async (customerId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = {}
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.email !== undefined) dbUpdates.email = updates.email
+    if (updates.phone) dbUpdates.phone = updates.phone
+    if (updates.address) dbUpdates.address = updates.address
+    if (updates.status) dbUpdates.status = updates.status
+    if (updates.totalOrders !== undefined) dbUpdates.total_orders = updates.totalOrders
+    if (updates.totalSpent !== undefined) dbUpdates.total_spent = updates.totalSpent
+    dbUpdates.updated_at = new Date().toISOString()
+
+    const { error } = await supabase
+        .from('customers')
+        .update(dbUpdates)
+        .eq('customer_id', customerId)
+
+    if (error) handleError(error, 'update customer')
+}
+
+export const deleteCustomerFromDb = async (customerId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('customer_id', customerId)
+
+    if (error) handleError(error, 'delete customer')
+}
+
+// =====================================================
+// ORDERS
+// =====================================================
+
+export const fetchOrders = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            customers (name),
+            order_items (*)
+        `)
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch orders')
+
+    return data?.map(o => ({
+        id: o.order_id,
+        uuid: o.id,
+        customerId: o.customer_id,
+        customerName: o.customers?.name || 'Unknown', // Get from customer relationship
+        items: o.order_items?.map(item => ({
+            name: item.name,
+            qty: item.quantity,
+            price: parseFloat(item.price)
+        })) || [],
+        total: parseFloat(o.total),
+        status: o.status,
+        paymentStatus: o.payment_status,
+        createdAt: o.created_at
+    })) || []
+}
+
+export const addOrderToDb = async (orderData, customerName, customerUuid) => {
+    if (!isSupabaseConfigured()) return null
+
+    const orderId = generateId('ORD')
+
+    // Insert order (customer_name is not a column - it comes from customer relationship)
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+            order_id: orderId,
+            customer_id: customerUuid,
+            total: orderData.total,
+            status: 'pending',
+            payment_status: 'pending'
+        })
+        .select()
+        .single()
+
+    if (orderError) handleError(orderError, 'add order')
+
+    // Insert order items
+    if (orderData.items?.length > 0) {
+        const orderItems = orderData.items.map(item => ({
+            order_id: order.id,
+            name: item.name,
+            quantity: item.qty,
+            price: item.price
+        }))
+
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems)
+
+        if (itemsError) handleError(itemsError, 'add order items')
+    }
+
+    return {
+        id: order.order_id,
+        uuid: order.id,
+        customerId: orderData.customerId,
+        customerName: customerName,
+        items: orderData.items,
+        total: parseFloat(order.total),
+        status: order.status,
+        paymentStatus: order.payment_status,
+        createdAt: order.created_at
+    }
+}
+
+export const updateOrderStatusInDb = async (orderId, status) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('order_id', orderId)
+
+    if (error) handleError(error, 'update order status')
+}
+
+export const updateOrderPaymentInDb = async (orderId, paymentStatus) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: paymentStatus, updated_at: new Date().toISOString() })
+        .eq('order_id', orderId)
+
+    if (error) handleError(error, 'update order payment')
+}
+
+// =====================================================
+// TRANSACTIONS (optional - uses payments table if exists)
+// =====================================================
+
+export const fetchTransactions = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    try {
+        // Transactions are generated from payments - return empty for now
+        // as we use payments table directly
+        return []
+    } catch (error) {
+        console.log('Transactions table not available, using empty array')
+        return []
+    }
+}
+
+export const addTransactionToDb = async (transactionData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const transactionId = generateId('TRX')
+
+    const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+            transaction_id: transactionId,
+            type: transactionData.type,
+            category: transactionData.category,
+            amount: transactionData.amount,
+            description: transactionData.description
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add transaction')
+
+    return {
+        id: data.transaction_id,
+        uuid: data.id,
+        type: data.type,
+        category: data.category,
+        amount: parseFloat(data.amount),
+        description: data.description,
+        createdAt: data.created_at?.split('T')[0]
+    }
+}
+
+// =====================================================
+// BILLS (not implemented - use orders table instead)
+// =====================================================
+
+export const fetchBills = async () => {
+    if (!isSupabaseConfigured()) return []
+    // Bills functionality is handled through orders table
+    // Return empty array as bills table doesn't exist
+    return []
+}
+
+export const addBillToDb = async (billData, customerUuid) => {
+    // Bills table doesn't exist - return null
+    return null
+}
+
+export const updateBillInDb = async (billUuid, updates) => {
+    // Bills table doesn't exist - return null
+    return null
+}
+
+export const payBillInDb = async (billId) => {
+    // Bills table doesn't exist
+    return null
+}
+
+// =====================================================
+// WATER PRODUCTION (not implemented in schema)
+// =====================================================
+
+export const fetchWaterProduction = async () => {
+    // Water production table doesn't exist in our schema
+    return []
+}
+
+export const addWaterProductionToDb = async (productionData) => {
+    // Water production table doesn't exist
+    return null
+}
+
+// =====================================================
+// SUPPORT TICKETS
+// =====================================================
+
+export const fetchSupportTickets = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('support_tickets')
+        .select(`
+            *,
+            customers (customer_id)
+        `)
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch support tickets')
+
+    return data?.map(t => ({
+        id: t.ticket_id,
+        uuid: t.id,
+        customerId: t.customers?.customer_id,
+        subject: t.subject,
+        message: t.message,
+        status: t.status,
+        adminReply: t.admin_reply,
+        createdAt: t.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addTicketToDb = async (ticketData, customerUuid) => {
+    if (!isSupabaseConfigured()) return null
+
+    const ticketId = generateId('TKT')
+
+    const { data, error } = await supabase
+        .from('support_tickets')
+        .insert({
+            ticket_id: ticketId,
+            customer_id: customerUuid,
+            subject: ticketData.subject,
+            message: ticketData.message,
+            status: 'pending'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add ticket')
+
+    return {
+        id: data.ticket_id,
+        uuid: data.id,
+        customerId: ticketData.customerId,
+        subject: data.subject,
+        message: data.message,
+        status: data.status,
+        adminReply: null,
+        createdAt: data.created_at?.split('T')[0]
+    }
+}
+
+export const updateTicketInDb = async (ticketId, status, adminReply = null) => {
+    if (!isSupabaseConfigured()) return
+
+    const updates = {
+        status,
+        updated_at: new Date().toISOString()
+    }
+    if (adminReply) updates.admin_reply = adminReply
+
+    const { error } = await supabase
+        .from('support_tickets')
+        .update(updates)
+        .eq('ticket_id', ticketId)
+
+    if (error) handleError(error, 'update ticket')
+}
+
+// =====================================================
+// USER AUTHENTICATION (Custom - not Supabase Auth)
+// =====================================================
+
+export const loginUser = async (identifier, password) => {
+    if (!isSupabaseConfigured()) return null
+
+    // Check if identifier is email or phone
+    const isEmail = identifier.includes('@')
+
+    // Try to find user by email or phone
+    let query = supabase
+        .from('users')
+        .select('*')
+        .eq('password', password)
+        .eq('status', 'active')
+
+    if (isEmail) {
+        query = query.eq('email', identifier.toLowerCase())
+    } else {
+        query = query.eq('phone', identifier)
+    }
+
+    const { data, error } = await query.single()
+
+    if (error || !data) {
+        console.error('Login failed:', error?.message || 'Invalid credentials')
+        return null
+    }
+
+    return {
+        id: data.user_id,
+        uuid: data.id,
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        designation: data.designation,
+        phone: data.phone,
+        customerId: data.customer_id
+    }
+}
+
+export const fetchUsers = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch users')
+
+    return data?.map(u => ({
+        id: u.user_id,
+        uuid: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        designation: u.designation,
+        phone: u.phone,
+        status: u.status,
+        customerId: u.customer_id,
+        createdAt: u.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addUserToDb = async (userData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const userId = generateId('USR')
+
+    const { data, error } = await supabase
+        .from('users')
+        .insert({
+            user_id: userId,
+            email: userData.email.toLowerCase(),
+            password: userData.password,
+            name: userData.name,
+            role: userData.role,
+            designation: userData.designation || null,
+            phone: userData.phone || null,
+            status: 'active',
+            customer_id: userData.customerId || null
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add user')
+
+    return {
+        id: data.user_id,
+        uuid: data.id,
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        designation: data.designation,
+        phone: data.phone,
+        status: data.status,
+        customerId: data.customer_id,
+        createdAt: data.created_at?.split('T')[0]
+    }
+}
+
+export const updateUserInDb = async (userId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = {}
+    if (updates.email) dbUpdates.email = updates.email.toLowerCase()
+    if (updates.password) dbUpdates.password = updates.password
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.role) dbUpdates.role = updates.role
+    if (updates.designation !== undefined) dbUpdates.designation = updates.designation
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone
+    if (updates.status) dbUpdates.status = updates.status
+    dbUpdates.updated_at = new Date().toISOString()
+
+    const { error } = await supabase
+        .from('users')
+        .update(dbUpdates)
+        .eq('user_id', userId)
+
+    if (error) handleError(error, 'update user')
+}
+
+export const deleteUserFromDb = async (userId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('user_id', userId)
+
+    if (error) handleError(error, 'delete user')
+}
+
+// =====================================================
+// PRODUCTS
+// =====================================================
+
+export const fetchProducts = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch products')
+
+    return data?.map(p => ({
+        id: p.product_id,
+        uuid: p.id,
+        name: p.name,
+        bottleType: p.bottle_type,
+        price: parseFloat(p.price),
+        purchasePrice: parseFloat(p.purchase_price || 0),
+        currentStock: p.current_stock,
+        minStockAlert: p.min_stock_alert,
+        status: p.status,
+        createdAt: p.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addProductToDb = async (productData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const productId = generateId('PRD')
+
+    const { data, error } = await supabase
+        .from('products')
+        .insert({
+            product_id: productId,
+            name: productData.name,
+            bottle_type: productData.bottleType,
+            price: productData.price,
+            purchase_price: productData.purchasePrice || 0,
+            current_stock: productData.currentStock || 0,
+            min_stock_alert: productData.minStockAlert || 10,
+            status: 'active'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add product')
+
+    return {
+        id: data.product_id,
+        uuid: data.id,
+        name: data.name,
+        bottleType: data.bottle_type,
+        price: parseFloat(data.price),
+        purchasePrice: parseFloat(data.purchase_price),
+        currentStock: data.current_stock,
+        minStockAlert: data.min_stock_alert,
+        status: data.status
+    }
+}
+
+export const updateProductInDb = async (productId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.bottleType) dbUpdates.bottle_type = updates.bottleType
+    if (updates.price !== undefined) dbUpdates.price = updates.price
+    if (updates.purchasePrice !== undefined) dbUpdates.purchase_price = updates.purchasePrice
+    if (updates.currentStock !== undefined) dbUpdates.current_stock = updates.currentStock
+    if (updates.minStockAlert !== undefined) dbUpdates.min_stock_alert = updates.minStockAlert
+    if (updates.status) dbUpdates.status = updates.status
+
+    const { error } = await supabase
+        .from('products')
+        .update(dbUpdates)
+        .eq('product_id', productId)
+
+    if (error) handleError(error, 'update product')
+}
+
+export const deleteProductFromDb = async (productId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('product_id', productId)
+
+    if (error) handleError(error, 'delete product')
+}
+
+// =====================================================
+// AREAS
+// =====================================================
+
+export const fetchAreas = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('areas')
+        .select('*')
+        .order('name', { ascending: true })
+
+    if (error) handleError(error, 'fetch areas')
+
+    return data?.map(a => ({
+        id: a.area_id,
+        uuid: a.id,
+        name: a.name,
+        description: a.description,
+        status: a.status,
+        createdAt: a.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addAreaToDb = async (areaData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const areaId = generateId('AREA')
+
+    const { data, error } = await supabase
+        .from('areas')
+        .insert({
+            area_id: areaId,
+            name: areaData.name,
+            description: areaData.description || null,
+            status: 'active'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add area')
+
+    return {
+        id: data.area_id,
+        uuid: data.id,
+        name: data.name,
+        description: data.description,
+        status: data.status
+    }
+}
+
+export const updateAreaInDb = async (areaId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('areas')
+        .update({
+            name: updates.name,
+            description: updates.description,
+            status: updates.status
+        })
+        .eq('area_id', areaId)
+
+    if (error) handleError(error, 'update area')
+}
+
+export const deleteAreaFromDb = async (areaId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('areas')
+        .delete()
+        .eq('area_id', areaId)
+
+    if (error) handleError(error, 'delete area')
+}
+
+// =====================================================
+// VENDORS
+// =====================================================
+
+export const fetchVendors = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) handleError(error, 'fetch vendors')
+
+    return data?.map(v => ({
+        id: v.vendor_id,
+        uuid: v.id,
+        name: v.name,
+        contactPerson: v.contact_person,
+        phone: v.phone,
+        email: v.email,
+        address: v.address,
+        openingBalance: parseFloat(v.opening_balance || 0),
+        currentBalance: parseFloat(v.current_balance || 0),
+        remarks: v.remarks,
+        status: v.status,
+        createdAt: v.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addVendorToDb = async (vendorData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const vendorId = generateId('VND')
+
+    const { data, error } = await supabase
+        .from('vendors')
+        .insert({
+            vendor_id: vendorId,
+            name: vendorData.name,
+            contact_person: vendorData.contactPerson || null,
+            phone: vendorData.phone,
+            email: vendorData.email || null,
+            address: vendorData.address || null,
+            opening_balance: vendorData.openingBalance || 0,
+            current_balance: vendorData.openingBalance || 0,
+            remarks: vendorData.remarks || null,
+            status: 'active'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add vendor')
+
+    return {
+        id: data.vendor_id,
+        uuid: data.id,
+        name: data.name,
+        phone: data.phone,
+        status: data.status
+    }
+}
+
+export const updateVendorInDb = async (vendorId, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.contactPerson !== undefined) dbUpdates.contact_person = updates.contactPerson
+    if (updates.phone) dbUpdates.phone = updates.phone
+    if (updates.email !== undefined) dbUpdates.email = updates.email
+    if (updates.address !== undefined) dbUpdates.address = updates.address
+    if (updates.currentBalance !== undefined) dbUpdates.current_balance = updates.currentBalance
+    if (updates.remarks !== undefined) dbUpdates.remarks = updates.remarks
+    if (updates.status) dbUpdates.status = updates.status
+
+    const { error } = await supabase
+        .from('vendors')
+        .update(dbUpdates)
+        .eq('vendor_id', vendorId)
+
+    if (error) handleError(error, 'update vendor')
+}
+
+export const deleteVendorFromDb = async (vendorId) => {
+    if (!isSupabaseConfigured()) return
+
+    const { error } = await supabase
+        .from('vendors')
+        .delete()
+        .eq('vendor_id', vendorId)
+
+    if (error) handleError(error, 'delete vendor')
+}
+
+// =====================================================
+// BANKS
+// =====================================================
+
+export const fetchBanks = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('banks')
+        .select('*')
+        .order('bank_name', { ascending: true })
+
+    if (error) handleError(error, 'fetch banks')
+
+    return data?.map(b => ({
+        id: b.bank_id,
+        uuid: b.id,
+        bankName: b.bank_name,
+        accountTitle: b.account_title,
+        accountNumber: b.account_number,
+        openingBalance: parseFloat(b.opening_balance || 0),
+        currentBalance: parseFloat(b.current_balance || 0),
+        status: b.status,
+        createdAt: b.created_at?.split('T')[0]
+    })) || []
+}
+
+export const addBankToDb = async (bankData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const bankId = generateId('BNK')
+
+    const { data, error } = await supabase
+        .from('banks')
+        .insert({
+            bank_id: bankId,
+            bank_name: bankData.bankName,
+            account_title: bankData.accountTitle,
+            account_number: bankData.accountNumber,
+            opening_balance: bankData.openingBalance || 0,
+            current_balance: bankData.openingBalance || 0,
+            status: 'active'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add bank')
+
+    return {
+        id: data.bank_id,
+        uuid: data.id,
+        bankName: data.bank_name,
+        accountTitle: data.account_title,
+        accountNumber: data.account_number,
+        openingBalance: parseFloat(data.opening_balance),
+        currentBalance: parseFloat(data.current_balance),
+        status: data.status
+    }
+}
+
+// =====================================================
+// STOCK MOVEMENTS
+// =====================================================
+
+export const fetchStockMovements = async (filters = {}) => {
+    if (!isSupabaseConfigured()) return []
+
+    let query = supabase
+        .from('stock_movements')
+        .select(`
+            *,
+            product:products(name, bottle_type)
+        `)
+        .order('created_at', { ascending: false })
+
+    if (filters.productId) {
+        query = query.eq('product_id', filters.productId)
+    }
+    if (filters.movementType) {
+        query = query.eq('movement_type', filters.movementType)
+    }
+
+    const { data, error } = await query.limit(100)
+
+    if (error) handleError(error, 'fetch stock movements')
+
+    return data?.map(m => ({
+        id: m.movement_id,
+        uuid: m.id,
+        productId: m.product_id,
+        productName: m.product?.name,
+        bottleType: m.product?.bottle_type,
+        movementType: m.movement_type,
+        quantity: m.quantity,
+        previousStock: m.previous_stock,
+        newStock: m.new_stock,
+        referenceType: m.reference_type,
+        remarks: m.remarks,
+        createdAt: m.created_at
+    })) || []
+}
+
+export const addStockMovement = async (movementData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const movementId = generateId('STK')
+
+    // First get current product stock
+    const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('current_stock')
+        .eq('id', movementData.productUuid)
+        .single()
+
+    if (productError) handleError(productError, 'get product stock')
+
+    const previousStock = product.current_stock
+    const newStock = movementData.movementType === 'in' || movementData.movementType === 'filling' || movementData.movementType === 'return'
+        ? previousStock + movementData.quantity
+        : previousStock - movementData.quantity
+
+    // Add movement record
+    const { data, error } = await supabase
+        .from('stock_movements')
+        .insert({
+            movement_id: movementId,
+            product_id: movementData.productUuid,
+            movement_type: movementData.movementType,
+            quantity: movementData.quantity,
+            previous_stock: previousStock,
+            new_stock: newStock,
+            reference_type: movementData.referenceType || 'manual',
+            reference_id: movementData.referenceId || null,
+            remarks: movementData.remarks || null,
+            created_by: movementData.createdBy || null
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add stock movement')
+
+    // Update product stock
+    const { error: updateError } = await supabase
+        .from('products')
+        .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+        .eq('id', movementData.productUuid)
+
+    if (updateError) handleError(updateError, 'update product stock')
+
+    return {
+        id: data.movement_id,
+        uuid: data.id,
+        newStock
+    }
+}
+
+// =====================================================
+// PAYMENTS
+// =====================================================
+
+export const fetchPayments = async (filters = {}) => {
+    if (!isSupabaseConfigured()) return []
+
+    let query = supabase
+        .from('payments')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (filters.paymentType) {
+        query = query.eq('payment_type', filters.paymentType)
+    }
+
+    const { data, error } = await query.limit(100)
+
+    if (error) handleError(error, 'fetch payments')
+
+    return data?.map(p => ({
+        id: p.payment_id,
+        uuid: p.id,
+        paymentType: p.payment_type,
+        referenceId: p.reference_id,
+        orderId: p.order_id,
+        receivedBy: p.received_by,
+        paymentDate: p.payment_date,
+        amount: parseFloat(p.amount),
+        paymentMode: p.payment_mode,
+        bankId: p.bank_id,
+        chequeNo: p.cheque_no,
+        remarks: p.remarks,
+        status: p.status,
+        createdAt: p.created_at
+    })) || []
+}
+
+export const addPaymentToDb = async (paymentData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const paymentId = generateId('PAY')
+
+    const { data, error } = await supabase
+        .from('payments')
+        .insert({
+            payment_id: paymentId,
+            payment_type: paymentData.paymentType,
+            reference_id: paymentData.referenceId,
+            order_id: paymentData.orderId || null,
+            received_by: paymentData.receivedBy || null,
+            payment_date: paymentData.paymentDate || new Date().toISOString().split('T')[0],
+            amount: paymentData.amount,
+            payment_mode: paymentData.paymentMode,
+            bank_id: paymentData.bankId || null,
+            cheque_no: paymentData.chequeNo || null,
+            remarks: paymentData.remarks || null,
+            status: 'completed'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add payment')
+
+    // Update customer/vendor balance
+    if (paymentData.paymentType === 'customer') {
+        await supabase.rpc('update_customer_balance', {
+            p_customer_id: paymentData.referenceId,
+            p_amount: -paymentData.amount  // Reduce balance
+        })
+    }
+
+    return {
+        id: data.payment_id,
+        uuid: data.id,
+        amount: parseFloat(data.amount)
+    }
+}
+
+// =====================================================
+// INVESTMENTS
+// =====================================================
+
+export const fetchInvestments = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('investments')
+        .select('*')
+        .order('investment_date', { ascending: false })
+
+    if (error) handleError(error, 'fetch investments')
+
+    return data?.map(i => ({
+        id: i.investment_id,
+        uuid: i.id,
+        investorName: i.investor_name,
+        investmentDetail: i.investment_detail,
+        amount: parseFloat(i.amount),
+        investmentDate: i.investment_date,
+        remarks: i.remarks,
+        createdAt: i.created_at
+    })) || []
+}
+
+export const addInvestmentToDb = async (investmentData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const investmentId = generateId('INV')
+
+    const { data, error } = await supabase
+        .from('investments')
+        .insert({
+            investment_id: investmentId,
+            investor_name: investmentData.investorName,
+            investment_detail: investmentData.investmentDetail || null,
+            amount: investmentData.amount,
+            investment_date: investmentData.investmentDate || new Date().toISOString().split('T')[0],
+            remarks: investmentData.remarks || null
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add investment')
+
+    return {
+        id: data.investment_id,
+        uuid: data.id,
+        amount: parseFloat(data.amount)
+    }
+}
+
+// =====================================================
+// EXPENDITURES
+// =====================================================
+
+export const fetchExpenditures = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('expenditures')
+        .select('*')
+        .order('expense_date', { ascending: false })
+
+    if (error) handleError(error, 'fetch expenditures')
+
+    return data?.map(e => ({
+        id: e.expenditure_id,
+        uuid: e.id,
+        category: e.category,
+        description: e.description,
+        amount: parseFloat(e.amount),
+        expenseDate: e.expense_date,
+        paymentMode: e.payment_mode,
+        bankId: e.bank_id,
+        remarks: e.remarks,
+        createdAt: e.created_at
+    })) || []
+}
+
+export const addExpenditureToDb = async (expenseData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const expenditureId = generateId('EXP')
+
+    const { data, error } = await supabase
+        .from('expenditures')
+        .insert({
+            expenditure_id: expenditureId,
+            category: expenseData.category,
+            description: expenseData.description,
+            amount: expenseData.amount,
+            expense_date: expenseData.expenseDate || new Date().toISOString().split('T')[0],
+            payment_mode: expenseData.paymentMode || 'cash',
+            bank_id: expenseData.bankId || null,
+            remarks: expenseData.remarks || null,
+            created_by: expenseData.createdBy || null
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add expenditure')
+
+    return {
+        id: data.expenditure_id,
+        uuid: data.id,
+        amount: parseFloat(data.amount)
+    }
+}
+
+// =====================================================
+// INITIALIZE ALL DATA
+// =====================================================
+
+export const initializeAllData = async () => {
+    if (!isSupabaseConfigured()) {
+        console.log('Supabase not configured, using mock data')
+        return null
+    }
+
+    try {
+        const [customers, orders, transactions, bills, waterProduction, supportTickets, users, products, areas, vendors, banks] = await Promise.all([
+            fetchCustomers(),
+            fetchOrders(),
+            fetchTransactions(),
+            fetchBills(),
+            fetchWaterProduction(),
+            fetchSupportTickets(),
+            fetchUsers(),
+            fetchProducts(),
+            fetchAreas(),
+            fetchVendors(),
+            fetchBanks()
+        ])
+
+        return {
+            customers,
+            orders,
+            transactions,
+            bills,
+            waterProduction,
+            supportTickets,
+            users,
+            products,
+            areas,
+            vendors,
+            banks
+        }
+    } catch (error) {
+        console.error('Failed to initialize data from Supabase:', error)
+        return null
+    }
+}

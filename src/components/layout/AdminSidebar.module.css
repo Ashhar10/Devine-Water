@@ -1,0 +1,197 @@
+/* AdminSidebar Component Styles */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-md);
+    z-index: var(--z-sticky);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.collapsed {
+    width: 80px;
+    padding: var(--space-sm);
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+    overflow: hidden;
+}
+
+.collapsed .logo {
+    justify-content: center;
+    padding: var(--space-sm);
+}
+
+.logoIcon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
+    border-radius: var(--radius-md);
+    color: var(--bg-deep-space);
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.sidebar:hover .logoIcon {
+    transform: rotate(10deg);
+}
+
+.logoText {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s;
+}
+
+.collapsed .logoText {
+    opacity: 0;
+    width: 0;
+    transition: opacity 0.15s ease;
+}
+
+/* Navigation */
+.nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+.navItem {
+    display: block;
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.navItemInner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 12px 14px;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border-radius: var(--radius-lg);
+}
+
+/* Collapsed state - center the icon box */
+.collapsed .navItemInner {
+    padding: 12px;
+    justify-content: center;
+}
+
+
+.navItem:hover .navItemInner {
+    color: var(--text-primary);
+    background: var(--glass-bg);
+}
+
+.navItem.active .navItemInner {
+    background: var(--primary-cyan-subtle);
+    color: var(--primary-cyan);
+}
+
+/* Icon - larger size */
+.navIcon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.navItem:hover .navIcon {
+    transform: scale(1.1);
+}
+
+.navLabel {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s, transform 0.2s ease;
+}
+
+.collapsed .navLabel {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.1s ease;
+}
+
+/* Collapse toggle */
+.toggleBtn {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+    z-index: 10;
+}
+
+.sidebar:hover .toggleBtn {
+    opacity: 1;
+}
+
+.toggleBtn:hover {
+    background: var(--primary-cyan);
+    color: var(--bg-deep-space);
+    border-color: var(--primary-cyan);
+    transform: translateY(-50%) scale(1.15);
+}
+
+/* Hide on mobile - completely */
+@media (max-width: 767px) {
+    .sidebar {
+        display: none !important;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .sidebar {
+        width: 240px;
+    }
+
+    .collapsed {
+        width: 68px;
+    }
+}

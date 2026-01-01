@@ -1,0 +1,54 @@
+/* AdminLayout Component Styles */
+
+.layout {
+    min-height: 100vh;
+    display: flex;
+}
+
+.main {
+    flex: 1;
+    margin-left: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main.collapsed {
+    margin-left: 80px;
+}
+
+.main.mobile {
+    margin-left: 0;
+    padding-bottom: 100px;
+    /* Space for floating menu button */
+}
+
+.content {
+    flex: 1;
+    padding: var(--space-xl);
+    overflow-y: auto;
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .main {
+        margin-left: 240px;
+    }
+
+    .main.collapsed {
+        margin-left: 68px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+    .main {
+        margin-left: 0 !important;
+    }
+
+    .content {
+        padding: var(--space-md);
+        padding-bottom: 120px;
+    }
+}

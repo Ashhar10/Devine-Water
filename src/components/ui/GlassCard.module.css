@@ -1,0 +1,109 @@
+/* GlassCard Component Styles */
+
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
+    transition:
+        transform var(--transition-base),
+        box-shadow var(--transition-base),
+        border-color var(--transition-base),
+        background var(--transition-base);
+}
+
+/* Padding variants */
+.padding-none {
+    padding: 0;
+}
+
+.padding-sm {
+    padding: var(--space-md);
+}
+
+.padding-md {
+    padding: var(--space-lg);
+}
+
+.padding-lg {
+    padding: var(--space-xl);
+}
+
+.padding-xl {
+    padding: var(--space-2xl);
+}
+
+/* Hover effects */
+.hoverable:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    box-shadow: var(--glass-shadow-hover);
+}
+
+/* Clickable state */
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:active {
+    transform: scale(0.98);
+}
+
+/* Glow variants */
+.glow-cyan {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 20px var(--primary-cyan-glow),
+        inset 0 0 20px var(--primary-cyan-subtle);
+}
+
+.glow-teal {
+    border-color: rgba(0, 255, 200, 0.3);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 20px var(--primary-teal-glow),
+        inset 0 0 20px rgba(0, 255, 200, 0.05);
+}
+
+.glow-success {
+    border-color: rgba(0, 230, 118, 0.3);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 20px var(--success-glow),
+        inset 0 0 20px var(--success-subtle);
+}
+
+.glow-warning {
+    border-color: rgba(255, 171, 0, 0.3);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 20px var(--warning-glow),
+        inset 0 0 20px var(--warning-subtle);
+}
+
+.glow-error {
+    border-color: rgba(255, 92, 92, 0.3);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 20px var(--error-glow),
+        inset 0 0 20px var(--error-subtle);
+}
+
+.glow-income {
+    border-color: rgba(0, 229, 160, 0.4);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 25px var(--income-glow),
+        inset 0 0 20px rgba(0, 229, 160, 0.08);
+}
+
+.glow-expense {
+    border-color: rgba(255, 107, 107, 0.4);
+    box-shadow:
+        var(--glass-shadow),
+        0 0 25px var(--expense-glow),
+        inset 0 0 20px rgba(255, 107, 107, 0.08);
+}

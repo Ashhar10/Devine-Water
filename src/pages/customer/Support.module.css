@@ -1,0 +1,243 @@
+/* Support Page Styles */
+
+.support {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Header */
+.header {
+    text-align: center;
+    padding: var(--space-lg) 0;
+}
+
+.headerIcon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-cyan-subtle);
+    color: var(--primary-cyan);
+    border-radius: var(--radius-xl);
+}
+
+.headerTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.headerSubtitle {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Form Card */
+.formCard {
+    margin-top: var(--space-md);
+}
+
+.formGroup {
+    margin-bottom: var(--space-lg);
+}
+
+.label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.input,
+.textarea {
+    width: 100%;
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    font-family: inherit;
+    outline: none;
+    transition: all var(--transition-fast);
+    resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Section */
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.sectionTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Tickets List */
+.ticketsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.ticketCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md) !important;
+}
+
+.ticketHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticketId {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.ticketStatus {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.ticketStatus.resolved {
+    background: var(--success-subtle);
+    color: var(--success);
+}
+
+.ticketStatus.in_progress {
+    background: var(--warning-subtle);
+    color: var(--warning);
+}
+
+.ticketSubject {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.ticketMeta {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* FAQ */
+.faqList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.faqCard {
+    cursor: pointer;
+    padding: var(--space-md) !important;
+}
+
+.faqQuestion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.faqIcon {
+    font-size: var(--text-xl);
+    color: var(--primary-cyan);
+}
+
+.faqAnswer {
+    margin: var(--space-md) 0 0 0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--glass-border);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Contact Card */
+.contactCard {
+    text-align: center;
+}
+
+.contactText {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: var(--space-md) 0 0 0;
+}
+
+.contactText strong {
+    color: var(--primary-cyan);
+}
+
+/* Additional ticket styles */
+.ticketMessage {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: var(--space-sm) 0;
+    line-height: 1.5;
+}
+
+.adminReply {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: var(--success-subtle);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+    border-radius: var(--radius-md);
+}
+
+.adminReply strong {
+    font-size: var(--text-sm);
+    color: var(--success);
+    display: block;
+    margin-bottom: var(--space-xs);
+}
+
+.adminReply p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.emptyState {
+    text-align: center;
+    padding: var(--space-xl) !important;
+}
+
+.emptyState p {
+    color: var(--text-muted);
+    margin: 0;
+}

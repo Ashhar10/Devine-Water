@@ -1,0 +1,266 @@
+/* FinanceModule Page Styles */
+
+.finance {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+/* Summary Row */
+.summaryRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+}
+
+.summaryCard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+}
+
+.summaryIcon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--success-subtle);
+    color: var(--success);
+    border-radius: var(--radius-lg);
+}
+
+.expenseIcon {
+    background: var(--error-subtle);
+    color: var(--error);
+}
+
+.profitIcon {
+    background: var(--primary-cyan-subtle);
+    color: var(--primary-cyan);
+}
+
+.summaryInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.summaryLabel {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summaryValue {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+}
+
+.income {
+    color: var(--income);
+}
+
+.expense {
+    color: var(--expense);
+}
+
+.profit {
+    color: var(--primary-cyan);
+}
+
+/* Main Content */
+.mainContent {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+}
+
+.panelCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    height: 100%;
+}
+
+.panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.panelTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.panelTitleIcon {
+    color: var(--text-muted);
+}
+
+/* Expense Categories */
+.expenseCategories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.categoryCard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.categoryCard:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+}
+
+.categoryIcon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+}
+
+.categoryInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.categoryName {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.categoryAmount {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.categoryProgress {
+    width: 60px;
+    height: 4px;
+    background: var(--glass-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progressBar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
+}
+
+.categoryPercentage {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Transactions List */
+.transactionsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.listTitle {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.transactionItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+}
+
+.transactionInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.transactionDesc {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.transactionDate {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.transactionAmount {
+    font-family: var(--font-display);
+    font-weight: 600;
+}
+
+.incomeAmount {
+    color: var(--income);
+}
+
+.expenseAmount {
+    color: var(--expense);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .summaryRow {
+        grid-template-columns: 1fr;
+    }
+
+    .mainContent {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .summaryCard {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .categoryCard {
+        flex-wrap: wrap;
+    }
+
+    .categoryProgress {
+        order: 4;
+        width: 100%;
+        margin-top: var(--space-sm);
+    }
+
+    .categoryPercentage {
+        order: 3;
+    }
+}

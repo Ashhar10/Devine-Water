@@ -33,15 +33,15 @@ export const fetchCustomers = async () => {
         id: c.customer_id,
         uuid: c.id,
         name: c.name,
-        email: c.email,
         phone: c.phone,
-        address: c.address,
-        latitude: c.latitude ? parseFloat(c.latitude) : null,
-        longitude: c.longitude ? parseFloat(c.longitude) : null,
+        address: c.address || '',
+        email: c.email || '',
+        area: c.area_id || '',
         status: c.status,
-        totalOrders: c.total_orders,
-        totalSpent: parseFloat(c.total_spent),
-        createdAt: c.created_at?.split('T')[0]
+        totalOrders: parseInt(c.total_orders) || 0,
+        totalSpent: parseFloat(c.total_spent) || 0,
+        currentBalance: parseFloat(c.current_balance) || 0,  // Add current balance
+        createdAt: c.created_at
     })) || []
 }
 

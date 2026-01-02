@@ -143,9 +143,13 @@ export const fetchOrders = async () => {
     if (error) handleError(error, 'fetch orders')
 
     return data?.map(o => {
-        // Calculate total from order items
-        const total = o.order_items?.reduce((sum, item) =>
-            sum + (parseFloat(item.unit_price) * parseInt(item.quantity)), 0) || 0
+        // Calculate total from order items (use total_price if available, else calculate)
+        const total = o.order_items?.reduce((sum, item) => {
+            if (item.total_price) {
+                return sum + parseFloat(item.total_price)
+            }
+            return sum + (parseFloat(item.unit_price || 0) * parseInt(item.quantity || 0))
+        }, 0) || 0
 
         return {
             id: o.order_id,

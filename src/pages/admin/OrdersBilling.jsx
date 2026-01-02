@@ -70,7 +70,7 @@ function OrdersBilling() {
             salesmanId: newOrder.salesmanId || null,
             items: [{
                 name: product.name,
-                productId: product.id,
+                productId: product.uuid,  // Use UUID instead of local ID
                 qty: parseInt(newOrder.quantity),
                 returnQty: parseInt(newOrder.returnQuantity) || 0,
                 price: product.price

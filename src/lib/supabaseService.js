@@ -127,7 +127,14 @@ export const fetchOrders = async () => {
     const { data, error } = await supabase
         .from('orders')
         .select(`
-            *,
+            id,
+            order_id,
+            customer_id,
+            salesman_id,
+            order_date,
+            status,
+            payment_status,
+            created_at,
             customers (name),
             order_items (*)
         `)
@@ -135,21 +142,27 @@ export const fetchOrders = async () => {
 
     if (error) handleError(error, 'fetch orders')
 
-    return data?.map(o => ({
-        id: o.order_id,
-        uuid: o.id,
-        customerId: o.customer_id,
-        customerName: o.customers?.name || 'Unknown', // Get from customer relationship
-        items: o.order_items?.map(item => ({
-            name: item.name,
-            qty: item.quantity,
-            price: parseFloat(item.price)
-        })) || [],
-        total: parseFloat(o.total),
-        status: o.status,
-        paymentStatus: o.payment_status,
-        createdAt: o.created_at
-    })) || []
+    return data?.map(o => {
+        // Calculate total from order items
+        const total = o.order_items?.reduce((sum, item) =>
+            sum + (parseFloat(item.price) * parseInt(item.quantity)), 0) || 0
+
+        return {
+            id: o.order_id,
+            uuid: o.id,
+            customerId: o.customer_id,
+            customerName: o.customers?.name || 'Unknown',
+            items: o.order_items?.map(item => ({
+                name: item.name,
+                qty: item.quantity,
+                price: parseFloat(item.price)
+            })) || [],
+            total: total,  // Calculated from items
+            status: o.status,
+            paymentStatus: o.payment_status,
+            createdAt: o.created_at
+        }
+    }) || []
 }
 
 export const addOrderToDb = async (orderData, customerName, customerUuid) => {
@@ -157,13 +170,12 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
 
     const orderId = generateId('ORD')
 
-    // Insert order
+    // Insert order (no total column - it's calculated from order_items)
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
             order_id: orderId,
             customer_id: customerUuid,
-            total: orderData.total,
             status: 'pending',
             payment_status: 'pending'
         })
@@ -200,7 +212,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
         customerId: orderData.customerId,  // Keep local ID for matching
         customerName: customerName,
         items: orderData.items,
-        total: parseFloat(order.total),
+        total: orderData.total,  // Use total from orderData (calculated in frontend)
         status: order.status,
         paymentStatus: order.payment_status,
         createdAt: order.created_at

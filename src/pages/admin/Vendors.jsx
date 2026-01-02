@@ -23,6 +23,7 @@ function Vendors() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingVendor, setEditingVendor] = useState(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         contactPerson: '',
@@ -34,6 +35,8 @@ function Vendors() {
     })
 
     const vendors = useDataStore(state => state.vendors)
+    const addVendor = useDataStore(state => state.addVendor)
+    const updateVendor = useDataStore(state => state.updateVendor)
 
     const filteredVendors = vendors.filter(v =>
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,9 +51,21 @@ function Vendors() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        // TODO: Connect to store actions
-        console.log('Submitting vendor:', formData)
-        resetForm()
+        setIsSubmitting(true)
+
+        try {
+            if (editingVendor) {
+                await updateVendor(editingVendor.id, formData)
+            } else {
+                await addVendor(formData)
+            }
+            resetForm()
+        } catch (error) {
+            console.error('Error saving vendor:', error)
+            alert('Failed to save vendor. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const handleEdit = (vendor) => {
@@ -301,8 +316,8 @@ function Vendors() {
                                     placeholder="Any notes about this vendor"
                                 />
                             </div>
-                            <Button type="submit" variant="primary" fullWidth>
-                                {editingVendor ? 'Update Vendor' : 'Add Vendor'}
+                            <Button type="submit" variant="primary" fullWidth disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving...' : (editingVendor ? 'Update Vendor' : 'Add Vendor')}
                             </Button>
                         </form>
                     </GlassCard>

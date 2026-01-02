@@ -30,6 +30,7 @@ function Payments() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showPaymentModal, setShowPaymentModal] = useState(false)
     const [filterType, setFilterType] = useState('all')
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         paymentType: 'customer',
         referenceId: '',
@@ -43,18 +44,13 @@ function Payments() {
     const customers = useDataStore(state => state.customers)
     const vendors = useDataStore(state => state.vendors)
     const banks = useDataStore(state => state.banks)
-
-    // Mock payments data - will connect to real store later
-    const payments = useMemo(() => [
-        { id: 'PAY-001', paymentType: 'customer', referenceName: 'Ali Hassan', amount: 5000, paymentMode: 'cash', paymentDate: '2024-12-24', status: 'completed' },
-        { id: 'PAY-002', paymentType: 'customer', referenceName: 'Fatima Khan', amount: 3200, paymentMode: 'bank_transfer', paymentDate: '2024-12-24', status: 'completed' },
-        { id: 'PAY-003', paymentType: 'vendor', referenceName: 'ABC Supplies', amount: 15000, paymentMode: 'cheque', paymentDate: '2024-12-23', status: 'pending' },
-    ], [])
+    const payments = useDataStore(state => state.payments)
+    const addPayment = useDataStore(state => state.addPayment)
 
     const filteredPayments = payments.filter(p => {
         const matchesType = filterType === 'all' || p.paymentType === filterType
-        const matchesSearch = p.referenceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesSearch = searchTerm === '' ||
+            (p.id && p.id.toLowerCase().includes(searchTerm.toLowerCase()))
         return matchesType && matchesSearch
     })
 
@@ -66,9 +62,18 @@ function Payments() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Submitting payment:', formData)
-        setShowPaymentModal(false)
-        resetForm()
+        setIsSubmitting(true)
+
+        try {
+            await addPayment(formData)
+            setShowPaymentModal(false)
+            resetForm()
+        } catch (error) {
+            console.error('Error recording payment:', error)
+            alert('Failed to record payment. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const resetForm = () => {
@@ -175,35 +180,47 @@ function Payments() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredPayments.map((payment, index) => (
-                            <motion.tr
-                                key={payment.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: index * 0.03 }}
-                            >
-                                <td className={styles.paymentId}>{payment.id}</td>
-                                <td>
-                                    <span className={`${styles.typeBadge} ${styles[payment.paymentType]}`}>
-                                        {payment.paymentType === 'customer' ? 'Received' : 'Paid'}
-                                    </span>
-                                </td>
-                                <td className={styles.nameCell}>
-                                    <User size={14} />
-                                    {payment.referenceName}
-                                </td>
-                                <td className={`${styles.amount} ${payment.paymentType === 'customer' ? styles.income : styles.expense}`}>
-                                    {payment.paymentType === 'customer' ? '+' : '-'} Rs {payment.amount.toLocaleString()}
-                                </td>
-                                <td className={styles.modeCell}>
-                                    {payment.paymentMode.replace('_', ' ')}
-                                </td>
-                                <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
-                                <td>
-                                    <StatusBadge status={payment.status} size="sm" />
-                                </td>
-                            </motion.tr>
-                        ))}
+                        {filteredPayments.map((payment, index) => {
+                            // Get customer or vendor name
+                            let referenceName = 'Unknown'
+                            if (payment.paymentType === 'customer') {
+                                const customer = customers.find(c => c.uuid === payment.referenceId)
+                                referenceName = customer?.name || 'Unknown Customer'
+                            } else {
+                                const vendor = vendors.find(v => v.uuid === payment.referenceId)
+                                referenceName = vendor?.name || 'Unknown Vendor'
+                            }
+
+                            return (
+                                <motion.tr
+                                    key={payment.id}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: index * 0.03 }}
+                                >
+                                    <td className={styles.paymentId}>{payment.id}</td>
+                                    <td>
+                                        <span className={`${styles.typeBadge} ${styles[payment.paymentType]}`}>
+                                            {payment.paymentType === 'customer' ? 'Received' : 'Paid'}
+                                        </span>
+                                    </td>
+                                    <td className={styles.nameCell}>
+                                        <User size={14} />
+                                        {referenceName}
+                                    </td>
+                                    <td className={`${styles.amount} ${payment.paymentType === 'customer' ? styles.income : styles.expense}`}>
+                                        {payment.paymentType === 'customer' ? '+' : '-'} Rs {payment.amount.toLocaleString()}
+                                    </td>
+                                    <td className={styles.modeCell}>
+                                        {payment.paymentMode.replace('_', ' ')}
+                                    </td>
+                                    <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
+                                    <td>
+                                        <StatusBadge status={payment.status} size="sm" />
+                                    </td>
+                                </motion.tr>
+                            )
+                        })}
                     </tbody>
                 </table>
 
@@ -338,8 +355,8 @@ function Payments() {
                                 />
                             </div>
 
-                            <Button type="submit" variant="primary" fullWidth>
-                                {formData.paymentType === 'customer' ? 'Receive Payment' : 'Make Payment'}
+                            <Button type="submit" variant="primary" fullWidth disabled={isSubmitting}>
+                                {isSubmitting ? 'Processing...' : (formData.paymentType === 'customer' ? 'Receive Payment' : 'Make Payment')}
                             </Button>
                         </form>
                     </GlassCard>

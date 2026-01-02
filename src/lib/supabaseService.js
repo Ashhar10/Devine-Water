@@ -1156,7 +1156,7 @@ export const initializeAllData = async () => {
     }
 
     try {
-        const [customers, orders, transactions, bills, waterProduction, supportTickets, users, products, areas, vendors, banks] = await Promise.all([
+        const [customers, orders, transactions, bills, waterProduction, supportTickets, users, products, areas, vendors, banks, payments, investments, expenditures] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),
             fetchTransactions(),
@@ -1167,7 +1167,10 @@ export const initializeAllData = async () => {
             fetchProducts(),
             fetchAreas(),
             fetchVendors(),
-            fetchBanks()
+            fetchBanks(),
+            fetchPayments(),
+            fetchInvestments(),
+            fetchExpenditures()
         ])
 
         return {
@@ -1181,7 +1184,10 @@ export const initializeAllData = async () => {
             products,
             areas,
             vendors,
-            banks
+            banks,
+            payments,
+            investments,
+            expenditures
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

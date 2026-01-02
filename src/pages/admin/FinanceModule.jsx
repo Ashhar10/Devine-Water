@@ -33,39 +33,38 @@ const expenseColors = {
 function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({ category: '', amount: '', description: '' })
 
-    // Get raw transactions from store - stable reference
-    const transactions = useDataStore(state => state.transactions)
-    const addTransaction = useDataStore(state => state.addTransaction)
+    // Get data from store
+    const investments = useDataStore(state => state.investments)
+    const expenditures = useDataStore(state => state.expenditures)
+    const addInvestment = useDataStore(state => state.addInvestment)
+    const addExpenditure = useDataStore(state => state.addExpenditure)
 
     // Compute financial summary with useMemo
-    const { income, expenses, profit, incomeTransactions, expenseTransactions } = useMemo(() => {
-        const incTrx = transactions.filter(t => t.type === 'income')
-        const expTrx = transactions.filter(t => t.type === 'expense')
-        const inc = incTrx.reduce((sum, t) => sum + t.amount, 0)
-        const exp = expTrx.reduce((sum, t) => sum + t.amount, 0)
+    const { income, expenses, profit } = useMemo(() => {
+        const inc = investments.reduce((sum, t) => sum + t.amount, 0)
+        const exp = expenditures.reduce((sum, t) => sum + t.amount, 0)
 
         return {
             income: inc,
             expenses: exp,
             profit: inc - exp,
-            incomeTransactions: incTrx,
-            expenseTransactions: expTrx,
         }
-    }, [transactions])
+    }, [investments, expenditures])
 
-    // Group income by week for chart
+    // Group income by week for chart (using recent investments)
     const incomeData = useMemo(() => {
-        return incomeTransactions.slice(0, 4).map((t, i) => ({
+        return investments.slice(0, 4).map((t, i) => ({
             name: `Week ${i + 1}`,
             income: t.amount,
         }))
-    }, [incomeTransactions])
+    }, [investments])
 
     // Group expenses by category
     const { expenseCategories, totalExpenses } = useMemo(() => {
-        const byCategory = expenseTransactions.reduce((acc, t) => {
+        const byCategory = expenditures.reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount
             return acc
         }, {})
@@ -82,30 +81,46 @@ function FinanceModule() {
         }))
 
         return { expenseCategories: categories, totalExpenses: total }
-    }, [expenseTransactions])
+    }, [expenditures])
 
-    const handleAddIncome = (e) => {
+    const handleAddIncome = async (e) => {
         e.preventDefault()
-        addTransaction({
-            type: 'income',
-            category: formData.category || 'Water Sales',
-            amount: parseFloat(formData.amount),
-            description: formData.description,
-        })
-        setShowIncomeModal(false)
-        setFormData({ category: '', amount: '', description: '' })
+        setIsSubmitting(true)
+
+        try {
+            await addInvestment({
+                investorName: formData.category || 'Water Sales',
+                investmentDetail: formData.description,
+                amount: parseFloat(formData.amount),
+            })
+            setShowIncomeModal(false)
+            setFormData({ category: '', amount: '', description: '' })
+        } catch (error) {
+            console.error('Error adding income:', error)
+            alert('Failed to add income. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
-    const handleAddExpense = (e) => {
+    const handleAddExpense = async (e) => {
         e.preventDefault()
-        addTransaction({
-            type: 'expense',
-            category: formData.category,
-            amount: parseFloat(formData.amount),
-            description: formData.description,
-        })
-        setShowExpenseModal(false)
-        setFormData({ category: '', amount: '', description: '' })
+        setIsSubmitting(true)
+
+        try {
+            await addExpenditure({
+                category: formData.category,
+                description: formData.description,
+                amount: parseFloat(formData.amount),
+            })
+            setShowExpenseModal(false)
+            setFormData({ category: '', amount: '', description: '' })
+        } catch (error) {
+            console.error('Error adding expense:', error)
+            alert('Failed to add expense. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -174,23 +189,28 @@ function FinanceModule() {
 
                         <div className={styles.transactionsList}>
                             <h4 className={styles.listTitle}>Recent Income</h4>
-                            {incomeTransactions.slice(0, 4).map((transaction, index) => (
+                            {investments.slice(0, 4).map((investment, index) => (
                                 <motion.div
-                                    key={transaction.id}
+                                    key={investment.id}
                                     className={styles.transactionItem}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <div className={styles.transactionInfo}>
-                                        <span className={styles.transactionDesc}>{transaction.description}</span>
-                                        <span className={styles.transactionDate}>{transaction.createdAt}</span>
+                                        <span className={styles.transactionDesc}>{investment.investmentDetail || investment.investorName}</span>
+                                        <span className={styles.transactionDate}>{investment.investmentDate}</span>
                                     </div>
                                     <span className={`${styles.transactionAmount} ${styles.incomeAmount}`}>
-                                        +Rs {transaction.amount.toLocaleString()}
+                                        +Rs {investment.amount.toLocaleString()}
                                     </span>
                                 </motion.div>
                             ))}
+                            {investments.length === 0 && (
+                                <p style={{ textAlign: 'center', opacity: 0.6, padding: '20px 0' }}>
+                                    No income records yet
+                                </p>
+                            )}
                         </div>
                     </GlassCard>
                 </div>
@@ -246,23 +266,28 @@ function FinanceModule() {
                         {/* Recent Expenses */}
                         <div className={styles.transactionsList}>
                             <h4 className={styles.listTitle}>Recent Expenses</h4>
-                            {expenseTransactions.slice(0, 3).map((transaction, index) => (
+                            {expenditures.slice(0, 3).map((expenditure, index) => (
                                 <motion.div
-                                    key={transaction.id}
+                                    key={expenditure.id}
                                     className={styles.transactionItem}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <div className={styles.transactionInfo}>
-                                        <span className={styles.transactionDesc}>{transaction.description}</span>
-                                        <span className={styles.transactionDate}>{transaction.createdAt}</span>
+                                        <span className={styles.transactionDesc}>{expenditure.description}</span>
+                                        <span className={styles.transactionDate}>{expenditure.expenseDate}</span>
                                     </div>
                                     <span className={`${styles.transactionAmount} ${styles.expenseAmount}`}>
-                                        -Rs {transaction.amount.toLocaleString()}
+                                        -Rs {expenditure.amount.toLocaleString()}
                                     </span>
                                 </motion.div>
                             ))}
+                            {expenditures.length === 0 && (
+                                <p style={{ textAlign: 'center', opacity: 0.6, padding: '20px 0' }}>
+                                    No expense records yet
+                                </p>
+                            )}
                         </div>
                     </GlassCard>
                 </div>
@@ -312,8 +337,8 @@ function FinanceModule() {
                                     required
                                 />
                             </div>
-                            <Button type="submit" variant="success" fullWidth>
-                                Add Income
+                            <Button type="submit" variant="success" fullWidth disabled={isSubmitting}>
+                                {isSubmitting ? 'Adding...' : 'Add Income'}
                             </Button>
                         </form>
                     </GlassCard>
@@ -367,8 +392,8 @@ function FinanceModule() {
                                     required
                                 />
                             </div>
-                            <Button type="submit" variant="danger" fullWidth>
-                                Add Expense
+                            <Button type="submit" variant="danger" fullWidth disabled={isSubmitting}>
+                                {isSubmitting ? 'Adding...' : 'Add Expense'}
                             </Button>
                         </form>
                     </GlassCard>

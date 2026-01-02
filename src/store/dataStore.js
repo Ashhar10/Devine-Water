@@ -17,7 +17,16 @@ import {
     updateTicketInDb,
     addUserToDb,
     updateUserInDb,
-    deleteUserFromDb
+    deleteUserFromDb,
+    addVendorToDb,
+    updateVendorInDb,
+    deleteVendorFromDb,
+    addPaymentToDb,
+    addInvestmentToDb,
+    addExpenditureToDb,
+    fetchPayments,
+    fetchInvestments,
+    fetchExpenditures
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -48,6 +57,9 @@ export const useDataStore = create(
             areas: [],
             vendors: [],
             banks: [],
+            payments: [],
+            investments: [],
+            expenditures: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -76,6 +88,9 @@ export const useDataStore = create(
                         areas: data?.areas || [],
                         vendors: data?.vendors || [],
                         banks: data?.banks || [],
+                        payments: data?.payments || [],
+                        investments: data?.investments || [],
+                        expenditures: data?.expenditures || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -94,6 +109,9 @@ export const useDataStore = create(
                         areas: [],
                         vendors: [],
                         banks: [],
+                        payments: [],
+                        investments: [],
+                        expenditures: [],
                         isLoading: false,
                         isInitialized: true,
                         error: error.message
@@ -634,6 +652,199 @@ export const useDataStore = create(
                 // } catch (error) {
                 //     console.error('Failed to update stock in DB:', error)
                 // }
+            },
+
+            // ===== VENDOR MANAGEMENT ACTIONS =====
+            getVendors: () => get().vendors,
+
+            addVendor: async (data) => {
+                const newVendor = {
+                    ...data,
+                    id: `VND-${generateId()}`,
+                    status: 'active',
+                    currentBalance: data.openingBalance || 0,
+                    createdAt: new Date().toISOString().split('T')[0],
+                }
+
+                // Optimistic update
+                set(state => ({ vendors: [...state.vendors, newVendor] }))
+
+                try {
+                    const dbVendor = await addVendorToDb(data)
+                    if (dbVendor) {
+                        set(state => ({
+                            vendors: state.vendors.map(v =>
+                                v.id === newVendor.id ? dbVendor : v
+                            )
+                        }))
+                        return dbVendor
+                    }
+                } catch (error) {
+                    console.error('Failed to add vendor to DB:', error)
+                    // Rollback on error
+                    set(state => ({
+                        vendors: state.vendors.filter(v => v.id !== newVendor.id)
+                    }))
+                    throw error
+                }
+
+                return newVendor
+            },
+
+            updateVendor: async (id, data) => {
+                set(state => ({
+                    vendors: state.vendors.map(v =>
+                        v.id === id ? { ...v, ...data } : v
+                    )
+                }))
+
+                try {
+                    await updateVendorInDb(id, data)
+                } catch (error) {
+                    console.error('Failed to update vendor in DB:', error)
+                }
+            },
+
+            deleteVendor: async (id) => {
+                set(state => ({
+                    vendors: state.vendors.filter(v => v.id !== id)
+                }))
+
+                try {
+                    await deleteVendorFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete vendor from DB:', error)
+                }
+            },
+
+            // ===== PAYMENT ACTIONS =====
+            getPayments: (type = null) => {
+                const payments = get().payments
+                return type ? payments.filter(p => p.paymentType === type) : payments
+            },
+
+            addPayment: async (data) => {
+                const newPayment = {
+                    ...data,
+                    id: `PAY-${generateId()}`,
+                    status: 'completed',
+                    paymentDate: data.paymentDate || new Date().toISOString().split('T')[0],
+                    createdAt: new Date().toISOString(),
+                }
+
+                // Optimistic update
+                set(state => ({ payments: [newPayment, ...state.payments] }))
+
+                try {
+                    const dbPayment = await addPaymentToDb(data)
+                    if (dbPayment) {
+                        set(state => ({
+                            payments: state.payments.map(p =>
+                                p.id === newPayment.id ? dbPayment : p
+                            )
+                        }))
+
+                        // Update customer or vendor balance
+                        if (data.paymentType === 'customer') {
+                            const customer = get().customers.find(c => c.uuid === data.referenceId)
+                            if (customer) {
+                                get().updateCustomer(customer.id, {
+                                    currentBalance: (customer.currentBalance || 0) - parseFloat(data.amount)
+                                })
+                            }
+                        } else if (data.paymentType === 'vendor') {
+                            const vendor = get().vendors.find(v => v.uuid === data.referenceId)
+                            if (vendor) {
+                                get().updateVendor(vendor.id, {
+                                    currentBalance: (vendor.currentBalance || 0) - parseFloat(data.amount)
+                                })
+                            }
+                        }
+
+                        return dbPayment
+                    }
+                } catch (error) {
+                    console.error('Failed to add payment to DB:', error)
+                    // Rollback on error
+                    set(state => ({
+                        payments: state.payments.filter(p => p.id !== newPayment.id)
+                    }))
+                    throw error
+                }
+
+                return newPayment
+            },
+
+            // ===== INVESTMENT ACTIONS (Income) =====
+            getInvestments: () => get().investments,
+
+            addInvestment: async (data) => {
+                const newInvestment = {
+                    ...data,
+                    id: `INV-${generateId()}`,
+                    investmentDate: data.investmentDate || new Date().toISOString().split('T')[0],
+                    createdAt: new Date().toISOString().split('T')[0],
+                }
+
+                set(state => ({
+                    investments: [newInvestment, ...state.investments]
+                }))
+
+                try {
+                    const dbInvestment = await addInvestmentToDb(data)
+                    if (dbInvestment) {
+                        set(state => ({
+                            investments: state.investments.map(i =>
+                                i.id === newInvestment.id ? dbInvestment : i
+                            )
+                        }))
+                        return dbInvestment
+                    }
+                } catch (error) {
+                    console.error('Failed to add investment to DB:', error)
+                    set(state => ({
+                        investments: state.investments.filter(i => i.id !== newInvestment.id)
+                    }))
+                    throw error
+                }
+
+                return newInvestment
+            },
+
+            // ===== EXPENDITURE ACTIONS (Expense) =====
+            getExpenditures: () => get().expenditures,
+
+            addExpenditure: async (data) => {
+                const newExpenditure = {
+                    ...data,
+                    id: `EXP-${generateId()}`,
+                    expenseDate: data.expenseDate || new Date().toISOString().split('T')[0],
+                    createdAt: new Date().toISOString().split('T')[0],
+                }
+
+                set(state => ({
+                    expenditures: [newExpenditure, ...state.expenditures]
+                }))
+
+                try {
+                    const dbExpenditure = await addExpenditureToDb(data)
+                    if (dbExpenditure) {
+                        set(state => ({
+                            expenditures: state.expenditures.map(e =>
+                                e.id === newExpenditure.id ? dbExpenditure : e
+                            )
+                        }))
+                        return dbExpenditure
+                    }
+                } catch (error) {
+                    console.error('Failed to add expenditure to DB:', error)
+                    set(state => ({
+                        expenditures: state.expenditures.filter(e => e.id !== newExpenditure.id)
+                    }))
+                    throw error
+                }
+
+                return newExpenditure
             },
 
             // ===== RESET =====

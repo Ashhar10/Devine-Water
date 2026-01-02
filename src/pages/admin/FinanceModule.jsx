@@ -34,6 +34,8 @@ function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [viewMode, setViewMode] = useState('daily')
+    const [currentPeriod, setCurrentPeriod] = useState(new Date())
     const [formData, setFormData] = useState({
         category: '',
         amount: '',
@@ -199,6 +201,24 @@ function FinanceModule() {
 
     return (
         <div className={styles.finance}>
+            {/* View Mode Controls */}
+            <div className={styles.viewControls}>
+                <div className={styles.viewModes}>
+                    {['daily', 'weekly', 'monthly', 'yearly'].map(mode => (
+                        <button
+                            key={mode}
+                            className={`${styles.viewModeBtn} ${viewMode === mode ? styles.active : ''}`}
+                            onClick={() => setViewMode(mode)}
+                        >
+                            {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                        </button>
+                    ))}
+                </div>
+                <button className={styles.todayBtn} onClick={() => setCurrentPeriod(new Date())}>
+                    Today
+                </button>
+            </div>
+
             {/* Summary Cards */}
             <section className={styles.summaryRow}>
                 <GlassCard className={styles.summaryCard} glow glowColor="income">

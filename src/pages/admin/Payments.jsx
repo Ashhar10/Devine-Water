@@ -277,7 +277,7 @@ function Payments() {
                                 >
                                     <option value="">Select {formData.paymentType}</option>
                                     {referenceList.filter(r => r.status === 'active').map(r => (
-                                        <option key={r.id} value={r.id}>
+                                        <option key={r.id} value={r.uuid}>
                                             {r.name} {r.currentBalance ? `(Balance: Rs ${r.currentBalance})` : ''}
                                         </option>
                                     ))}

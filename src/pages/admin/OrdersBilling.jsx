@@ -65,7 +65,8 @@ function OrdersBilling() {
         const total = subtotal - (parseFloat(newOrder.discount) || 0)
 
         addOrder({
-            customerId: newOrder.customerId,
+            customerId: newOrder.customerId,        // Local ID for store lookup
+            customerUuid: customer.uuid,             // UUID for Supabase
             salesmanId: newOrder.salesmanId || null,
             items: [{
                 name: product.name,

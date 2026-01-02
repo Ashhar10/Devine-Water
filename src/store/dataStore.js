@@ -202,29 +202,49 @@ export const useDataStore = create(
                     createdAt: new Date().toISOString(),
                 }
 
+                // Optimistic update
                 set(state => ({ orders: [newOrder, ...state.orders] }))
 
-                if (customer) {
-                    get().updateCustomer(data.customerId, {
-                        totalOrders: customer.totalOrders + 1,
-                        totalSpent: customer.totalSpent + data.total,
-                    })
-                }
+                // Use customerUuid if provided, otherwise get from customer
+                const customerUuid = data.customerUuid || customer?.uuid
 
-                if (customer?.uuid) {
+                if (customerUuid && customer) {
                     try {
-                        const dbOrder = await addOrderToDb(data, customer.name, customer.uuid)
+                        const dbOrder = await addOrderToDb({
+                            ...data,
+                            customerUuid
+                        }, customer.name, customerUuid)
+
                         if (dbOrder) {
+                            // Replace optimistic order with DB order
                             set(state => ({
                                 orders: state.orders.map(o =>
                                     o.id === newOrder.id ? dbOrder : o
                                 )
                             }))
+
+                            // Update customer stats
+                            get().updateCustomer(data.customerId, {
+                                totalOrders: (customer.totalOrders || 0) + 1,
+                                totalSpent: (customer.totalSpent || 0) + data.total,
+                            })
+
                             return dbOrder
                         }
                     } catch (error) {
                         console.error('Failed to add order to DB:', error)
+                        // Rollback optimistic update on error
+                        set(state => ({
+                            orders: state.orders.filter(o => o.id !== newOrder.id)
+                        }))
+                        throw error
                     }
+                } else {
+                    console.error('No customer UUID available for order')
+                    // Rollback if no UUID
+                    set(state => ({
+                        orders: state.orders.filter(o => o.id !== newOrder.id)
+                    }))
                 }
 
                 return newOrder

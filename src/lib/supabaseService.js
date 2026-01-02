@@ -157,7 +157,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
 
     const orderId = generateId('ORD')
 
-    // Insert order (customer_name is not a column - it comes from customer relationship)
+    // Insert order
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -170,12 +170,15 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
         .select()
         .single()
 
-    if (orderError) handleError(orderError, 'add order')
+    if (orderError) {
+        handleError(orderError, 'add order')
+        return null  // Return null to indicate failure
+    }
 
-    // Insert order items
+    // Insert order items using order's UUID
     if (orderData.items?.length > 0) {
         const orderItems = orderData.items.map(item => ({
-            order_id: order.id,
+            order_id: order.id,  // This is the UUID from database
             name: item.name,
             quantity: item.qty,
             price: item.price
@@ -185,13 +188,16 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             .from('order_items')
             .insert(orderItems)
 
-        if (itemsError) handleError(itemsError, 'add order items')
+        if (itemsError) {
+            console.error('Failed to add order items:', itemsError)
+            // Don't fail the whole order if just items fail
+        }
     }
 
     return {
         id: order.order_id,
         uuid: order.id,
-        customerId: orderData.customerId,
+        customerId: orderData.customerId,  // Keep local ID for matching
         customerName: customerName,
         items: orderData.items,
         total: parseFloat(order.total),

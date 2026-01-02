@@ -145,7 +145,7 @@ export const fetchOrders = async () => {
     return data?.map(o => {
         // Calculate total from order items
         const total = o.order_items?.reduce((sum, item) =>
-            sum + (parseFloat(item.price) * parseInt(item.quantity)), 0) || 0
+            sum + (parseFloat(item.unit_price) * parseInt(item.quantity)), 0) || 0
 
         return {
             id: o.order_id,
@@ -153,9 +153,10 @@ export const fetchOrders = async () => {
             customerId: o.customer_id,
             customerName: o.customers?.name || 'Unknown',
             items: o.order_items?.map(item => ({
-                name: item.name,
+                productId: item.product_id,
+                name: item.product_id || 'Product',  // We'll need to join products to get name
                 qty: item.quantity,
-                price: parseFloat(item.price)
+                price: parseFloat(item.unit_price)
             })) || [],
             total: total,  // Calculated from items
             status: o.status,
@@ -193,9 +194,10 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
     if (orderData.items?.length > 0) {
         const orderItems = orderData.items.map(item => ({
             order_id: order.id,  // This is the UUID from database
-            name: item.name,
+            product_id: item.productId || null,  // Use product_id instead of name
             quantity: item.qty,
-            price: item.price
+            unit_price: item.price,  // Use unit_price instead of price
+            total_price: item.price * item.qty
         }))
 
         const { error: itemsError } = await supabase

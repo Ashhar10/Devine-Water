@@ -168,6 +168,7 @@ function FinanceModule() {
                 investorName: formData.category || 'Water Sales',
                 investmentDetail: formData.description,
                 amount: parseFloat(formData.amount),
+                date: formData.date  // Add date field
             })
             setShowIncomeModal(false)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
@@ -188,6 +189,7 @@ function FinanceModule() {
                 category: formData.category,
                 description: formData.description,
                 amount: parseFloat(formData.amount),
+                date: formData.date  // Add date field
             })
             setShowExpenseModal(false)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })

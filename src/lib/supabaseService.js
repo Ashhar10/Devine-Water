@@ -183,6 +183,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             order_id: orderId,
             invoice_no: invoiceNo,  // Required field
             customer_id: customerUuid,
+            order_date: orderData.orderDate || new Date().toISOString().split('T')[0],
             status: 'pending',
             payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })

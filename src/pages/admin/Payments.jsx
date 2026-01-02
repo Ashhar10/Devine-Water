@@ -39,7 +39,8 @@ function Payments() {
         paymentMode: 'cash',
         bankId: '',
         chequeNo: '',
-        remarks: ''
+        remarks: '',
+        paymentDate: new Date().toISOString().split('T')[0]  // Default to today
     })
 
     const customers = useDataStore(state => state.customers)
@@ -109,7 +110,8 @@ function Payments() {
             paymentMode: 'cash',
             bankId: '',
             chequeNo: '',
-            remarks: ''
+            remarks: '',
+            paymentDate: new Date().toISOString().split('T')[0]
         })
         setSelectedBalance(0)
     }
@@ -403,6 +405,16 @@ function Payments() {
                                 </div>
                             )}
 
+                            {/* Payment Date */}
+                            <div className={styles.formGroup}>
+                                <label>Payment Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.paymentDate}
+                                    onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                                />
+                            </div>
+
                             {/* Remarks */}
                             <div className={styles.formGroup}>
                                 <label>Remarks</label>
@@ -410,7 +422,7 @@ function Payments() {
                                     type="text"
                                     value={formData.remarks}
                                     onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                                    placeholder="Any notes..."
+                                    placeholder="Optional notes"
                                 />
                             </div>
 

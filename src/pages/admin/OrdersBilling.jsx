@@ -27,7 +27,8 @@ function OrdersBilling() {
         returnQuantity: 0,
         salesmanId: '',
         discount: 0,
-        notes: ''
+        notes: '',
+        orderDate: new Date().toISOString().split('T')[0]  // Default to today
     })
 
     const orders = useDataStore(state => state.orders)
@@ -68,6 +69,7 @@ function OrdersBilling() {
             customerId: newOrder.customerId,        // Local ID for store lookup
             customerUuid: customer.uuid,             // UUID for Supabase
             salesmanId: newOrder.salesmanId || null,
+            orderDate: newOrder.orderDate,           // Order date
             items: [{
                 name: product.name,
                 productId: product.uuid,  // Use UUID instead of local ID
@@ -81,7 +83,7 @@ function OrdersBilling() {
         })
 
         setShowNewOrderModal(false)
-        setNewOrder({ customerId: '', productId: '', quantity: 1, returnQuantity: 0, salesmanId: '', discount: 0, notes: '' })
+        setNewOrder({ customerId: '', productId: '', quantity: 1, returnQuantity: 0, salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
     }
 
     const handleStatusChange = (orderId, newStatus) => {
@@ -304,6 +306,15 @@ function OrdersBilling() {
                                         <option key={s.id} value={s.uuid}>{s.name}</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Order Date</label>
+                                <input
+                                    type="date"
+                                    value={newOrder.orderDate}
+                                    onChange={(e) => setNewOrder({ ...newOrder, orderDate: e.target.value })}
+                                />
                             </div>
 
                             <div className={styles.formRow}>

@@ -34,7 +34,12 @@ function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [formData, setFormData] = useState({ category: '', amount: '', description: '' })
+    const [formData, setFormData] = useState({
+        category: '',
+        amount: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]  // Default to today
+    })
 
     // Get data from store
     const investments = useDataStore(state => state.investments)
@@ -94,7 +99,7 @@ function FinanceModule() {
                 amount: parseFloat(formData.amount),
             })
             setShowIncomeModal(false)
-            setFormData({ category: '', amount: '', description: '' })
+            setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
         } catch (error) {
             console.error('Error adding income:', error)
             alert('Failed to add income. Please try again.')
@@ -114,7 +119,7 @@ function FinanceModule() {
                 amount: parseFloat(formData.amount),
             })
             setShowExpenseModal(false)
-            setFormData({ category: '', amount: '', description: '' })
+            setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
         } catch (error) {
             console.error('Error adding expense:', error)
             alert('Failed to add expense. Please try again.')

@@ -59,13 +59,82 @@ function FinanceModule() {
         }
     }, [investments, expenditures])
 
-    // Group income by week for chart (using recent investments)
+    // Generate chart data based on view mode
     const incomeData = useMemo(() => {
-        return investments.slice(0, 4).map((t, i) => ({
-            name: `Week ${i + 1}`,
-            income: t.amount,
-        }))
-    }, [investments])
+        const result = []
+        const now = new Date(currentPeriod)
+
+        // Determine date range based on view mode
+        let startDate = new Date(now)
+        let daysToShow = 30
+
+        if (viewMode === 'daily') {
+            startDate.setDate(now.getDate() - 29)  // Last 30 days
+            daysToShow = 30
+        } else if (viewMode === 'weekly') {
+            startDate.setDate(now.getDate() - 83)  // Last 12 weeks
+            daysToShow = 84
+        } else if (viewMode === 'monthly') {
+            startDate.setMonth(now.getMonth() - 11)  // Last 12 months
+        } else if (viewMode === 'yearly') {
+            startDate.setFullYear(now.getFullYear() - 4)  // Last 5 years
+        }
+
+        // Aggregate data by period
+        const aggregated = {}
+
+        investments.forEach(inv => {
+            if (!inv.date) return
+            const invDate = new Date(inv.date)
+            if (invDate < startDate || invDate > now) return
+
+            let key
+            if (viewMode === 'daily') {
+                key = inv.date
+            } else if (viewMode === 'weekly') {
+                // Get Monday of the week
+                const day = invDate.getDay()
+                const diff = invDate.getDate() - day + (day === 0 ? -6 : 1)
+                const monday = new Date(invDate)
+                monday.setDate(diff)
+                key = monday.toISOString().split('T')[0]
+            } else if (viewMode === 'monthly') {
+                key = `${invDate.getFullYear()}-${String(invDate.getMonth() + 1).padStart(2, '0')}-01`
+            } else if (viewMode === 'yearly') {
+                key = `${invDate.getFullYear()}-01-01`
+            }
+
+            if (!aggregated[key]) aggregated[key] = 0
+            aggregated[key] += inv.amount
+        })
+
+        // Generate labels and fill gaps
+        const keys = Object.keys(aggregated).sort()
+
+        Object.keys(aggregated).sort().forEach(key => {
+            const date = new Date(key)
+            let label
+
+            if (viewMode === 'daily') {
+                const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                label = `${weekday}, ${dateStr}`
+            } else if (viewMode === 'weekly') {
+                label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            } else if (viewMode === 'monthly') {
+                label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+            } else if (viewMode === 'yearly') {
+                label = date.getFullYear().toString()
+            }
+
+            result.push({
+                name: label,
+                income: aggregated[key]
+            })
+        })
+
+        return result.slice(-12)  // Show last 12 periods max
+    }, [investments, viewMode, currentPeriod])
 
     // Group expenses by category
     const { expenseCategories, totalExpenses } = useMemo(() => {

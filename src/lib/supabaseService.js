@@ -169,12 +169,14 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
     if (!isSupabaseConfigured()) return null
 
     const orderId = generateId('ORD')
+    const invoiceNo = generateId('INV')  // Generate invoice number
 
     // Insert order (no total column - it's calculated from order_items)
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
             order_id: orderId,
+            invoice_no: invoiceNo,  // Required field
             customer_id: customerUuid,
             status: 'pending',
             payment_status: 'pending'

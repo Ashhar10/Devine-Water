@@ -160,16 +160,27 @@ export const useDataStore = create(
             },
 
             updateCustomer: async (id, data) => {
+                const customer = get().customers.find(c => c.id === id)
+                if (!customer) return
+
+                // Optimistic update
                 set(state => ({
                     customers: state.customers.map(c =>
                         c.id === id ? { ...c, ...data } : c
                     )
                 }))
 
+                // Update in database using customer UUID
                 try {
-                    await updateCustomerInDb(id, data)
+                    await updateCustomerInDb(customer.uuid, data)
                 } catch (error) {
                     console.error('Failed to update customer in DB:', error)
+                    // Rollback on error
+                    set(state => ({
+                        customers: state.customers.map(c =>
+                            c.id === id ? customer : c
+                        )
+                    }))
                 }
             },
 

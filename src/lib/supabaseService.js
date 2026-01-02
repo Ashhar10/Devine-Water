@@ -234,13 +234,13 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
     }
 }
 
-export const updateOrderStatusInDb = async (orderId, status) => {
+export const updateOrderStatusInDb = async (orderUuid, status) => {
     if (!isSupabaseConfigured()) return
 
     const { error } = await supabase
         .from('orders')
         .update({ status, updated_at: new Date().toISOString() })
-        .eq('order_id', orderId)
+        .eq('id', orderUuid)  // Use UUID column 'id' not 'order_id'
 
     if (error) handleError(error, 'update order status')
 }

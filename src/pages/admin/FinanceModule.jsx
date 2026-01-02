@@ -34,8 +34,6 @@ function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [viewMode, setViewMode] = useState('daily')
-    const [currentPeriod, setCurrentPeriod] = useState(new Date())
     const [formData, setFormData] = useState({
         category: '',
         amount: '',
@@ -61,82 +59,13 @@ function FinanceModule() {
         }
     }, [investments, expenditures])
 
-    // Generate chart data based on view mode
+    // Group income by week for chart (using recent investments)
     const incomeData = useMemo(() => {
-        const result = []
-        const now = new Date(currentPeriod)
-
-        // Determine date range based on view mode
-        let startDate = new Date(now)
-        let daysToShow = 30
-
-        if (viewMode === 'daily') {
-            startDate.setDate(now.getDate() - 29)  // Last 30 days
-            daysToShow = 30
-        } else if (viewMode === 'weekly') {
-            startDate.setDate(now.getDate() - 83)  // Last 12 weeks
-            daysToShow = 84
-        } else if (viewMode === 'monthly') {
-            startDate.setMonth(now.getMonth() - 11)  // Last 12 months
-        } else if (viewMode === 'yearly') {
-            startDate.setFullYear(now.getFullYear() - 4)  // Last 5 years
-        }
-
-        // Aggregate data by period
-        const aggregated = {}
-
-        investments.forEach(inv => {
-            if (!inv.date) return
-            const invDate = new Date(inv.date)
-            if (invDate < startDate || invDate > now) return
-
-            let key
-            if (viewMode === 'daily') {
-                key = inv.date
-            } else if (viewMode === 'weekly') {
-                // Get Monday of the week
-                const day = invDate.getDay()
-                const diff = invDate.getDate() - day + (day === 0 ? -6 : 1)
-                const monday = new Date(invDate)
-                monday.setDate(diff)
-                key = monday.toISOString().split('T')[0]
-            } else if (viewMode === 'monthly') {
-                key = `${invDate.getFullYear()}-${String(invDate.getMonth() + 1).padStart(2, '0')}-01`
-            } else if (viewMode === 'yearly') {
-                key = `${invDate.getFullYear()}-01-01`
-            }
-
-            if (!aggregated[key]) aggregated[key] = 0
-            aggregated[key] += inv.amount
-        })
-
-        // Generate labels and fill gaps
-        const keys = Object.keys(aggregated).sort()
-
-        Object.keys(aggregated).sort().forEach(key => {
-            const date = new Date(key)
-            let label
-
-            if (viewMode === 'daily') {
-                const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
-                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                label = `${weekday}, ${dateStr}`
-            } else if (viewMode === 'weekly') {
-                label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            } else if (viewMode === 'monthly') {
-                label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-            } else if (viewMode === 'yearly') {
-                label = date.getFullYear().toString()
-            }
-
-            result.push({
-                name: label,
-                income: aggregated[key]
-            })
-        })
-
-        return result.slice(-12)  // Show last 12 periods max
-    }, [investments, viewMode, currentPeriod])
+        return investments.slice(0, 4).map((t, i) => ({
+            name: `Week ${i + 1}`,
+            income: t.amount,
+        }))
+    }, [investments])
 
     // Group expenses by category
     const { expenseCategories, totalExpenses } = useMemo(() => {
@@ -168,7 +97,6 @@ function FinanceModule() {
                 investorName: formData.category || 'Water Sales',
                 investmentDetail: formData.description,
                 amount: parseFloat(formData.amount),
-                date: formData.date  // Add date field
             })
             setShowIncomeModal(false)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
@@ -189,7 +117,6 @@ function FinanceModule() {
                 category: formData.category,
                 description: formData.description,
                 amount: parseFloat(formData.amount),
-                date: formData.date  // Add date field
             })
             setShowExpenseModal(false)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
@@ -203,24 +130,6 @@ function FinanceModule() {
 
     return (
         <div className={styles.finance}>
-            {/* View Mode Controls */}
-            <div className={styles.viewControls}>
-                <div className={styles.viewModes}>
-                    {['daily', 'weekly', 'monthly', 'yearly'].map(mode => (
-                        <button
-                            key={mode}
-                            className={`${styles.viewModeBtn} ${viewMode === mode ? styles.active : ''}`}
-                            onClick={() => setViewMode(mode)}
-                        >
-                            {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                        </button>
-                    ))}
-                </div>
-                <button className={styles.todayBtn} onClick={() => setCurrentPeriod(new Date())}>
-                    Today
-                </button>
-            </div>
-
             {/* Summary Cards */}
             <section className={styles.summaryRow}>
                 <GlassCard className={styles.summaryCard} glow glowColor="income">

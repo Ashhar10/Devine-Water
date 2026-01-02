@@ -179,7 +179,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             invoice_no: invoiceNo,  // Required field
             customer_id: customerUuid,
             status: 'pending',
-            payment_status: 'pending'
+            payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })
         .select()
         .single()

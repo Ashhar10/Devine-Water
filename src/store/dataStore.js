@@ -198,7 +198,7 @@ export const useDataStore = create(
                     id: `ORD-${generateId()}`,
                     customerName: customer?.name || 'Unknown',
                     status: 'pending',
-                    paymentStatus: 'pending',
+                    paymentStatus: 'unpaid',  // Changed from 'pending' to match schema
                     createdAt: new Date().toISOString(),
                 }
 

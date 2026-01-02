@@ -9,44 +9,54 @@ import styles from './Reports.module.css'
 
 function Reports() {
     // Get real data from store
-    const waterProduction = useDataStore(state => state.waterProduction)
-    const transactions = useDataStore(state => state.transactions)
+    const orders = useDataStore(state => state.orders)
+    const investments = useDataStore(state => state.investments)
+    const expenditures = useDataStore(state => state.expenditures)
     const customers = useDataStore(state => state.customers)
 
-    // Transform water production data for chart
-    const chartData = useMemo(() => {
-        if (waterProduction.length === 0) {
-            return []
-        }
-        return waterProduction.map(wp => ({
-            name: new Date(wp.date).toLocaleString('default', { month: 'short' }),
-            water: wp.produced,
-            consumed: wp.consumed
-        }))
-    }, [waterProduction])
-
-    // Calculate revenue from transactions
+    // Calculate revenue from orders
     const revenueData = useMemo(() => {
         const monthly = {}
-        transactions.forEach(t => {
-            if (t.type === 'income') {
-                const month = new Date(t.createdAt).toLocaleString('default', { month: 'short' })
-                monthly[month] = (monthly[month] || 0) + t.amount
+        orders.forEach(order => {
+            if (order.status === 'delivered') {
+                const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
+                monthly[month] = (monthly[month] || 0) + order.total
             }
         })
         return Object.entries(monthly).map(([name, revenue]) => ({ name, revenue }))
-    }, [transactions])
+    }, [orders])
+
+    // Transform orders data for bottles chart
+    const chartData = useMemo(() => {
+        const monthly = {}
+        orders.forEach(order => {
+            const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
+            const bottles = order.items?.reduce((sum, item) => sum + item.qty, 0) || 0
+            if (!monthly[month]) {
+                monthly[month] = { delivered: 0, total: 0 }
+            }
+            monthly[month].total += bottles
+            if (order.status === 'delivered') {
+                monthly[month].delivered += bottles
+            }
+        })
+        return Object.entries(monthly).map(([name, data]) => ({
+            name,
+            bottles: data.total,
+            delivered: data.delivered
+        }))
+    }, [orders])
 
     // Calculate totals
     const totals = useMemo(() => {
-        const totalWater = waterProduction.reduce((sum, wp) => sum + wp.produced, 0)
-        const totalRevenue = transactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0)
+        const totalBottles = orders.reduce((sum, o) =>
+            sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
+        const totalRevenue = investments.reduce((sum, inv) => sum + inv.amount, 0)
+        const totalExpenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
         const activeCustomers = customers.filter(c => c.status === 'active').length
 
-        return { totalWater, totalRevenue, activeCustomers }
-    }, [waterProduction, transactions, customers])
+        return { totalBottles, totalRevenue, totalExpenses, activeCustomers }
+    }, [orders, investments, expenditures, customers])
 
     // Format numbers
     const formatNumber = (num) => {
@@ -57,8 +67,8 @@ function Reports() {
 
     const summaryStats = [
         {
-            label: 'Total Water Produced',
-            value: `${formatNumber(totals.totalWater)} L`,
+            label: 'Total Orders',
+            value: orders.length.toString(),
             icon: Droplets,
             color: 'cyan'
         },
@@ -116,11 +126,11 @@ function Reports() {
             {/* Main Chart */}
             <section className={styles.mainChart}>
                 <DataChart
-                    title="Water Production Overview"
+                    title="Orders & Delivery Overview"
                     subtitle={chartData.length > 0 ? `${chartData.length} months of data` : 'No data available'}
                     data={chartData}
                     type="area"
-                    dataKeys={['water', 'consumed']}
+                    dataKeys={['bottles', 'delivered']}
                     colors={['#00d4ff', '#00ffc8']}
                     height={350}
                     showLegend
@@ -150,8 +160,8 @@ function Reports() {
                             <span className={styles.quickValue}>{totals.activeCustomers}</span>
                         </div>
                         <div className={styles.quickStat}>
-                            <span className={styles.quickLabel}>Data Points</span>
-                            <span className={styles.quickValue}>{waterProduction.length}</span>
+                            <span className={styles.quickLabel}>Total Orders</span>
+                            <span className={styles.quickValue}>{orders.length}</span>
                         </div>
                     </div>
                 </GlassCard>

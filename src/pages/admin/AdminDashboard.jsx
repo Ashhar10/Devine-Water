@@ -20,55 +20,71 @@ function AdminDashboard() {
     // Get raw data from store - stable references
     const customers = useDataStore(state => state.customers)
     const orders = useDataStore(state => state.orders)
-    const waterProduction = useDataStore(state => state.waterProduction)
-    const transactions = useDataStore(state => state.transactions)
+    const investments = useDataStore(state => state.investments)
+    const expenditures = useDataStore(state => state.expenditures)
 
     // Compute stats with useMemo to avoid recalculation
     const stats = useMemo(() => {
         const activeCustomers = customers.filter(c => c.status === 'active').length
         const todayStr = new Date().toISOString().split('T')[0]
-        const todayOrders = orders.filter(o => o.createdAt.startsWith(todayStr)).length
+        const todayOrders = orders.filter(o => o.createdAt?.startsWith(todayStr)).length
         const pendingOrders = orders.filter(o => o.status === 'pending').length
 
-        const totalProduction = waterProduction.reduce((acc, r) => ({
-            produced: acc.produced + r.produced,
-            consumed: acc.consumed + r.consumed,
-        }), { produced: 0, consumed: 0 })
+        // Calculate total bottles from orders
+        const totalBottles = orders.reduce((sum, o) =>
+            sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
+        const deliveredBottles = orders
+            .filter(o => o.status === 'delivered')
+            .reduce((sum, o) => sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
 
-        const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
-        const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+        const income = investments.reduce((sum, inv) => sum + inv.amount, 0)
+        const expenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
 
         return {
             totalCustomers: activeCustomers,
             totalOrders: orders.length,
             pendingOrders,
             todayOrders,
-            totalWaterProduced: totalProduction.produced,
-            totalWaterConsumed: totalProduction.consumed,
+            totalBottles,
+            deliveredBottles,
             revenue: income,
             expenses: expenses,
             profit: income - expenses,
         }
-    }, [customers, orders, waterProduction, transactions])
+    }, [customers, orders, investments, expenditures])
 
-    // Transform water production data for chart
-    const waterFlowData = useMemo(() => waterProduction.map(wp => ({
-        name: new Date(wp.date).toLocaleString('default', { month: 'short' }),
-        produced: wp.produced,
-        consumed: wp.consumed,
-    })), [waterProduction])
+    // Transform orders data for bottles chart
+    const bottlesData = useMemo(() => {
+        const monthly = {}
+        orders.forEach(order => {
+            const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
+            const bottles = order.items?.reduce((sum, item) => sum + item.qty, 0) || 0
+            if (!monthly[month]) monthly[month] = { total: 0, delivered: 0 }
+            monthly[month].total += bottles
+            if (order.status === 'delivered') monthly[month].delivered += bottles
+        })
+        return Object.entries(monthly).map(([name, data]) => ({
+            name,
+            bottles: data.total,
+            delivered: data.delivered
+        }))
+    }, [orders])
 
-    // Group transactions by month for revenue chart
+    // Group investments/expenditures by month for revenue chart
     const revenueData = useMemo(() => {
         const monthly = {}
-        transactions.forEach(t => {
-            const month = new Date(t.createdAt).toLocaleString('default', { month: 'short' })
+        investments.forEach(inv => {
+            const month = new Date(inv.createdAt).toLocaleString('default', { month: 'short' })
             if (!monthly[month]) monthly[month] = { revenue: 0, expenses: 0 }
-            if (t.type === 'income') monthly[month].revenue += t.amount
-            else monthly[month].expenses += t.amount
+            monthly[month].revenue += inv.amount
+        })
+        expenditures.forEach(exp => {
+            const month = new Date(exp.createdAt).toLocaleString('default', { month: 'short' })
+            if (!monthly[month]) monthly[month] = { revenue: 0, expenses: 0 }
+            monthly[month].expenses += exp.amount
         })
         return Object.entries(monthly).map(([name, data]) => ({ name, ...data }))
-    }, [transactions])
+    }, [investments, expenditures])
 
     // Get recent orders (last 5)
     const recentOrders = useMemo(() => orders.slice(0, 5).map(order => ({
@@ -85,20 +101,18 @@ function AdminDashboard() {
             {/* KPI Cards */}
             <section className={styles.kpiGrid}>
                 <KPICard
-                    title="Total Water Produced"
-                    value={stats.totalWaterProduced}
-                    unit=" L"
-                    icon={Droplets}
+                    title="Total Orders"
+                    value={stats.totalOrders}
+                    icon={ShoppingCart}
                     trend="up"
                     trendValue={12.5}
                     color="cyan"
                     delay={0}
                 />
                 <KPICard
-                    title="Total Consumption"
-                    value={stats.totalWaterConsumed}
-                    unit=" L"
-                    icon={TrendingUp}
+                    title="Bottles Delivered"
+                    value={stats.deliveredBottles}
+                    icon={Droplets}
                     trend="up"
                     trendValue={8.2}
                     color="teal"
@@ -128,11 +142,11 @@ function AdminDashboard() {
             {/* Charts Row */}
             <section className={styles.chartsRow}>
                 <DataChart
-                    title="Water Production vs Consumption"
-                    subtitle="Monthly overview in liters"
-                    data={waterFlowData}
+                    title="Orders & Delivery"
+                    subtitle="Monthly bottles ordered vs delivered"
+                    data={bottlesData}
                     type="area"
-                    dataKeys={['produced', 'consumed']}
+                    dataKeys={['bottles', 'delivered']}
                     colors={['#00d4ff', '#00ffc8']}
                     height={280}
                     showLegend

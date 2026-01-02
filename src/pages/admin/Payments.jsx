@@ -31,6 +31,7 @@ function Payments() {
     const [showPaymentModal, setShowPaymentModal] = useState(false)
     const [filterType, setFilterType] = useState('all')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [selectedBalance, setSelectedBalance] = useState(0)
     const [formData, setFormData] = useState({
         paymentType: 'customer',
         referenceId: '',
@@ -60,6 +61,30 @@ function Payments() {
         todayCount: payments.filter(p => p.paymentDate === new Date().toISOString().split('T')[0]).length
     }), [payments])
 
+    // Calculate change amount
+    const changeAmount = useMemo(() => {
+        const amount = parseFloat(formData.amount) || 0
+        if (formData.paymentType === 'customer') {
+            // For customer payments, change = amount paid - balance owed
+            return amount > selectedBalance ? amount - selectedBalance : 0
+        }
+        return 0
+    }, [formData.amount, selectedBalance, formData.paymentType])
+
+    // Handle reference selection and auto-fill balance
+    const handleReferenceChange = (e) => {
+        const referenceId = e.target.value
+        setFormData({ ...formData, referenceId })
+
+        if (referenceId) {
+            const referenceList = formData.paymentType === 'customer' ? customers : vendors
+            const selected = referenceList.find(r => r.uuid === referenceId)
+            setSelectedBalance(selected?.currentBalance || 0)
+        } else {
+            setSelectedBalance(0)
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsSubmitting(true)
@@ -86,6 +111,7 @@ function Payments() {
             chequeNo: '',
             remarks: ''
         })
+        setSelectedBalance(0)
     }
 
     // Get reference list based on payment type
@@ -212,7 +238,7 @@ function Payments() {
                                         {payment.paymentType === 'customer' ? '+' : '-'} Rs {payment.amount.toLocaleString()}
                                     </td>
                                     <td className={styles.modeCell}>
-                                        {payment.paymentMode.replace('_', ' ')}
+                                        {payment.paymentMode ? payment.paymentMode.replace('_', ' ') : 'N/A'}
                                     </td>
                                     <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
                                     <td>
@@ -272,17 +298,27 @@ function Payments() {
                                 <label>{formData.paymentType === 'customer' ? 'Customer' : 'Vendor'} *</label>
                                 <select
                                     value={formData.referenceId}
-                                    onChange={(e) => setFormData({ ...formData, referenceId: e.target.value })}
+                                    onChange={handleReferenceChange}
                                     required
                                 >
                                     <option value="">Select {formData.paymentType}</option>
                                     {referenceList.filter(r => r.status === 'active').map(r => (
                                         <option key={r.id} value={r.uuid}>
-                                            {r.name} {r.currentBalance ? `(Balance: Rs ${r.currentBalance})` : ''}
+                                            {r.name}
                                         </option>
                                     ))}
                                 </select>
                             </div>
+
+                            {/* Current Balance Display */}
+                            {formData.referenceId && (
+                                <div className={styles.balanceDisplay}>
+                                    <div className={styles.balanceInfo}>
+                                        <span className={styles.balanceLabel}>Current Balance:</span>
+                                        <span className={styles.balanceAmount}>Rs {selectedBalance.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Amount */}
                             <div className={styles.formGroup}>
@@ -296,6 +332,29 @@ function Payments() {
                                     min="1"
                                 />
                             </div>
+
+                            {/* Change/Remaining Display for Customer Payments */}
+                            {formData.paymentType === 'customer' && formData.amount && formData.referenceId && (
+                                <div className={styles.calculationDisplay}>
+                                    {changeAmount > 0 ? (
+                                        <div className={styles.changeInfo}>
+                                            <span className={styles.changeLabel}>Change to Return:</span>
+                                            <span className={styles.changeAmount}>Rs {changeAmount.toLocaleString()}</span>
+                                        </div>
+                                    ) : parseFloat(formData.amount) < selectedBalance ? (
+                                        <div className={styles.remainingInfo}>
+                                            <span className={styles.remainingLabel}>Remaining Balance:</span>
+                                            <span className={styles.remainingAmount}>
+                                                Rs {(selectedBalance - parseFloat(formData.amount)).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className={styles.paidInfo}>
+                                            <span className={styles.paidLabel}>✓ Fully Paid</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Payment Mode */}
                             <div className={styles.formGroup}>

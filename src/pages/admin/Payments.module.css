@@ -421,6 +421,110 @@
     box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
 }
 
+/* Balance and Change Display Styles */
+.balanceDisplay {
+    padding: var(--space-md);
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 229, 160, 0.1));
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.balanceInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.balanceLabel {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.balanceAmount {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--primary-cyan);
+}
+
+.calculationDisplay {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.changeInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    background: linear-gradient(135deg, rgba(0, 229, 160, 0.15), rgba(0, 212, 255, 0.1));
+    border: 1px solid rgba(0, 229, 160, 0.4);
+    border-radius: var(--radius-md);
+}
+
+.changeLabel {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.changeAmount {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--success);
+}
+
+.remainingInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    background: linear-gradient(135deg, rgba(255, 136, 0, 0.1), rgba(255, 68, 68, 0.05));
+    border: 1px solid rgba(255, 136, 0, 0.3);
+    border-radius: var(--radius-md);
+}
+
+.remainingLabel {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.remainingAmount {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: #ff8800;
+}
+
+.paidInfo {
+    padding: var(--space-md);
+    background: linear-gradient(135deg, rgba(0, 229, 160, 0.15), rgba(0, 255, 170, 0.1));
+    border: 1px solid rgba(0, 229, 160, 0.4);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.paidLabel {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--success);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header {
@@ -429,6 +533,10 @@
     }
 
     .statsRow {
+        grid-template-columns: 1fr;
+    }
+
+    .statsGrid {
         grid-template-columns: 1fr;
     }
 

@@ -37,6 +37,7 @@ function Vendors() {
     const vendors = useDataStore(state => state.vendors)
     const addVendor = useDataStore(state => state.addVendor)
     const updateVendor = useDataStore(state => state.updateVendor)
+    const deleteVendor = useDataStore(state => state.deleteVendor)
 
     const filteredVendors = vendors.filter(v =>
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,6 +66,17 @@ function Vendors() {
             alert('Failed to save vendor. Please try again.')
         } finally {
             setIsSubmitting(false)
+        }
+    }
+
+    const handleDelete = async (vendor) => {
+        if (confirm(`Are you sure you want to delete ${vendor.name}?`)) {
+            try {
+                await deleteVendor(vendor.id)
+            } catch (error) {
+                console.error('Error deleting vendor:', error)
+                alert('Failed to delete vendor. Please try again.')
+            }
         }
     }
 
@@ -214,7 +226,7 @@ function Vendors() {
                                     <button className={styles.actionBtn} onClick={() => handleEdit(vendor)}>
                                         <Edit size={16} />
                                     </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`}>
+                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(vendor)}>
                                         <Trash size={16} />
                                     </button>
                                 </div>

@@ -209,14 +209,16 @@ function Payments() {
                     </thead>
                     <tbody>
                         {filteredPayments.map((payment, index) => {
-                            // Get customer or vendor name
-                            let referenceName = 'Unknown'
-                            if (payment.paymentType === 'customer') {
-                                const customer = customers.find(c => c.uuid === payment.referenceId)
-                                referenceName = customer?.name || 'Unknown Customer'
-                            } else {
-                                const vendor = vendors.find(v => v.uuid === payment.referenceId)
-                                referenceName = vendor?.name || 'Unknown Vendor'
+                            // Use referenceName if available, otherwise lookup
+                            let referenceName = payment.referenceName
+                            if (!referenceName || referenceName === 'Unknown') {
+                                if (payment.paymentType === 'customer') {
+                                    const customer = customers.find(c => c.uuid === payment.referenceId)
+                                    referenceName = customer?.name || 'Unknown Customer'
+                                } else {
+                                    const vendor = vendors.find(v => v.uuid === payment.referenceId)
+                                    referenceName = vendor?.name || 'Unknown Vendor'
+                                }
                             }
 
                             return (

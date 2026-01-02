@@ -770,9 +770,20 @@ export const useDataStore = create(
             },
 
             addPayment: async (data) => {
+                // Lookup reference name before adding
+                let referenceName = 'Unknown'
+                if (data.paymentType === 'customer') {
+                    const customer = get().customers.find(c => c.uuid === data.referenceId)
+                    referenceName = customer?.name || 'Unknown Customer'
+                } else if (data.paymentType === 'vendor') {
+                    const vendor = get().vendors.find(v => v.uuid === data.referenceId)
+                    referenceName = vendor?.name || 'Unknown Vendor'
+                }
+
                 const newPayment = {
                     ...data,
                     id: `PAY-${generateId()}`,
+                    referenceName: referenceName,  // Add name for display
                     status: 'completed',
                     paymentDate: data.paymentDate || new Date().toISOString().split('T')[0],
                     createdAt: new Date().toISOString(),
@@ -784,9 +795,12 @@ export const useDataStore = create(
                 try {
                     const dbPayment = await addPaymentToDb(data)
                     if (dbPayment) {
+                        // Merge DB payment with reference name
+                        const fullPayment = { ...dbPayment, referenceName }
+
                         set(state => ({
                             payments: state.payments.map(p =>
-                                p.id === newPayment.id ? dbPayment : p
+                                p.id === newPayment.id ? fullPayment : p
                             )
                         }))
 
@@ -807,7 +821,7 @@ export const useDataStore = create(
                             }
                         }
 
-                        return dbPayment
+                        return fullPayment
                     }
                 } catch (error) {
                     console.error('Failed to add payment to DB:', error)

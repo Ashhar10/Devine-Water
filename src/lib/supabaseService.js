@@ -1063,7 +1063,16 @@ export const addPaymentToDb = async (paymentData) => {
     return {
         id: data.payment_id,
         uuid: data.id,
-        amount: parseFloat(data.amount)
+        paymentType: data.payment_type,
+        referenceId: data.reference_id,
+        amount: parseFloat(data.amount),
+        paymentMode: data.payment_mode,
+        paymentDate: data.payment_date,
+        bankId: data.bank_id,
+        chequeNo: data.cheque_no,
+        remarks: data.remarks,
+        status: data.status,
+        createdAt: data.created_at
     }
 }
 

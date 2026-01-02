@@ -250,17 +250,32 @@ export const useDataStore = create(
                 return newOrder
             },
 
-            updateOrderStatus: async (id, status) => {
+            updateOrderStatus: async (orderId, newStatus) => {
+                const order = get().orders.find(o => o.id === orderId)
+                if (!order) return
+
+                // Update order status locally
                 set(state => ({
                     orders: state.orders.map(o =>
-                        o.id === id ? { ...o, status } : o
+                        o.id === orderId ? { ...o, status: newStatus } : o
                     )
                 }))
 
+                // If delivered, add order total to customer's current balance
+                if (newStatus === 'delivered' && order.customerId) {
+                    const customer = get().customers.find(c => c.id === order.customerId)
+                    if (customer) {
+                        get().updateCustomer(order.customerId, {
+                            currentBalance: (customer.currentBalance || 0) + order.total
+                        })
+                    }
+                }
+
+                // Update in database
                 try {
-                    await updateOrderStatusInDb(id, status)
+                    await updateOrderStatusInDb(order.uuid, newStatus)
                 } catch (error) {
-                    console.error('Failed to update order status in DB:', error)
+                    console.error('Failed to update order status:', error)
                 }
             },
 

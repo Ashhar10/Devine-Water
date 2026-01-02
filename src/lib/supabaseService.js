@@ -85,25 +85,31 @@ export const addCustomerToDb = async (customerData) => {
     }
 }
 
-export const updateCustomerInDb = async (customerId, updates) => {
-    if (!isSupabaseConfigured()) return
+export const updateCustomerInDb = async (customerUuid, updates) => {
+    if (!isSupabaseConfigured()) return null
 
-    const dbUpdates = {}
-    if (updates.name) dbUpdates.name = updates.name
-    if (updates.email !== undefined) dbUpdates.email = updates.email
-    if (updates.phone) dbUpdates.phone = updates.phone
-    if (updates.address) dbUpdates.address = updates.address
-    if (updates.status) dbUpdates.status = updates.status
-    if (updates.totalOrders !== undefined) dbUpdates.total_orders = updates.totalOrders
-    if (updates.totalSpent !== undefined) dbUpdates.total_spent = updates.totalSpent
-    dbUpdates.updated_at = new Date().toISOString()
+    const dbUpdates = {
+        ...(updates.name && { name: updates.name }),
+        ...(updates.phone && { phone: updates.phone }),
+        ...(updates.email !== undefined && { email: updates.email }),
+        ...(updates.address && { address: updates.address }),
+        ...(updates.status && { status: updates.status }),
+        ...(updates.totalOrders !== undefined && { total_orders: updates.totalOrders }),
+        ...(updates.totalSpent !== undefined && { total_spent: updates.totalSpent }),
+        ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
+        updated_at: new Date().toISOString()
+    }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('customers')
         .update(dbUpdates)
-        .eq('customer_id', customerId)
+        .eq('id', customerUuid)
+        .select()
+        .single()
 
     if (error) handleError(error, 'update customer')
+
+    return data
 }
 
 export const deleteCustomerFromDb = async (customerId) => {

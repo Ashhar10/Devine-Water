@@ -346,6 +346,15 @@ function Customers() {
                                         <span className={styles.statText}>Total Spent</span>
                                     </div>
                                 </div>
+                                <div className={styles.stat}>
+                                    <Wallet size={16} className={styles.statIcon} />
+                                    <div>
+                                        <span className={`${styles.statNumber} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
+                                            {customer.currentBalance?.toLocaleString() || 0}
+                                        </span>
+                                        <span className={styles.statText}>Balance</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className={styles.cardFooter}>

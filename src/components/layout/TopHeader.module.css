@@ -170,49 +170,6 @@
     font-size: var(--text-sm);
 }
 
-/* Profile Dropdown */
-.profileWrapper {
-    position: relative;
-}
-
-.chevronUp {
-    transform: rotate(180deg);
-    transition: transform var(--transition-fast);
-}
-
-.dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 160px;
-    background: var(--bg-surface);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
-    z-index: var(--z-dropdown);
-}
-
-.dropdownItem {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-md);
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    text-align: left;
-}
-
-.dropdownItem:hover {
-    background: var(--glass-bg-hover);
-    color: var(--error);
-}
-
 /* Responsive */
 @media (max-width: 1024px) {
     .menuBtn {

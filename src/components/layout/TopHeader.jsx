@@ -2,16 +2,20 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Bell, User, Menu, LogOut, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/authStore'
+import { useDataStore } from '../../store/dataStore'
 import styles from './TopHeader.module.css'
 
 function TopHeader({ title, subtitle, onMenuClick }) {
     const [showDropdown, setShowDropdown] = useState(false)
     const navigate = useNavigate()
-    const logout = useAuthStore(state => state.logout)
+    const setCurrentUser = useDataStore(state => state.setCurrentUser)
 
     const handleLogout = () => {
-        logout()
+        // Clear user from store
+        setCurrentUser(null)
+        // Clear localStorage
+        localStorage.removeItem('currentUser')
+        // Navigate to login
         navigate('/login')
     }
 

@@ -36,12 +36,19 @@ export const fetchCustomers = async () => {
         phone: c.phone,
         address: c.address || '',
         email: c.email || '',
-        area: c.area_id || '',
+        areaId: c.area_id || '',
+        deliveryDays: c.delivery_days || [],
+        requiredBottles: c.required_bottles || 1,
+        securityDeposit: parseFloat(c.security_deposit) || 0,
+        securityRemarks: c.security_remarks || '',
+        openingBottles: parseInt(c.opening_bottles) || 0,
         status: c.status,
         totalOrders: parseInt(c.total_orders) || 0,
         totalSpent: parseFloat(c.total_spent) || 0,
-        currentBalance: parseFloat(c.current_balance) || 0,  // Add current balance
-        createdAt: c.created_at
+        currentBalance: parseFloat(c.current_balance) || 0,
+        latitude: c.latitude ? parseFloat(c.latitude) : null,
+        longitude: c.longitude ? parseFloat(c.longitude) : null,
+        createdAt: c.created_at?.split('T')[0]
     })) || []
 }
 
@@ -60,6 +67,13 @@ export const addCustomerToDb = async (customerData) => {
             address: customerData.address,
             latitude: customerData.latitude || null,
             longitude: customerData.longitude || null,
+            area_id: customerData.areaId || null,
+            delivery_days: customerData.deliveryDays || [],
+            required_bottles: customerData.requiredBottles || 1,
+            security_deposit: customerData.securityDeposit || 0,
+            security_remarks: customerData.securityRemarks || null,
+            opening_bottles: customerData.openingBottles || 0,
+            current_balance: customerData.openingBalance || 0,
             status: 'active',
             total_orders: 0,
             total_spent: 0
@@ -78,9 +92,16 @@ export const addCustomerToDb = async (customerData) => {
         address: data.address,
         latitude: data.latitude ? parseFloat(data.latitude) : null,
         longitude: data.longitude ? parseFloat(data.longitude) : null,
+        areaId: data.area_id,
+        deliveryDays: data.delivery_days || [],
+        requiredBottles: data.required_bottles,
+        securityDeposit: parseFloat(data.security_deposit),
+        securityRemarks: data.security_remarks,
+        openingBottles: data.opening_bottles,
         status: data.status,
         totalOrders: data.total_orders,
         totalSpent: parseFloat(data.total_spent),
+        currentBalance: parseFloat(data.current_balance),
         createdAt: data.created_at?.split('T')[0]
     }
 }
@@ -89,16 +110,25 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
     if (!isSupabaseConfigured()) return null
 
     const dbUpdates = {
-        ...(updates.name && { name: updates.name }),
-        ...(updates.phone && { phone: updates.phone }),
-        ...(updates.email !== undefined && { email: updates.email }),
-        ...(updates.address && { address: updates.address }),
-        ...(updates.status && { status: updates.status }),
-        ...(updates.totalOrders !== undefined && { total_orders: updates.totalOrders }),
-        ...(updates.totalSpent !== undefined && { total_spent: updates.totalSpent }),
-        ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
         updated_at: new Date().toISOString()
     }
+
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.phone) dbUpdates.phone = updates.phone
+    if (updates.email !== undefined) dbUpdates.email = updates.email
+    if (updates.address) dbUpdates.address = updates.address
+    if (updates.latitude !== undefined) dbUpdates.latitude = updates.latitude
+    if (updates.longitude !== undefined) dbUpdates.longitude = updates.longitude
+    if (updates.areaId !== undefined) dbUpdates.area_id = updates.areaId
+    if (updates.deliveryDays) dbUpdates.delivery_days = updates.deliveryDays
+    if (updates.requiredBottles !== undefined) dbUpdates.required_bottles = updates.requiredBottles
+    if (updates.securityDeposit !== undefined) dbUpdates.security_deposit = updates.securityDeposit
+    if (updates.securityRemarks !== undefined) dbUpdates.security_remarks = updates.securityRemarks
+    if (updates.openingBottles !== undefined) dbUpdates.opening_bottles = updates.openingBottles
+    if (updates.status) dbUpdates.status = updates.status
+    if (updates.totalOrders !== undefined) dbUpdates.total_orders = updates.totalOrders
+    if (updates.totalSpent !== undefined) dbUpdates.total_spent = updates.totalSpent
+    if (updates.currentBalance !== undefined) dbUpdates.current_balance = updates.currentBalance
 
     const { data, error } = await supabase
         .from('customers')
@@ -109,7 +139,27 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
 
     if (error) handleError(error, 'update customer')
 
-    return data
+    return {
+        id: data.customer_id,
+        uuid: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        latitude: data.latitude ? parseFloat(data.latitude) : null,
+        longitude: data.longitude ? parseFloat(data.longitude) : null,
+        areaId: data.area_id,
+        deliveryDays: data.delivery_days || [],
+        requiredBottles: data.required_bottles,
+        securityDeposit: parseFloat(data.security_deposit),
+        securityRemarks: data.security_remarks,
+        openingBottles: data.opening_bottles,
+        status: data.status,
+        totalOrders: data.total_orders,
+        totalSpent: parseFloat(data.total_spent),
+        currentBalance: parseFloat(data.current_balance),
+        createdAt: data.created_at?.split('T')[0]
+    }
 }
 
 export const deleteCustomerFromDb = async (customerId) => {

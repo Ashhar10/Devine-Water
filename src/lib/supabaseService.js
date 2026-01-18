@@ -36,13 +36,17 @@ export const fetchCustomers = async () => {
         phone: c.phone,
         address: c.address || '',
         email: c.email || '',
-        area: c.area_id || '',
+        area: c.area_id || '', // Keep existing 'area' field for backward compatibility if needed
+        areaId: c.area_id || '', // Add new 'areaId' field
         status: c.status,
         totalOrders: parseInt(c.total_orders) || 0,
         totalSpent: parseFloat(c.total_spent) || 0,
-        totalSpent: parseFloat(c.total_spent) || 0,
         currentBalance: parseFloat(c.current_balance) || 0,
         deliveryDays: c.delivery_days || [],
+        requiredBottles: parseInt(c.required_bottles) || 1,
+        securityDeposit: parseFloat(c.security_deposit) || 0,
+        securityRemarks: c.security_remarks || '',
+        openingBottles: parseInt(c.opening_bottles) || 0,
         createdAt: c.created_at
     })) || []
 }
@@ -64,6 +68,11 @@ export const addCustomerToDb = async (customerData) => {
             longitude: customerData.longitude || null,
             status: 'active',
             delivery_days: customerData.deliveryDays || [],
+            area_id: customerData.areaId || null,
+            required_bottles: customerData.requiredBottles || 1,
+            security_deposit: customerData.securityDeposit || 0,
+            security_remarks: customerData.securityRemarks || null,
+            opening_bottles: customerData.openingBottles || 0,
             total_orders: 0,
             total_spent: 0
         })
@@ -85,6 +94,11 @@ export const addCustomerToDb = async (customerData) => {
         totalOrders: data.total_orders,
         totalSpent: parseFloat(data.total_spent),
         deliveryDays: data.delivery_days || [],
+        areaId: data.area_id,
+        requiredBottles: data.required_bottles,
+        securityDeposit: parseFloat(data.security_deposit),
+        securityRemarks: data.security_remarks,
+        openingBottles: data.opening_bottles,
         createdAt: data.created_at?.split('T')[0]
     }
 }
@@ -103,6 +117,11 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         ...(updates.totalSpent !== undefined && { total_spent: updates.totalSpent }),
         ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
         ...(updates.deliveryDays && { delivery_days: updates.deliveryDays }),
+        ...(updates.areaId !== undefined && { area_id: updates.areaId }),
+        ...(updates.requiredBottles !== undefined && { required_bottles: updates.requiredBottles }),
+        ...(updates.securityDeposit !== undefined && { security_deposit: updates.securityDeposit }),
+        ...(updates.securityRemarks !== undefined && { security_remarks: updates.securityRemarks }),
+        ...(updates.openingBottles !== undefined && { opening_bottles: updates.openingBottles }),
         updated_at: new Date().toISOString()
     }
 

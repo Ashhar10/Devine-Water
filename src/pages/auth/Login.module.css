@@ -252,6 +252,18 @@
     color: var(--text-muted);
 }
 
+
+
+/* Fix for browser autofill background */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s;
+    background-color: transparent !important;
+}
+
 .submitBtn {
     width: 100%;
     margin-top: 8px;

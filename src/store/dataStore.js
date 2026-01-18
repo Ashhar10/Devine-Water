@@ -23,8 +23,6 @@ import {
     deleteVendorFromDb,
     addPaymentToDb,
     addInvestmentToDb,
-    addPaymentToDb,
-    addInvestmentToDb,
     addExpenditureToDb,
     fetchPayments,
     fetchInvestments,

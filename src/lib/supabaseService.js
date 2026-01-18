@@ -57,6 +57,8 @@ export const addCustomerToDb = async (customerData) => {
 
     const customerId = generateId('CUS')
 
+    console.log('Adding customer to DB:', customerData)
+
     const { data, error } = await supabase
         .from('customers')
         .insert({
@@ -112,15 +114,16 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
 
     const dbUpdates = {
         ...(updates.name && { name: updates.name }),
-        ...(updates.phone && { phone: updates.phone }),
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.phone !== undefined && { phone: updates.phone }),
         ...(updates.email !== undefined && { email: updates.email }),
-        ...(updates.address && { address: updates.address }),
-        ...(updates.status && { status: updates.status }),
+        ...(updates.address !== undefined && { address: updates.address }),
+        ...(updates.status !== undefined && { status: updates.status }),
         ...(updates.totalOrders !== undefined && { total_orders: updates.totalOrders }),
         ...(updates.totalSpent !== undefined && { total_spent: updates.totalSpent }),
-        ...(updates.totalSpent !== undefined && { total_spent: updates.totalSpent }),
         ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
-        ...(updates.deliveryDays && { delivery_days: updates.deliveryDays }),
+        // FIXED: Always include these fields even if empty
+        ...(updates.deliveryDays !== undefined && { delivery_days: updates.deliveryDays }),
         ...(updates.areaId !== undefined && { area_id: updates.areaId }),
         ...(updates.requiredBottles !== undefined && { required_bottles: updates.requiredBottles }),
         ...(updates.securityDeposit !== undefined && { security_deposit: updates.securityDeposit }),

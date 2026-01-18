@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Droplets, User, Lock, LogIn } from 'lucide-react'
+import { Droplets, User, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 import { loginUser } from '../../lib/supabaseService'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -14,6 +14,7 @@ function Login() {
 
     const [identifier, setIdentifier] = useState('') // Can be email or phone
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -95,13 +96,21 @@ function Login() {
                         <div className={styles.inputGroup}>
                             <Lock size={18} className={styles.inputIcon} />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={styles.input}
+                                className={`${styles.input} ${styles.passwordInput}`}
                                 required
                             />
+                            <button
+                                type="button"
+                                className={styles.passwordToggle}
+                                onClick={() => setShowPassword(!showPassword)}
+                                tabIndex="-1"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
 
                         <Button

@@ -178,7 +178,9 @@ export const useDataStore = create(
 
                 // Update in database using customer UUID
                 try {
+                    console.log('Updating customer in DB:', customer.uuid, data)
                     await updateCustomerInDb(customer.uuid, data)
+                    console.log('Customer updated successfully')
                 } catch (error) {
                     console.error('Failed to update customer in DB:', error)
                     // Rollback on error
@@ -663,14 +665,18 @@ export const useDataStore = create(
 
                 // Database persistence
                 try {
+                    console.log('Adding product to DB:', data)
                     const dbProduct = await addProductToDb(data)
                     if (dbProduct) {
+                        console.log('Product added successfully:', dbProduct)
                         set(state => ({
                             products: state.products.map(p =>
                                 p.id === newProduct.id ? dbProduct : p
                             )
                         }))
                         return dbProduct
+                    } else {
+                        console.warn('addProductToDb returned null/undefined')
                     }
                 } catch (error) {
                     console.error('Failed to add product to DB:', error)
@@ -681,6 +687,11 @@ export const useDataStore = create(
 
             updateProduct: async (id, data) => {
                 const product = get().products.find(p => p.id === id) // Get product first
+                if (!product) {
+                    console.error('Product not found for update:', id)
+                    return
+                }
+
                 set(state => ({
                     products: state.products.map(p =>
                         p.id === id ? { ...p, ...data } : p
@@ -689,21 +700,30 @@ export const useDataStore = create(
 
                 // Database persistence
                 try {
+                    console.log('Updating product in DB:', product.uuid, data)
                     await updateProductInDb(product.uuid, data)
+                    console.log('Product updated successfully')
                 } catch (error) {
                     console.error('Failed to update product in DB:', error)
                 }
             },
 
             deleteProduct: async (id) => {
-                const product = get().products.find(p => p.id === id) // Get product first
+                const product = get().products.find(p => p.id === id)
+                if (!product) {
+                    console.error('Product not found for delete:', id)
+                    return
+                }
+
                 set(state => ({
                     products: state.products.filter(p => p.id !== id)
                 }))
 
                 // Database persistence
                 try {
+                    console.log('Deleting product from DB:', product.uuid)
                     await deleteProductFromDb(product.uuid)
+                    console.log('Product deleted successfully')
                 } catch (error) {
                     console.error('Failed to delete product from DB:', error)
                 }

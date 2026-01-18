@@ -7,7 +7,9 @@ import {
     FileText,
     Download,
     X,
-    Check
+    Check,
+    Trash2,
+    Edit
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -19,6 +21,8 @@ function OrdersBilling() {
     const [expandedOrder, setExpandedOrder] = useState(null)
     const [filterStatus, setFilterStatus] = useState('all')
     const [showNewOrderModal, setShowNewOrderModal] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editingOrderId, setEditingOrderId] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [newOrder, setNewOrder] = useState({
         customerId: '',
@@ -36,6 +40,8 @@ function OrdersBilling() {
     const products = useDataStore(state => state.products)
     const users = useDataStore(state => state.users)
     const addOrder = useDataStore(state => state.addOrder)
+    const updateOrder = useDataStore(state => state.updateOrder)
+    const deleteOrder = useDataStore(state => state.deleteOrder)
     const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
     const updateOrderPayment = useDataStore(state => state.updateOrderPayment)
 
@@ -65,25 +71,135 @@ function OrdersBilling() {
         const subtotal = parseInt(newOrder.quantity) * product.price
         const total = subtotal - (parseFloat(newOrder.discount) || 0)
 
-        addOrder({
-            customerId: newOrder.customerId,        // Local ID for store lookup
-            customerUuid: customer.uuid,             // UUID for Supabase
-            salesmanId: newOrder.salesmanId || null,
-            orderDate: newOrder.orderDate,           // Order date
-            items: [{
-                name: product.name,
-                productId: product.uuid,  // Use UUID instead of local ID
-                qty: parseInt(newOrder.quantity),
-                returnQty: parseInt(newOrder.returnQuantity) || 0,
-                price: product.price
-            }],
-            total: total,
-            discount: parseFloat(newOrder.discount) || 0,
-            notes: newOrder.notes
-        })
+        if (isEditing && editingOrderId) {
+            updateOrder(editingOrderId, {
+                customerId: newOrder.customerId,
+                salesmanId: newOrder.salesmanId || null,
+                orderDate: newOrder.orderDate,
+                items: [{
+                    name: product.name,
+                    productId: product.uuid,
+                    qty: parseInt(newOrder.quantity),
+                    returnQty: parseInt(newOrder.returnQuantity) || 0,
+                    price: product.price
+                }],
+                total: total,
+                discount: parseFloat(newOrder.discount) || 0,
+                notes: newOrder.notes
+            })
+            setIsEditing(false)
+            setEditingOrderId(null)
+        } else {
+            addOrder({
+                customerId: newOrder.customerId,        // Local ID for store lookup
+                customerUuid: customer.uuid,             // UUID for Supabase
+                salesmanId: newOrder.salesmanId || null,
+                orderDate: newOrder.orderDate,           // Order date
+                items: [{
+                    name: product.name,
+                    productId: product.uuid,  // Use UUID instead of local ID (fixed comment)
+                    qty: parseInt(newOrder.quantity),
+                    returnQty: parseInt(newOrder.returnQuantity) || 0,
+                    price: product.price
+                }],
+                total: total,
+                discount: parseFloat(newOrder.discount) || 0,
+                notes: newOrder.notes
+            })
+        }
 
         setShowNewOrderModal(false)
         setNewOrder({ customerId: '', productId: '', quantity: 1, returnQuantity: 0, salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
+    }
+
+    const handleDeleteOrder = (e, orderId) => {
+        e.stopPropagation()
+        if (window.confirm('Are you sure you want to delete this order?')) {
+            deleteOrder(orderId)
+        }
+    }
+
+    const handleEditOrder = (e, order) => {
+        e.stopPropagation()
+        setIsEditing(true)
+        setEditingOrderId(order.id)
+
+        // Populate form (simplified for single item orders as per current logic)
+        // Find product ID based on name or UUID if available in items
+        const item = order.items[0]
+        const product = products.find(p => p.uuid === item.productId) || products.find(p => p.name === item.name)
+
+        setNewOrder({
+            customerId: order.customerId,
+            productId: product?.id || '',
+            quantity: item?.qty || 1,
+            returnQuantity: item?.returnQty || 0,
+            salesmanId: order.salesmanId || '',
+            discount: order.discount || 0,
+            notes: order.notes || '',
+            orderDate: order.orderDate || order.createdAt.split('T')[0]
+        })
+        setShowNewOrderModal(true)
+    }
+
+    const handleViewInvoice = (e, order) => {
+        e.stopPropagation()
+        // Simple print window for now
+        const printWindow = window.open('', '_blank')
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Invoice #${order.id}</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Devine Water</h1>
+                        <h2>Invoice</h2>
+                        <p>Order ID: ${order.id}</p>
+                        <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                        <p><strong>Customer:</strong> ${order.customerName}</p>
+                        <p><strong>Status:</strong> ${order.status} / ${order.paymentStatus}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.qty}</td>
+                                    <td>Rs ${item.price}</td>
+                                    <td>Rs ${(item.price * item.qty).toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot>
+                             <tr>
+                                <td colspan="3" style="text-align:right"><strong>Total:</strong></td>
+                                <td><strong>Rs ${order.total.toLocaleString()}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </body>
+            </html>
+        `)
+        printWindow.document.close()
+        printWindow.print()
     }
 
     const handleStatusChange = (orderId, newStatus) => {
@@ -200,8 +316,25 @@ function OrdersBilling() {
                                             </div>
                                         </div>
                                         <div className={styles.detailActions}>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                icon={FileText}
+                                                onClick={(e) => handleViewInvoice(e, order)}
+                                            >
+                                                View Invoice
+                                            </Button>
+
                                             {order.status !== 'delivered' && order.status !== 'cancelled' && (
                                                 <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        icon={Edit}
+                                                        onClick={(e) => handleEditOrder(e, order)}
+                                                    >
+                                                        Edit
+                                                    </Button>
                                                     <Button
                                                         variant="success"
                                                         size="sm"
@@ -221,8 +354,14 @@ function OrdersBilling() {
                                                     )}
                                                 </>
                                             )}
-                                            <Button variant="ghost" size="sm" icon={FileText}>
-                                                View Invoice
+
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                icon={Trash2}
+                                                onClick={(e) => handleDeleteOrder(e, order.id)}
+                                            >
+                                                Delete
                                             </Button>
                                         </div>
                                     </motion.div>
@@ -238,7 +377,7 @@ function OrdersBilling() {
                 <div className={styles.modalOverlay} onClick={() => setShowNewOrderModal(false)}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>Create New Order</h3>
+                            <h3>{isEditing ? 'Edit Order' : 'Create New Order'}</h3>
                             <button className={styles.closeBtn} onClick={() => setShowNewOrderModal(false)}>
                                 <X size={20} />
                             </button>
@@ -357,7 +496,7 @@ function OrdersBilling() {
                             </div>
 
                             <Button type="submit" variant="primary" fullWidth>
-                                Create Order
+                                {isEditing ? 'Update Order' : 'Create Order'}
                             </Button>
                         </form>
                     </GlassCard>

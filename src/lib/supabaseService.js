@@ -256,6 +256,45 @@ export const updateOrderPaymentInDb = async (orderId, paymentStatus) => {
     if (error) handleError(error, 'update order payment')
 }
 
+export const updateOrderInDb = async (orderUuid, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = {
+        updated_at: new Date().toISOString()
+    }
+
+    if (updates.status) dbUpdates.status = updates.status
+    if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
+    if (updates.orderDate) dbUpdates.order_date = updates.orderDate
+    if (updates.customerId) dbUpdates.customer_id = updates.customerId
+    if (updates.salesmanId) dbUpdates.salesman_id = updates.salesmanId
+
+    // Handle order items update separately if needed
+    // For now, complicated updates might require deleting and re-inserting items
+    // ignoring item updates here for simplicity or handling later
+
+    const { error } = await supabase
+        .from('orders')
+        .update(dbUpdates)
+        .eq('id', orderUuid)
+
+    if (error) handleError(error, 'update order')
+}
+
+export const deleteOrderFromDb = async (orderUuid) => {
+    if (!isSupabaseConfigured()) return
+
+    // Items should cascade delete if foreign keys are set up correctly
+    // Otherwise delete items first
+
+    const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderUuid)
+
+    if (error) handleError(error, 'delete order')
+}
+
 // =====================================================
 // TRANSACTIONS (optional - uses payments table if exists)
 // =====================================================

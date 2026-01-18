@@ -23,10 +23,14 @@ import {
     deleteVendorFromDb,
     addPaymentToDb,
     addInvestmentToDb,
+    addPaymentToDb,
+    addInvestmentToDb,
     addExpenditureToDb,
     fetchPayments,
     fetchInvestments,
-    fetchExpenditures
+    fetchExpenditures,
+    deleteOrderFromDb,
+    updateOrderInDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -301,6 +305,36 @@ export const useDataStore = create(
                     await updateOrderPaymentInDb(id, paymentStatus)
                 } catch (error) {
                     console.error('Failed to update order payment in DB:', error)
+                }
+            },
+
+            updateOrder: async (id, updates) => {
+                const order = get().orders.find(o => o.id === id)
+
+                set(state => ({
+                    orders: state.orders.map(o =>
+                        o.id === id ? { ...o, ...updates } : o
+                    )
+                }))
+
+                try {
+                    await updateOrderInDb(order.uuid, updates)
+                } catch (error) {
+                    console.error('Failed to update order in DB:', error)
+                }
+            },
+
+            deleteOrder: async (id) => {
+                const order = get().orders.find(o => o.id === id)
+
+                set(state => ({
+                    orders: state.orders.filter(o => o.id !== id)
+                }))
+
+                try {
+                    await deleteOrderFromDb(order.uuid)
+                } catch (error) {
+                    console.error('Failed to delete order from DB:', error)
                 }
             },
 

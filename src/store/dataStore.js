@@ -28,7 +28,11 @@ import {
     fetchInvestments,
     fetchExpenditures,
     deleteOrderFromDb,
-    updateOrderInDb
+    updateOrderInDb,
+    addProductToDb,
+    updateProductInDb,
+    deleteProductFromDb,
+    addStockMovement
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -657,50 +661,52 @@ export const useDataStore = create(
                 // Optimistic update
                 set(state => ({ products: [...state.products, newProduct] }))
 
-                // TODO: Add database persistence when product table is created
-                // try {
-                //     const dbProduct = await addProductToDb(data)
-                //     if (dbProduct) {
-                //         set(state => ({
-                //             products: state.products.map(p =>
-                //                 p.id === newProduct.id ? dbProduct : p
-                //             )
-                //         }))
-                //         return dbProduct
-                //     }
-                // } catch (error) {
-                //     console.error('Failed to add product to DB:', error)
-                // }
+                // Database persistence
+                try {
+                    const dbProduct = await addProductToDb(data)
+                    if (dbProduct) {
+                        set(state => ({
+                            products: state.products.map(p =>
+                                p.id === newProduct.id ? dbProduct : p
+                            )
+                        }))
+                        return dbProduct
+                    }
+                } catch (error) {
+                    console.error('Failed to add product to DB:', error)
+                }
 
                 return newProduct
             },
 
             updateProduct: async (id, data) => {
+                const product = get().products.find(p => p.id === id) // Get product first
                 set(state => ({
                     products: state.products.map(p =>
                         p.id === id ? { ...p, ...data } : p
                     )
                 }))
 
-                // TODO: Add database persistence when product table is created
-                // try {
-                //     await updateProductInDb(id, data)
-                // } catch (error) {
-                //     console.error('Failed to update product in DB:', error)
-                // }
+                // Database persistence
+                try {
+                    await updateProductInDb(product.uuid, data)
+                } catch (error) {
+                    console.error('Failed to update product in DB:', error)
+                }
             },
 
             deleteProduct: async (id) => {
+                const product = get().products.find(p => p.id === id) // Get product first
                 set(state => ({
                     products: state.products.filter(p => p.id !== id)
                 }))
 
-                // TODO: Add database persistence when product table is created
-                // try {
-                //     await deleteProductFromDb(id)
-                // } catch (error) {
-                //     console.error('Failed to delete product from DB:', error)
-                // }
+                // Database persistence
+                try {
+                    await deleteProductFromDb(product.uuid)
+                } catch (error) {
+                    console.error('Failed to delete product from DB:', error)
+                }
             },
 
             updateProductStock: async (id, quantity, type, remarks = '') => {
@@ -723,13 +729,17 @@ export const useDataStore = create(
                     )
                 }))
 
-                // TODO: Add stock movement logging and database persistence
-                // try {
-                //     await updateProductStockInDb(id, newStock)
-                //     await addStockMovementToDb({ productId: id, quantity, type, remarks })
-                // } catch (error) {
-                //     console.error('Failed to update stock in DB:', error)
-                // }
+                // Stock movement logging and database persistence
+                try {
+                    await addStockMovement({
+                        productUuid: product.uuid,
+                        quantity,
+                        movementType: type,
+                        remarks
+                    })
+                } catch (error) {
+                    console.error('Failed to update stock in DB:', error)
+                }
             },
 
             // ===== VENDOR MANAGEMENT ACTIONS =====

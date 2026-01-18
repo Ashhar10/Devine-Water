@@ -36,8 +36,8 @@ export const fetchCustomers = async () => {
         phone: c.phone,
         address: c.address || '',
         email: c.email || '',
-        area: c.area_id || '', // Keep existing 'area' field for backward compatibility if needed
-        areaId: c.area_id || '', // Add new 'areaId' field
+        area: c.area_id || '',
+        areaId: c.area_id || '',
         status: c.status,
         totalOrders: parseInt(c.total_orders) || 0,
         totalSpent: parseFloat(c.total_spent) || 0,
@@ -47,6 +47,7 @@ export const fetchCustomers = async () => {
         securityDeposit: parseFloat(c.security_deposit) || 0,
         securityRemarks: c.security_remarks || '',
         openingBottles: parseInt(c.opening_bottles) || 0,
+        openingBalance: parseFloat(c.opening_balance) || 0,
         createdAt: c.created_at
     })) || []
 }
@@ -73,6 +74,8 @@ export const addCustomerToDb = async (customerData) => {
             security_deposit: customerData.securityDeposit || 0,
             security_remarks: customerData.securityRemarks || null,
             opening_bottles: customerData.openingBottles || 0,
+            opening_balance: customerData.openingBalance || 0,
+            current_balance: customerData.openingBalance || 0,
             total_orders: 0,
             total_spent: 0
         })
@@ -99,6 +102,7 @@ export const addCustomerToDb = async (customerData) => {
         securityDeposit: parseFloat(data.security_deposit),
         securityRemarks: data.security_remarks,
         openingBottles: data.opening_bottles,
+        openingBalance: parseFloat(data.opening_balance),
         createdAt: data.created_at?.split('T')[0]
     }
 }
@@ -122,6 +126,7 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         ...(updates.securityDeposit !== undefined && { security_deposit: updates.securityDeposit }),
         ...(updates.securityRemarks !== undefined && { security_remarks: updates.securityRemarks }),
         ...(updates.openingBottles !== undefined && { opening_bottles: updates.openingBottles }),
+        ...(updates.openingBalance !== undefined && { opening_balance: updates.openingBalance }),
         updated_at: new Date().toISOString()
     }
 

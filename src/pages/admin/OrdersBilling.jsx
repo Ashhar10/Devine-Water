@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Search,
     Plus,
+    AlertTriangle,
     ChevronDown,
     FileText,
     Download,
@@ -23,6 +24,7 @@ function OrdersBilling() {
     const [showNewOrderModal, setShowNewOrderModal] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [editingOrderId, setEditingOrderId] = useState(null)
+    const [orderToDelete, setOrderToDelete] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [newOrder, setNewOrder] = useState({
         customerId: '',
@@ -112,10 +114,15 @@ function OrdersBilling() {
         setNewOrder({ customerId: '', productId: '', quantity: 1, returnQuantity: 0, salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
     }
 
-    const handleDeleteOrder = (e, orderId) => {
+    const handleDeleteClick = (e, orderId) => {
         e.stopPropagation()
-        if (window.confirm('Are you sure you want to delete this order?')) {
-            deleteOrder(orderId)
+        setOrderToDelete(orderId)
+    }
+
+    const confirmDelete = () => {
+        if (orderToDelete) {
+            deleteOrder(orderToDelete)
+            setOrderToDelete(null)
         }
     }
 
@@ -359,7 +366,7 @@ function OrdersBilling() {
                                                 variant="danger"
                                                 size="sm"
                                                 icon={Trash2}
-                                                onClick={(e) => handleDeleteOrder(e, order.id)}
+                                                onClick={(e) => handleDeleteClick(e, order.id)}
                                             >
                                                 Delete
                                             </Button>
@@ -499,6 +506,42 @@ function OrdersBilling() {
                                 {isEditing ? 'Update Order' : 'Create Order'}
                             </Button>
                         </form>
+                    </GlassCard>
+                </div>
+            )}
+            {/* Delete Confirmation Modal */}
+            {orderToDelete && (
+                <div className={styles.modalOverlay} onClick={() => setOrderToDelete(null)}>
+                    <GlassCard className={`${styles.modal} ${styles.deleteModal}`} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3 className={styles.deleteTitle}>
+                                <AlertTriangle size={24} className={styles.warningIcon} />
+                                Delete Order
+                            </h3>
+                            <button className={styles.closeBtn} onClick={() => setOrderToDelete(null)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className={styles.modalContent}>
+                            <p>Are you sure you want to delete order <strong>{orderToDelete}</strong>?</p>
+                            <p className={styles.warningText}>This action cannot be undone.</p>
+                        </div>
+
+                        <div className={styles.modalActions}>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setOrderToDelete(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="danger"
+                                onClick={confirmDelete}
+                            >
+                                Delete Order
+                            </Button>
+                        </div>
                     </GlassCard>
                 </div>
             )}

@@ -242,6 +242,40 @@
     overflow-y: auto;
 }
 
+.deleteModal {
+    max-width: 400px !important;
+}
+
+.deleteTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ef4444;
+}
+
+.warningIcon {
+    color: #ef4444;
+}
+
+.modalContent {
+    margin: 20px 0;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.warningText {
+    font-size: 0.875rem;
+    color: #ef4444;
+    margin-top: 8px;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
 .modalHeader {
     display: flex;
     justify-content: space-between;

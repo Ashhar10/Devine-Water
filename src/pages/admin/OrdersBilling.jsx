@@ -332,16 +332,17 @@ function OrdersBilling() {
                                                 View Invoice
                                             </Button>
 
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                icon={Edit}
+                                                onClick={(e) => handleEditOrder(e, order)}
+                                            >
+                                                Edit
+                                            </Button>
+
                                             {order.status !== 'delivered' && order.status !== 'cancelled' && (
                                                 <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        icon={Edit}
-                                                        onClick={(e) => handleEditOrder(e, order)}
-                                                    >
-                                                        Edit
-                                                    </Button>
                                                     <Button
                                                         variant="success"
                                                         size="sm"

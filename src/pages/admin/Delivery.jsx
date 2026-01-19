@@ -180,51 +180,53 @@ function Delivery() {
 
             {/* Filters */}
             <div className={styles.filters}>
-                <div className={styles.daySelector}>
-                    {DAYS_OF_WEEK.map(day => (
-                        <button
-                            key={day}
-                            className={`${styles.dayBtn} ${selectedDay === day ? styles.active : ''}`}
-                            onClick={() => setSelectedDay(day)}
-                        >
-                            {day.slice(0, 3)}
-                        </button>
-                    ))}
+                <div className={styles.searchBox}>
+                    <Search size={20} className={styles.searchIcon} />
+                    <input
+                        type="text"
+                        placeholder="Search customers..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
 
-                <div className={styles.filterRow}>
-                    <div className={styles.searchWrapper}>
-                        <Search size={18} className={styles.searchIcon} />
+                <div className={styles.filterGroup}>
+                    <div className={styles.dateFilter}>
+                        <Calendar size={18} className={styles.filterIcon} />
                         <input
-                            type="text"
-                            placeholder="Search customers..."
-                            className={styles.searchInput}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className={styles.dateInput}
                         />
+                        <span className={styles.dayLabel}>{selectedDay}</span>
                     </div>
 
-                    <select
-                        className={styles.filterSelect}
-                        value={selectedEmployee}
-                        onChange={(e) => setSelectedEmployee(e.target.value)}
-                    >
-                        <option value="">All Employees</option>
-                        {employees.map(emp => (
-                            <option key={emp.id} value={emp.uuid}>{emp.name}</option>
-                        ))}
-                    </select>
+                    <div className={styles.selectWrapper}>
+                        <MapPin size={18} className={styles.filterIcon} />
+                        <select
+                            value={selectedArea}
+                            onChange={(e) => setSelectedArea(e.target.value)}
+                        >
+                            <option value="">All Areas</option>
+                            {areas.map(area => (
+                                <option key={area.id} value={area.id}>{area.name}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <select
-                        className={styles.filterSelect}
-                        value={selectedArea}
-                        onChange={(e) => setSelectedArea(e.target.value)}
-                    >
-                        <option value="">All Areas</option>
-                        {areas.map(area => (
-                            <option key={area.id} value={area.uuid}>{area.name}</option>
-                        ))}
-                    </select>
+                    <div className={styles.selectWrapper}>
+                        <User size={18} className={styles.filterIcon} />
+                        <select
+                            value={selectedEmployee}
+                            onChange={(e) => setSelectedEmployee(e.target.value)}
+                        >
+                            <option value="">All Delivery Staff</option>
+                            {employees.map(emp => (
+                                <option key={emp.id} value={emp.id}>{emp.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 

@@ -23,7 +23,17 @@ import styles from './Delivery.module.css'
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 function Delivery() {
-    const [selectedDay, setSelectedDay] = useState(DAYS_OF_WEEK[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1])
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+
+    // Derive selectedDay from selectedDate
+    const dateObj = new Date(selectedDate)
+    const dayIndex = dateObj.getDay()
+    const selectedDay = DAYS_OF_WEEK[dayIndex === 0 ? 6 : dayIndex - 1]
+
+    // Use selectedDate as the "today" for all checks
+    const todayDate = selectedDate
+
+    // const [selectedDay, setSelectedDay] = useState(DAYS_OF_WEEK[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1])
     const [selectedEmployee, setSelectedEmployee] = useState('')
     const [selectedArea, setSelectedArea] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
@@ -57,7 +67,6 @@ function Delivery() {
     })
 
     // Sort: undelivered first, delivered last
-    const todayDate = new Date().toISOString().split('T')[0]
     const sortedDeliveryList = [...deliveryList].sort((a, b) => {
         const aDelivered = getDeliveryForCustomer(a.id, todayDate)
         const bDelivered = getDeliveryForCustomer(b.id, todayDate)

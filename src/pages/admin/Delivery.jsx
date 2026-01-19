@@ -27,10 +27,18 @@ function Delivery() {
     const [selectedEmployee, setSelectedEmployee] = useState('')
     const [selectedArea, setSelectedArea] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
+    const [showDeliveryModal, setShowDeliveryModal] = useState(false)
+    const [selectedCustomer, setSelectedCustomer] = useState(null)
+    const [deliveryForm, setDeliveryForm] = useState({
+        bottlesDelivered: '',
+        notes: ''
+    })
 
     const customers = useDataStore(state => state.customers)
     const users = useDataStore(state => state.users)
     const areas = useDataStore(state => state.areas)
+    const addDelivery = useDataStore(state => state.addDelivery)
+    const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
 
     // Get employees (staff)
     const employees = users.filter(u => u.role === 'staff' || u.role === 'admin')
@@ -43,6 +51,17 @@ function Delivery() {
             c.phone.includes(searchTerm) ||
             c.address.toLowerCase().includes(searchTerm.toLowerCase())
         return matchesDay && matchesArea && matchesSearch && c.status === 'active'
+    })
+
+    // Sort: undelivered first, delivered last
+    const todayDate = new Date().toISOString().split('T')[0]
+    const sortedDeliveryList = [...deliveryList].sort((a, b) => {
+        const aDelivered = getDeliveryForCustomer(a.id, todayDate)
+        const bDelivered = getDeliveryForCustomer(b.id, todayDate)
+
+        if (aDelivered && !bDelivered) return 1
+        if (!aDelivered && bDelivered) return -1
+        return 0
     })
 
     // Calculate totals
@@ -58,6 +77,39 @@ function Delivery() {
         month: 'long',
         day: 'numeric'
     })
+
+    const handleMarkDelivered = (customer) => {
+        setSelectedCustomer(customer)
+        setDeliveryForm({
+            bottlesDelivered: customer.requiredBottles || 1,
+            notes: ''
+        })
+        setShowDeliveryModal(true)
+    }
+
+    const handleDeliverySubmit = async (e) => {
+        e.preventDefault()
+        if (!selectedCustomer) return
+
+        await addDelivery({
+            customerId: selectedCustomer.id,
+            customerName: selectedCustomer.name,
+            deliveryDate: todayDate,
+            bottlesDelivered: parseInt(deliveryForm.bottlesDelivered),
+            notes: deliveryForm.notes,
+            deliveryDay: selectedDay
+        })
+
+        setShowDeliveryModal(false)
+        setSelectedCustomer(null)
+        setDeliveryForm({ bottlesDelivered: '', notes: '' })
+    }
+
+    const handleCloseModal = () => {
+        setShowDeliveryModal(false)
+        setSelectedCustomer(null)
+        setDeliveryForm({ bottlesDelivered: '', notes: '' })
+    }
 
     return (
         <div className={styles.delivery}>
@@ -174,57 +226,68 @@ function Delivery() {
                             </tr>
                         </thead>
                         <tbody>
-                            {deliveryList.map((customer, index) => (
-                                <motion.tr
-                                    key={customer.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: index * 0.02 }}
-                                >
-                                    <td>{index + 1}</td>
-                                    <td>
-                                        <div className={styles.customerCell}>
-                                            <span className={styles.customerName}>{customer.name}</span>
-                                            <span className={styles.customerId}>{customer.id}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.addressCell}>
-                                            <MapPin size={12} />
-                                            <span>{customer.address}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.phoneCell}>
-                                            <Phone size={12} />
-                                            <span>{customer.phone}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className={styles.bottleCount}>
-                                            {customer.requiredBottles || 1}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
-                                            Rs {customer.currentBalance?.toLocaleString() || 0}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <StatusBadge status="pending" size="sm" />
-                                    </td>
-                                    <td>
-                                        <div className={styles.actionBtns}>
-                                            <button className={`${styles.actionBtn} ${styles.delivered}`} title="Mark Delivered">
-                                                <CheckCircle size={16} />
-                                            </button>
-                                            <button className={`${styles.actionBtn} ${styles.skipped}`} title="Skip">
-                                                <XCircle size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            ))}
+                            {sortedDeliveryList.map((customer, index) => {
+                                const delivery = getDeliveryForCustomer(customer.id, todayDate)
+                                const isDelivered = !!delivery
+
+                                return (
+                                    <motion.tr
+                                        key={customer.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: index * 0.02 }}
+                                        className={isDelivered ? styles.deliveredRow : ''}
+                                    >
+                                        <td>{index + 1}</td>
+                                        <td>
+                                            <div className={styles.customerCell}>
+                                                <span className={styles.customerName}>{customer.name}</span>
+                                                <span className={styles.customerId}>{customer.id}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.addressCell}>
+                                                <MapPin size={12} />
+                                                <span>{customer.address}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.phoneCell}>
+                                                <Phone size={12} />
+                                                <span>{customer.phone}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={styles.bottleCount}>
+                                                {isDelivered ? delivery.bottlesDelivered : (customer.requiredBottles || 1)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
+                                                Rs {customer.currentBalance?.toLocaleString() || 0}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <StatusBadge status={isDelivered ? "completed" : "pending"} size="sm" />
+                                        </td>
+                                        <td>
+                                            <div className={styles.actionBtns}>
+                                                <button
+                                                    className={`${styles.actionBtn} ${styles.delivered}`}
+                                                    title="Mark Delivered"
+                                                    onClick={() => handleMarkDelivered(customer)}
+                                                    disabled={isDelivered}
+                                                >
+                                                    <CheckCircle size={16} />
+                                                </button>
+                                                <button className={`${styles.actionBtn} ${styles.skipped}`} title="Skip">
+                                                    <XCircle size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                )
+                            })}
                         </tbody>
                     </table>
 
@@ -237,6 +300,79 @@ function Delivery() {
                     )}
                 </div>
             </GlassCard>
+
+            {/* Delivery Modal */}
+            {showDeliveryModal && selectedCustomer && (
+                <div className={styles.modalOverlay} onClick={handleCloseModal}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2>Mark Delivery</h2>
+                            <button className={styles.closeBtn} onClick={handleCloseModal}>
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleDeliverySubmit} className={styles.deliveryForm}>
+                            <div className={styles.customerInfo}>
+                                <div className={styles.infoRow}>
+                                    <User size={18} />
+                                    <div>
+                                        <span className={styles.infoLabel}>Customer</span>
+                                        <span className={styles.infoValue}>{selectedCustomer.name}</span>
+                                    </div>
+                                </div>
+                                <div className={styles.infoRow}>
+                                    <MapPin size={18} />
+                                    <div>
+                                        <span className={styles.infoLabel}>Address</span>
+                                        <span className={styles.infoValue}>{selectedCustomer.address}</span>
+                                    </div>
+                                </div>
+                                <div className={styles.infoRow}>
+                                    <Phone size={18} />
+                                    <div>
+                                        <span className={styles.infoLabel}>Contact</span>
+                                        <span className={styles.infoValue}>{selectedCustomer.phone}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Bottles Delivered</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={deliveryForm.bottlesDelivered}
+                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
+                                    required
+                                    className={styles.formInput}
+                                />
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Notes (Optional)</label>
+                                <textarea
+                                    value={deliveryForm.notes}
+                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                                    className={styles.formTextarea}
+                                    rows="3"
+                                    placeholder="Any additional notes..."
+                                />
+                            </div>
+
+                            <div className={styles.modalActions}>
+                                <button type="button" onClick={handleCloseModal} className={styles.cancelBtn}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className={styles.submitBtn}>
+                                    <CheckCircle size={18} />
+                                    Confirm Delivery
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

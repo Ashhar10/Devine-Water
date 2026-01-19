@@ -66,6 +66,7 @@ export const useDataStore = create(
             payments: [],
             investments: [],
             expenditures: [],
+            deliveries: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -97,6 +98,7 @@ export const useDataStore = create(
                         payments: data?.payments || [],
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
+                        deliveries: [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -967,6 +969,47 @@ export const useDataStore = create(
                 }
 
                 return newExpenditure
+            },
+
+            // ===== DELIVERY ACTIONS =====
+            getDeliveries: () => get().deliveries,
+
+            getDeliveriesByDate: (date) => {
+                return get().deliveries.filter(d => d.deliveryDate === date)
+            },
+
+            getDeliveryForCustomer: (customerId, date) => {
+                return get().deliveries.find(
+                    d => d.customerId === customerId && d.deliveryDate === date
+                )
+            },
+
+            addDelivery: async (data) => {
+                const newDelivery = {
+                    ...data,
+                    id: `DEL-${generateId()}`,
+                    createdAt: new Date().toISOString(),
+                }
+
+                // Optimistic update
+                set(state => ({ deliveries: [newDelivery, ...state.deliveries] }))
+
+                // TODO: Add database persistence when ready
+                // try {
+                //     const dbDelivery = await addDeliveryToDb(data)
+                //     if (dbDelivery) {
+                //         set(state => ({
+                //             deliveries: state.deliveries.map(d =>
+                //                 d.id === newDelivery.id ? dbDelivery : d
+                //             )
+                //         }))
+                //         return dbDelivery
+                //     }
+                // } catch (error) {
+                //     console.error('Failed to add delivery to DB:', error)
+                // }
+
+                return newDelivery
             },
 
             // ===== RESET =====

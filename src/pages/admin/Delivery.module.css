@@ -327,6 +327,222 @@
     color: white;
 }
 
+/* Delivered Row */
+.deliveredRow {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border-left: 3px solid var(--success);
+}
+
+.deliveredRow:hover {
+    background: rgba(34, 197, 94, 0.15) !important;
+}
+
+.actionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modalContent {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+}
+
+.modalHeader h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.closeBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--space-xs);
+    transition: color var(--transition-fast);
+}
+
+.closeBtn:hover {
+    color: var(--text-primary);
+}
+
+/* Delivery Form */
+.deliveryForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.customerInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+}
+
+.infoRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.infoRow svg {
+    color: var(--primary-cyan);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.infoRow>div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.infoLabel {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.infoValue {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.formGroup label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.formInput,
+.formTextarea {
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.formInput:focus,
+.formTextarea:focus {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
+}
+
+.formTextarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.modalActions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: flex-end;
+    margin-top: var(--space-md);
+}
+
+.cancelBtn,
+.submitBtn {
+    padding: var(--space-md) var(--space-xl);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+}
+
+.cancelBtn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+}
+
+.cancelBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.submitBtn {
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
+    color: var(--bg-deep-space);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.submitBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+}
+
 /* Empty State */
 .emptyState {
     display: flex;

@@ -616,7 +616,7 @@ function Customers() {
                                     type="text"
                                     value={areaForm.name}
                                     onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })}
-                                    placeholder="e.g. DHA Phase 1"
+                                    placeholder="e.g. Orangi Town"
                                     required
                                 />
                             </div>

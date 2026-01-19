@@ -1260,6 +1260,78 @@ export const addExpenditureToDb = async (expenseData) => {
 }
 
 // =====================================================
+// DELIVERIES
+// =====================================================
+
+export const fetchDeliveries = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('deliveries')
+        .select(`
+            *,
+            customers (customer_id, name)
+        `)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Fetch deliveries error:', error)
+        return []
+    }
+
+    return data?.map(d => ({
+        id: d.delivery_id,
+        uuid: d.id,
+        customerId: d.customers?.customer_id,
+        customerName: d.customers?.name || 'Unknown',
+        deliveryDate: d.delivery_date,
+        bottlesDelivered: d.bottles_delivered,
+        receiveBottles: d.receive_bottles || 0,
+        notes: d.notes,
+        deliveryDay: d.delivery_day,
+        createdAt: d.created_at
+    })) || []
+}
+
+export const addDeliveryToDb = async (deliveryData, customerUuid) => {
+    if (!isSupabaseConfigured()) return null
+
+    const deliveryId = generateId('DEL')
+
+    const { data, error } = await supabase
+        .from('deliveries')
+        .insert({
+            delivery_id: deliveryId,
+            customer_id: customerUuid,
+            delivery_date: deliveryData.deliveryDate,
+            bottles_delivered: deliveryData.bottlesDelivered,
+            receive_bottles: deliveryData.receiveBottles || 0,
+            notes: deliveryData.notes || null,
+            delivery_day: deliveryData.deliveryDay
+        })
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Add delivery error:', error)
+        throw error
+    }
+
+    return {
+        id: data.delivery_id,
+        uuid: data.id,
+        customerId: deliveryData.customerId,
+        customerName: deliveryData.customerName,
+        deliveryDate: data.delivery_date,
+        bottlesDelivered: data.bottles_delivered,
+        receiveBottles: data.receive_bottles,
+        notes: data.notes,
+        deliveryDay: data.delivery_day,
+        createdAt: data.created_at
+    }
+}
+
+// =====================================================
 // INITIALIZE ALL DATA
 // =====================================================
 
@@ -1270,7 +1342,23 @@ export const initializeAllData = async () => {
     }
 
     try {
-        const [customers, orders, transactions, bills, waterProduction, supportTickets, users, products, areas, vendors, banks, payments, investments, expenditures] = await Promise.all([
+        const [
+            customers,
+            orders,
+            transactions,
+            bills,
+            waterProduction,
+            supportTickets,
+            users,
+            products,
+            areas,
+            vendors,
+            banks,
+            payments,
+            investments,
+            expenditures,
+            deliveries
+        ] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),
             fetchTransactions(),
@@ -1284,7 +1372,8 @@ export const initializeAllData = async () => {
             fetchBanks(),
             fetchPayments(),
             fetchInvestments(),
-            fetchExpenditures()
+            fetchExpenditures(),
+            fetchDeliveries()
         ])
 
         return {
@@ -1301,7 +1390,8 @@ export const initializeAllData = async () => {
             banks,
             payments,
             investments,
-            expenditures
+            expenditures,
+            deliveries
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

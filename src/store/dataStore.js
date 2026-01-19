@@ -32,7 +32,8 @@ import {
     addProductToDb,
     updateProductInDb,
     deleteProductFromDb,
-    addStockMovement
+    addStockMovement,
+    addDeliveryToDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -82,14 +83,6 @@ export const useDataStore = create(
                     // Always fetch from Supabase (no mock data fallback)
                     const data = await initializeAllData()
 
-                    // Load deliveries from localStorage
-                    let savedDeliveries = []
-                    try {
-                        savedDeliveries = JSON.parse(localStorage.getItem('deliveries') || '[]')
-                    } catch (error) {
-                        console.error('Failed to load deliveries from localStorage:', error)
-                    }
-
                     // Use real data from Supabase (can be empty arrays)
                     set({
                         customers: data?.customers || [],
@@ -106,7 +99,7 @@ export const useDataStore = create(
                         payments: data?.payments || [],
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
-                        deliveries: savedDeliveries,
+                        deliveries: data?.deliveries || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -1002,28 +995,43 @@ export const useDataStore = create(
                 // Optimistic update
                 set(state => ({ deliveries: [newDelivery, ...state.deliveries] }))
 
-                // Persist to localStorage
+                // Save to localStorage temporarily (optimistic cache)
                 try {
-                    const existingDeliveries = JSON.parse(localStorage.getItem('deliveries') || '[]')
-                    localStorage.setItem('deliveries', JSON.stringify([newDelivery, ...existingDeliveries]))
+                    const existingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
+                    localStorage.setItem('deliveries_temp', JSON.stringify([newDelivery, ...existingDeliveries]))
                 } catch (error) {
-                    console.error('Failed to save delivery to localStorage:', error)
+                    console.error('Failed to save delivery to temp localStorage:', error)
                 }
 
-                // TODO: Add database persistence when ready
-                // try {
-                //     const dbDelivery = await addDeliveryToDb(data)
-                //     if (dbDelivery) {
-                //         set(state => ({
-                //             deliveries: state.deliveries.map(d =>
-                //                 d.id === newDelivery.id ? dbDelivery : d
-                //             )
-                //         }))
-                //         return dbDelivery
-                //     }
-                // } catch (error) {
-                //     console.error('Failed to add delivery to DB:', error)
-                // }
+                // Save to database
+                const customer = get().customers.find(c => c.id === data.customerId)
+                if (customer?.uuid) {
+                    try {
+                        const dbDelivery = await addDeliveryToDb(data, customer.uuid)
+                        if (dbDelivery) {
+                            // Successfully saved to database - update state with DB version
+                            set(state => ({
+                                deliveries: state.deliveries.map(d =>
+                                    d.id === newDelivery.id ? dbDelivery : d
+                                )
+                            }))
+
+                            // Clear temporary localStorage after successful DB save
+                            try {
+                                localStorage.removeItem('deliveries_temp')
+                            } catch (err) {
+                                console.error('Failed to clear temp localStorage:', err)
+                            }
+
+                            return dbDelivery
+                        }
+                    } catch (error) {
+                        console.error('Failed to add delivery to DB:', error)
+                        // Keep in localStorage temporarily for retry
+                    }
+                } else {
+                    console.error('No customer UUID available for delivery')
+                }
 
                 return newDelivery
             },

@@ -173,10 +173,8 @@ export const fetchOrders = async () => {
             order_date,
             status,
             payment_status,
-            notes,
-            discount,
             created_at,
-            customers (name, customer_id),
+            customers (name),
             order_items (*)
         `)
         .order('created_at', { ascending: false })
@@ -185,36 +183,27 @@ export const fetchOrders = async () => {
 
     return data?.map(o => {
         // Calculate total from order items (use total_price if available, else calculate)
-        const subtotal = o.order_items?.reduce((sum, item) => {
+        const total = o.order_items?.reduce((sum, item) => {
             if (item.total_price) {
                 return sum + parseFloat(item.total_price)
             }
             return sum + (parseFloat(item.unit_price || 0) * parseInt(item.quantity || 0))
         }, 0) || 0
 
-        const discount = parseFloat(o.discount) || 0
-        const total = subtotal - discount
-
         return {
             id: o.order_id,
             uuid: o.id,
-            customerId: o.customers?.customer_id, // Local ID (CUS-...) for display/forms
-            customerUuid: o.customer_id,          // DB UUID for foreign keys
+            customerId: o.customer_id,
             customerName: o.customers?.name || 'Unknown',
-            salesmanId: o.salesman_id,
-            notes: o.notes,
-            discount: discount,
             items: o.order_items?.map(item => ({
                 productId: item.product_id,
                 name: item.product_id || 'Product',  // We'll need to join products to get name
                 qty: item.quantity,
-                returnQty: item.return_quantity || 0,
                 price: parseFloat(item.unit_price)
             })) || [],
-            total: total,  // Final total after discount
+            total: total,  // Calculated from items
             status: o.status,
             paymentStatus: o.payment_status,
-            orderDate: o.order_date,
             createdAt: o.created_at
         }
     }) || []
@@ -233,12 +222,9 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             order_id: orderId,
             invoice_no: invoiceNo,  // Required field
             customer_id: customerUuid,
-            salesman_id: orderData.salesmanId || null,
             order_date: orderData.orderDate || new Date().toISOString().split('T')[0],
             status: 'pending',
-            payment_status: 'unpaid',
-            notes: orderData.notes || null,
-            discount: orderData.discount || 0
+            payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })
         .select()
         .single()
@@ -254,7 +240,6 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             order_id: order.id,  // This is the UUID from database
             product_id: item.productId || null,  // Use product_id instead of name
             quantity: item.qty,
-            return_quantity: item.returnQty || 0,
             unit_price: item.price,  // Use unit_price instead of price
             total_price: item.price * item.qty
         }))
@@ -265,16 +250,17 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
 
         if (itemsError) {
             console.error('Failed to add order items:', itemsError)
+            // Don't fail the whole order if just items fail
         }
     }
 
     return {
         id: order.order_id,
         uuid: order.id,
-        customerId: orderData.customerId,
+        customerId: orderData.customerId,  // Keep local ID for matching
         customerName: customerName,
         items: orderData.items,
-        total: orderData.total,
+        total: orderData.total,  // Use total from orderData (calculated in frontend)
         status: order.status,
         paymentStatus: order.payment_status,
         createdAt: order.created_at
@@ -313,10 +299,12 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.status) dbUpdates.status = updates.status
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
-    if (updates.customerUuid) dbUpdates.customer_id = updates.customerUuid  // Use UUID
-    if (updates.salesmanId !== undefined) dbUpdates.salesman_id = updates.salesmanId
-    if (updates.notes !== undefined) dbUpdates.notes = updates.notes
-    if (updates.discount !== undefined) dbUpdates.discount = updates.discount
+    if (updates.customerId) dbUpdates.customer_id = updates.customerId
+    if (updates.salesmanId) dbUpdates.salesman_id = updates.salesmanId
+
+    // Handle order items update separately if needed
+    // For now, complicated updates might require deleting and re-inserting items
+    // ignoring item updates here for simplicity or handling later
 
     const { error } = await supabase
         .from('orders')
@@ -324,38 +312,6 @@ export const updateOrderInDb = async (orderUuid, updates) => {
         .eq('id', orderUuid)
 
     if (error) handleError(error, 'update order')
-
-    // Handle order items: Delete all and re-insert (easiest way to handle potential changes)
-    if (updates.items && updates.items.length > 0) {
-        // 1. Delete existing items
-        const { error: deleteError } = await supabase
-            .from('order_items')
-            .delete()
-            .eq('order_id', orderUuid)
-
-        if (deleteError) {
-            console.error('Failed to clear old items during update:', deleteError)
-            return
-        }
-
-        // 2. Insert new items
-        const orderItems = updates.items.map(item => ({
-            order_id: orderUuid,
-            product_id: item.productId || null,
-            quantity: item.qty,
-            return_quantity: item.returnQty || 0,
-            unit_price: item.price,
-            total_price: item.price * item.qty
-        }))
-
-        const { error: insertError } = await supabase
-            .from('order_items')
-            .insert(orderItems)
-
-        if (insertError) {
-            console.error('Failed to update order items:', insertError)
-        }
-    }
 }
 
 export const deleteOrderFromDb = async (orderUuid) => {

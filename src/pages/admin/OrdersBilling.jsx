@@ -76,7 +76,6 @@ function OrdersBilling() {
         if (isEditing && editingOrderId) {
             updateOrder(editingOrderId, {
                 customerId: newOrder.customerId,
-                customerUuid: customer.uuid,  // Required for DB update
                 salesmanId: newOrder.salesmanId || null,
                 orderDate: newOrder.orderDate,
                 items: [{

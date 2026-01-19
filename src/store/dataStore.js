@@ -83,6 +83,22 @@ export const useDataStore = create(
                     // Always fetch from Supabase (no mock data fallback)
                     const data = await initializeAllData()
 
+                    // Recovery: Check for unsaved deliveries in temp storage
+                    let pendingDeliveries = []
+                    try {
+                        pendingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
+                    } catch (error) {
+                        console.error('Failed to load pending deliveries:', error)
+                    }
+
+                    // Merge DB deliveries with pending ones (avoiding duplicates if any)
+                    // Pending ones go on top (newer usually)
+                    const dbDeliveries = data?.deliveries || []
+                    const mergedDeliveries = [
+                        ...pendingDeliveries.filter(pd => !dbDeliveries.find(dd => dd.id === pd.id)),
+                        ...dbDeliveries
+                    ]
+
                     // Use real data from Supabase (can be empty arrays)
                     set({
                         customers: data?.customers || [],
@@ -99,10 +115,15 @@ export const useDataStore = create(
                         payments: data?.payments || [],
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
-                        deliveries: data?.deliveries || [],
+                        deliveries: mergedDeliveries,
                         isLoading: false,
                         isInitialized: true
                     })
+
+                    // Attempt to sync pending items if any
+                    if (pendingDeliveries.length > 0) {
+                        get().syncPendingDeliveries()
+                    }
                     console.log('✅ Data loaded from Supabase')
                 } catch (error) {
                     console.error('Failed to initialize:', error)
@@ -1034,6 +1055,43 @@ export const useDataStore = create(
                 }
 
                 return newDelivery
+            },
+
+            syncPendingDeliveries: async () => {
+                const pendingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
+                if (pendingDeliveries.length === 0) return
+
+                console.log(`Attempting to sync ${pendingDeliveries.length} pending deliveries...`)
+                const remainingPending = []
+
+                for (const delivery of pendingDeliveries) {
+                    try {
+                        const customer = get().customers.find(c => c.id === delivery.customerId)
+                        if (customer?.uuid) {
+                            const dbDelivery = await addDeliveryToDb(delivery, customer.uuid)
+                            if (dbDelivery) {
+                                // Update state: Replace temp ID with real DB ID if needed, or just update
+                                set(state => ({
+                                    deliveries: state.deliveries.map(d =>
+                                        d.id === delivery.id ? dbDelivery : d
+                                    )
+                                }))
+                                continue // Success, don't add to remaining
+                            }
+                        }
+                        remainingPending.push(delivery)
+                    } catch (error) {
+                        console.error('Sync failed for delivery:', delivery.id, error)
+                        remainingPending.push(delivery)
+                    }
+                }
+
+                // Update temp storage with what's left
+                if (remainingPending.length === 0) {
+                    localStorage.removeItem('deliveries_temp')
+                } else {
+                    localStorage.setItem('deliveries_temp', JSON.stringify(remainingPending))
+                }
             },
 
             // ===== RESET =====

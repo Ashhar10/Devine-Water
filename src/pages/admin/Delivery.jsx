@@ -31,14 +31,17 @@ function Delivery() {
     const [selectedCustomer, setSelectedCustomer] = useState(null)
     const [deliveryForm, setDeliveryForm] = useState({
         bottlesDelivered: '',
+        receiveBottles: '',
         notes: ''
     })
 
     const customers = useDataStore(state => state.customers)
     const users = useDataStore(state => state.users)
     const areas = useDataStore(state => state.areas)
+    const products = useDataStore(state => state.products)
     const addDelivery = useDataStore(state => state.addDelivery)
     const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
+    const addOrder = useDataStore(state => state.addOrder)
 
     // Get employees (staff)
     const employees = users.filter(u => u.role === 'staff' || u.role === 'admin')
@@ -82,6 +85,7 @@ function Delivery() {
         setSelectedCustomer(customer)
         setDeliveryForm({
             bottlesDelivered: customer.requiredBottles || 1,
+            receiveBottles: 0,
             notes: ''
         })
         setShowDeliveryModal(true)
@@ -91,24 +95,60 @@ function Delivery() {
         e.preventDefault()
         if (!selectedCustomer) return
 
+        const bottlesDelivered = parseInt(deliveryForm.bottlesDelivered)
+        const receiveBottles = parseInt(deliveryForm.receiveBottles) || 0
+
+        // Find water product (assuming first product or specific water product)
+        const waterProduct = products.find(p => p.name.toLowerCase().includes('water')) || products[0]
+
+        if (!waterProduct) {
+            alert('No water product found. Please add a product first.')
+            return
+        }
+
+        const unitPrice = waterProduct.price || 0
+        const total = bottlesDelivered * unitPrice
+
+        // Create order with auto-populated customer details
+        await addOrder({
+            customerId: selectedCustomer.id,
+            customerUuid: selectedCustomer.uuid,
+            customerName: selectedCustomer.name,
+            customerPhone: selectedCustomer.phone,
+            customerAddress: selectedCustomer.address,
+            items: [{
+                productId: waterProduct.id,
+                productName: waterProduct.name,
+                quantity: bottlesDelivered,
+                price: unitPrice
+            }],
+            total: total,
+            bottlesDelivered: bottlesDelivered,
+            receiveBottles: receiveBottles,
+            deliveryDate: todayDate,
+            notes: deliveryForm.notes
+        })
+
+        // Record delivery
         await addDelivery({
             customerId: selectedCustomer.id,
             customerName: selectedCustomer.name,
             deliveryDate: todayDate,
-            bottlesDelivered: parseInt(deliveryForm.bottlesDelivered),
+            bottlesDelivered: bottlesDelivered,
+            receiveBottles: receiveBottles,
             notes: deliveryForm.notes,
             deliveryDay: selectedDay
         })
 
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', notes: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
     }
 
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', notes: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
     }
 
     return (
@@ -345,6 +385,17 @@ function Delivery() {
                                     value={deliveryForm.bottlesDelivered}
                                     onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
                                     required
+                                    className={styles.formInput}
+                                />
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Receive Bottles (Empty Returns)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={deliveryForm.receiveBottles}
+                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
                                     className={styles.formInput}
                                 />
                             </div>

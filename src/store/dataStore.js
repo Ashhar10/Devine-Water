@@ -82,6 +82,14 @@ export const useDataStore = create(
                     // Always fetch from Supabase (no mock data fallback)
                     const data = await initializeAllData()
 
+                    // Load deliveries from localStorage
+                    let savedDeliveries = []
+                    try {
+                        savedDeliveries = JSON.parse(localStorage.getItem('deliveries') || '[]')
+                    } catch (error) {
+                        console.error('Failed to load deliveries from localStorage:', error)
+                    }
+
                     // Use real data from Supabase (can be empty arrays)
                     set({
                         customers: data?.customers || [],
@@ -98,7 +106,7 @@ export const useDataStore = create(
                         payments: data?.payments || [],
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
-                        deliveries: [],
+                        deliveries: savedDeliveries,
                         isLoading: false,
                         isInitialized: true
                     })
@@ -993,6 +1001,14 @@ export const useDataStore = create(
 
                 // Optimistic update
                 set(state => ({ deliveries: [newDelivery, ...state.deliveries] }))
+
+                // Persist to localStorage
+                try {
+                    const existingDeliveries = JSON.parse(localStorage.getItem('deliveries') || '[]')
+                    localStorage.setItem('deliveries', JSON.stringify([newDelivery, ...existingDeliveries]))
+                } catch (error) {
+                    console.error('Failed to save delivery to localStorage:', error)
+                }
 
                 // TODO: Add database persistence when ready
                 // try {

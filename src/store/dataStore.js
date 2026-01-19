@@ -33,7 +33,8 @@ import {
     updateProductInDb,
     deleteProductFromDb,
     addStockMovement,
-    addDeliveryToDb
+    addDeliveryToDb,
+    addAreaToDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -143,11 +144,35 @@ export const useDataStore = create(
                         investments: [],
                         expenditures: [],
                         isLoading: false,
-                        isInitialized: true,
-                        error: error.message
                     })
                 }
             },
+
+            // Area Actions
+            addArea: async (areaData) => {
+                const newArea = {
+                    ...areaData,
+                    id: `AREA-${generateId()}`,
+                    status: 'active'
+                }
+
+                // Optimistic update
+                set(state => ({ areas: [...state.areas, newArea] }))
+
+                // DB Persistence
+                try {
+                    const dbArea = await addAreaToDb(areaData)
+                    if (dbArea) {
+                        set(state => ({
+                            areas: state.areas.map(a => a.id === newArea.id ? dbArea : a)
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Failed to add area to DB:', error)
+                }
+                return newArea
+            },
+
 
             // ===== AUTH ACTIONS =====
             setCurrentUser: (user) => set({ currentUser: user }),

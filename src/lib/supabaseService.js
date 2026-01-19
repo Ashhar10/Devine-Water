@@ -742,6 +742,7 @@ export const fetchAreas = async () => {
     const { data, error } = await supabase
         .from('areas')
         .select('*')
+        .order('priority', { ascending: true, nullsFirst: false })
         .order('name', { ascending: true })
 
     if (error) handleError(error, 'fetch areas')
@@ -752,7 +753,8 @@ export const fetchAreas = async () => {
         name: a.name,
         description: a.description,
         status: a.status,
-        createdAt: a.created_at?.split('T')[0]
+        deliveryDays: a.delivery_days || [],
+        priority: a.priority || 0
     })) || []
 }
 
@@ -766,8 +768,10 @@ export const addAreaToDb = async (areaData) => {
         .insert({
             area_id: areaId,
             name: areaData.name,
-            description: areaData.description || null,
-            status: 'active'
+            description: areaData.description,
+            status: 'active',
+            delivery_days: areaData.deliveryDays || [],
+            priority: areaData.priority || 0
         })
         .select()
         .single()
@@ -779,7 +783,9 @@ export const addAreaToDb = async (areaData) => {
         uuid: data.id,
         name: data.name,
         description: data.description,
-        status: data.status
+        status: data.status,
+        deliveryDays: data.delivery_days || [],
+        priority: data.priority || 0
     }
 }
 
@@ -1147,6 +1153,8 @@ export const addPaymentToDb = async (paymentData) => {
         createdAt: data.created_at
     }
 }
+
+
 
 // =====================================================
 // INVESTMENTS

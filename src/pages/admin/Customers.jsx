@@ -15,7 +15,9 @@ import {
     Crosshair,
     Wallet,
     Package,
-    RotateCcw
+    RotateCcw,
+    Map,
+    Settings
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -52,8 +54,17 @@ function Customers() {
     const [formData, setFormData] = useState(getEmptyFormData())
 
     const customers = useDataStore(state => state.customers)
+    const [showAreaModal, setShowAreaModal] = useState(false)
+    const [areaForm, setAreaForm] = useState({
+        name: '',
+        description: '',
+        priority: 0,
+        deliveryDays: []
+    })
+
     const areas = useDataStore(state => state.areas)
     const addCustomer = useDataStore(state => state.addCustomer)
+    const addArea = useDataStore(state => state.addArea)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
     const addUser = useDataStore(state => state.addUser)
@@ -101,6 +112,13 @@ function Customers() {
         }
         setEditingCustomer(null)
         setShowAddModal(true)
+    }
+
+    const handleAreaSubmit = async (e) => {
+        e.preventDefault()
+        await addArea(areaForm)
+        setShowAreaModal(false)
+        setAreaForm({ name: '', description: '', priority: 0, deliveryDays: [] })
     }
 
     // Clear cache
@@ -270,10 +288,16 @@ function Customers() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button variant="primary" icon={Plus} onClick={openAddModal}>
-                    Add Customer {hasCachedData && '(Draft)'}
-                </Button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <Button variant="secondary" icon={Map} onClick={() => setShowAreaModal(true)}>
+                        Add Area
+                    </Button>
+                    <Button variant="primary" icon={Plus} onClick={openAddModal}>
+                        Add Customer {hasCachedData && '(Draft)'}
+                    </Button>
+                </div>
             </div>
+
 
             {/* Stats */}
             <div className={styles.statsRow}>
@@ -574,6 +598,79 @@ function Customers() {
                     </GlassCard>
                 </div>
             )}
+
+            {/* Area Modal */}
+            {showAreaModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowAreaModal(false)}>
+                    <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>Add New Area</h3>
+                            <button className={styles.closeBtn} onClick={() => setShowAreaModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAreaSubmit}>
+                            <div className={styles.formGroup}>
+                                <label>Area Name *</label>
+                                <input
+                                    type="text"
+                                    value={areaForm.name}
+                                    onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })}
+                                    placeholder="e.g. DHA Phase 1"
+                                    required
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Description</label>
+                                <input
+                                    type="text"
+                                    value={areaForm.description}
+                                    onChange={(e) => setAreaForm({ ...areaForm, description: e.target.value })}
+                                    placeholder="Sector A, B, C..."
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Route Priority (Sequence)</label>
+                                <input
+                                    type="number"
+                                    value={areaForm.priority}
+                                    onChange={(e) => setAreaForm({ ...areaForm, priority: parseInt(e.target.value) || 0 })}
+                                    placeholder="0"
+                                    min="0"
+                                />
+                                <small className={styles.inputHint}>Lower numbers (0, 1, 2) are served first</small>
+                            </div>
+
+                            {/* Area Delivery Days */}
+                            <div className={styles.formGroup}>
+                                <label>Area Delivery Days</label>
+                                <div className={styles.daysGrid}>
+                                    {DAYS_OF_WEEK.map(day => (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            className={`${styles.dayBtn} ${areaForm.deliveryDays.includes(day) ? styles.selected : ''}`}
+                                            onClick={() => setAreaForm(prev => ({
+                                                ...prev,
+                                                deliveryDays: prev.deliveryDays.includes(day)
+                                                    ? prev.deliveryDays.filter(d => d !== day)
+                                                    : [...prev.deliveryDays, day]
+                                            }))}
+                                        >
+                                            {day.slice(0, 3)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Button type="submit" variant="primary" fullWidth>
+                                Create Area
+                            </Button>
+                        </form>
+                    </GlassCard>
+                </div>
+            )}
+
         </div>
     )
 }

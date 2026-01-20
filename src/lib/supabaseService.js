@@ -239,10 +239,10 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
     if (orderData.items?.length > 0) {
         const orderItems = orderData.items.map(item => ({
             order_id: order.id,  // This is the UUID from database
-            product_id: item.productId || null,  // Use product_id instead of name
-            quantity: item.qty,
-            unit_price: item.price,  // Use unit_price instead of price
-            total_price: item.price * item.qty
+            product_id: item.productId || null,
+            quantity: item.quantity || item.qty,
+            unit_price: item.price,
+            total_price: item.price * (item.quantity || item.qty || 0)
         }))
 
         const { error: itemsError } = await supabase

@@ -1212,9 +1212,9 @@ export const updatePaymentInDb = async (id, updates) => {
             reference_id: updates.referenceId,
             amount: updates.amount,
             payment_mode: updates.paymentMode,
-            bank_id: updates.bankId,
-            cheque_no: updates.chequeNo,
-            remarks: updates.remarks,
+            bank_id: updates.bankId || null,
+            cheque_no: updates.chequeNo || null,
+            remarks: updates.remarks || null,
             payment_date: updates.paymentDate
         })
         .eq('payment_id', id)

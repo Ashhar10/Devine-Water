@@ -200,8 +200,6 @@ function FinanceModule() {
             alert('Failed to add category. Please try again.')
         } finally {
             setIsSubmitting(false)
-        } finally {
-            setIsSubmitting(false)
         }
     }
 

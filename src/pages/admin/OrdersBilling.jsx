@@ -20,6 +20,7 @@ import styles from './OrdersBilling.module.css'
 
 function OrdersBilling() {
     const [expandedOrder, setExpandedOrder] = useState(null)
+    const [activeTab, setActiveTab] = useState('all')  // 'delivered', 'pending', 'all'
     const [filterStatus, setFilterStatus] = useState('all')
     const [showNewOrderModal, setShowNewOrderModal] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -53,7 +54,13 @@ function OrdersBilling() {
     // Get selected product for price calculation
     const selectedProduct = products.find(p => p.id === newOrder.productId)
 
+    // Filter by tab
     const filteredOrders = orders
+        .filter(o => {
+            if (activeTab === 'delivered') return o.status === 'delivered'
+            if (activeTab === 'pending') return o.status === 'pending'
+            return true // 'all' shows everything
+        })
         .filter(o => filterStatus === 'all' || o.status === filterStatus)
         .filter(o =>
             o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -247,6 +254,31 @@ function OrdersBilling() {
                         New Order
                     </Button>
                 </div>
+            </div>
+
+            {/* Tabs Navigation */}
+            <div className={styles.tabsContainer}>
+                <button
+                    className={`${styles.tab} ${activeTab === 'all' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('all')}
+                >
+                    All Orders
+                    <span className={styles.tabCount}>{orders.length}</span>
+                </button>
+                <button
+                    className={`${styles.tab} ${activeTab === 'pending' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('pending')}
+                >
+                    Pending
+                    <span className={styles.tabCount}>{orders.filter(o => o.status === 'pending').length}</span>
+                </button>
+                <button
+                    className={`${styles.tab} ${activeTab === 'delivered' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('delivered')}
+                >
+                    Delivered
+                    <span className={styles.tabCount}>{orders.filter(o => o.status === 'delivered').length}</span>
+                </button>
             </div>
 
             {/* Orders List */}

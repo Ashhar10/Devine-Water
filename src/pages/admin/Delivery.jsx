@@ -402,6 +402,7 @@ function Delivery() {
                                                     className={`${styles.actionBtn} ${styles.delivered}`}
                                                     title={isDelivered ? "Edit Delivery" : "Mark Delivered"}
                                                     onClick={() => isDelivered ? handleEditDelivery(customer, delivery) : handleMarkDelivered(customer)}
+                                                    disabled={!isDelivered && status === 'skipped'}
                                                 >
                                                     {isDelivered && status === 'delivered' ? <Edit size={16} /> : <CheckCircle size={16} />}
                                                 </button>
@@ -409,6 +410,7 @@ function Delivery() {
                                                     className={`${styles.actionBtn} ${styles.skipped}`}
                                                     title="Skip"
                                                     onClick={() => handleSkipDelivery(customer)}
+                                                    disabled={isDelivered || status === 'skipped'}
                                                 >
                                                     <XCircle size={16} />
                                                 </button>

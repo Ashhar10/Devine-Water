@@ -200,10 +200,65 @@ function FinanceModule() {
             alert('Failed to add category. Please try again.')
         } finally {
             setIsSubmitting(false)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
+    const handleDeleteCategory = (id, name) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Category',
+            message: `Are you sure you want to delete the category "${name}"? This cannot be undone.`,
+            type: 'danger',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                try {
+                    if (categoryType === 'income') {
+                        await deleteIncomeCategory(id)
+                    } else {
+                        await deleteExpenseCategory(id)
+                    }
+                } catch (error) {
+                    console.error('Error deleting category:', error)
+                }
+            }
+        })
+    }
 
+    const handleDeleteInvestment = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Income Entry',
+            message: 'Are you sure you want to delete this income record? This action cannot be undone.',
+            type: 'danger',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                try {
+                    await deleteInvestment(id)
+                } catch (error) {
+                    console.error('Error deleting investment:', error)
+                }
+            }
+        })
+    }
+
+    const handleDeleteExpenditure = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Expense Entry',
+            message: 'Are you sure you want to delete this expense record? This action cannot be undone.',
+            type: 'danger',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                try {
+                    await deleteExpenditure(id)
+                } catch (error) {
+                    console.error('Error deleting expenditure:', error)
+                }
+            }
+        })
+    }
 
     return (
         <div className={styles.finance}>

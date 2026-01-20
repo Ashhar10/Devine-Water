@@ -264,6 +264,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
         total: orderData.total,  // Use total from orderData (calculated in frontend)
         status: order.status,
         paymentStatus: order.payment_status,
+        orderDate: order.order_date,
         createdAt: order.created_at
     }
 }

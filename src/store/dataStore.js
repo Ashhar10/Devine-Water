@@ -24,6 +24,8 @@ import {
     addPaymentToDb,
     addInvestmentToDb,
     addExpenditureToDb,
+    deleteInvestmentFromDb,
+    deleteExpenditureFromDb,
     fetchPayments,
     fetchInvestments,
     fetchExpenditures,

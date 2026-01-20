@@ -292,6 +292,8 @@ export const updateOrderPaymentInDb = async (orderId, paymentStatus) => {
 export const updateOrderInDb = async (orderUuid, updates) => {
     if (!isSupabaseConfigured()) return
 
+    console.log('Updating order in DB:', orderUuid, updates)
+
     const dbUpdates = {
         updated_at: new Date().toISOString()
     }
@@ -304,15 +306,23 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     // If needed, these would require UUID conversion from local IDs
 
     // Update the order record
+    console.log('Order updates to apply:', dbUpdates)
     const { error: orderError } = await supabase
         .from('orders')
         .update(dbUpdates)
         .eq('id', orderUuid)
 
-    if (orderError) handleError(orderError, 'update order')
+    if (orderError) {
+        console.error('Order update error:', orderError)
+        handleError(orderError, 'update order')
+    } else {
+        console.log('Order updated successfully')
+    }
 
     // Handle order items update if provided
     if (updates.items && updates.items.length > 0) {
+        console.log('Updating order items:', updates.items)
+
         // Delete existing order items
         const { error: deleteError } = await supabase
             .from('order_items')
@@ -321,6 +331,8 @@ export const updateOrderInDb = async (orderUuid, updates) => {
 
         if (deleteError) {
             console.error('Failed to delete old order items:', deleteError)
+        } else {
+            console.log('Old order items deleted successfully')
         }
 
         // Insert new order items
@@ -332,12 +344,15 @@ export const updateOrderInDb = async (orderUuid, updates) => {
             total_price: item.price * item.qty
         }))
 
+        console.log('Inserting new order items:', orderItems)
         const { error: itemsError } = await supabase
             .from('order_items')
             .insert(orderItems)
 
         if (itemsError) {
             console.error('Failed to update order items:', itemsError)
+        } else {
+            console.log('Order items updated successfully')
         }
     }
 }

@@ -1416,7 +1416,8 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
             bottles_delivered: deliveryData.bottlesDelivered,
             receive_bottles: deliveryData.receiveBottles || 0,
             notes: deliveryData.notes || null,
-            delivery_day: deliveryData.deliveryDay
+            delivery_day: deliveryData.deliveryDay,
+            status: deliveryData.status || 'delivered'
         })
         .select()
         .single()

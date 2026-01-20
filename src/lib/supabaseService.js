@@ -1436,6 +1436,7 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
         receiveBottles: data.receive_bottles,
         notes: data.notes,
         deliveryDay: data.delivery_day,
+        status: data.status,
         createdAt: data.created_at
     }
 }

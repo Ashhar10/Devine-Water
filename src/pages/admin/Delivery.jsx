@@ -66,14 +66,23 @@ function Delivery() {
         return matchesDay && matchesArea && matchesSearch && c.status === 'active'
     })
 
-    // Sort: undelivered first, delivered last
+    // Sort: undelivered first, then delivered, then skipped
     const sortedDeliveryList = [...deliveryList].sort((a, b) => {
-        const aDelivered = getDeliveryForCustomer(a.id, todayDate)
-        const bDelivered = getDeliveryForCustomer(b.id, todayDate)
+        const aDelivery = getDeliveryForCustomer(a.id, todayDate)
+        const bDelivery = getDeliveryForCustomer(b.id, todayDate)
 
-        if (aDelivered && !bDelivered) return 1
-        if (!aDelivered && bDelivered) return -1
-        return 0
+        const aStatus = aDelivery ? (aDelivery.status || 'delivered') : 'pending'
+        const bStatus = bDelivery ? (bDelivery.status || 'delivered') : 'pending'
+
+        // Priority order: pending (0), delivered (1), skipped (2)
+        const getPriority = (status) => {
+            if (status === 'pending') return 0
+            if (status === 'delivered') return 1
+            if (status === 'skipped') return 2
+            return 3
+        }
+
+        return getPriority(aStatus) - getPriority(bStatus)
     })
 
     // Calculate totals
@@ -152,6 +161,24 @@ function Delivery() {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
         setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
+        setShowDeliveryModal(false)
+        setSelectedCustomer(null)
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
+    }
+
+    const handleSkipDelivery = async (customer) => {
+        if (!confirm('Mark this delivery as skipped/not delivered?')) return
+
+        await addDelivery({
+            customerId: customer.id,
+            customerName: customer.name,
+            deliveryDate: todayDate,
+            bottlesDelivered: 0,
+            receiveBottles: 0,
+            notes: 'Skipped',
+            deliveryDay: selectedDay,
+            status: 'skipped'
+        })
     }
 
     const handleCloseModal = () => {
@@ -280,6 +307,7 @@ function Delivery() {
                             {sortedDeliveryList.map((customer, index) => {
                                 const delivery = getDeliveryForCustomer(customer.id, todayDate)
                                 const isDelivered = !!delivery
+                                const status = delivery?.status || (isDelivered ? 'delivered' : 'pending')
 
                                 return (
                                     <motion.tr
@@ -287,7 +315,7 @@ function Delivery() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: index * 0.02 }}
-                                        className={isDelivered ? styles.deliveredRow : ''}
+                                        className={`${status === 'delivered' ? styles.deliveredRow : ''} ${status === 'skipped' ? styles.skippedRow : ''}`}
                                     >
                                         <td>{index + 1}</td>
                                         <td>
@@ -319,7 +347,7 @@ function Delivery() {
                                             </span>
                                         </td>
                                         <td>
-                                            <StatusBadge status={isDelivered ? "completed" : "pending"} size="sm" />
+                                            <StatusBadge status={status} size="sm" />
                                         </td>
                                         <td>
                                             <div className={styles.actionBtns}>
@@ -331,7 +359,12 @@ function Delivery() {
                                                 >
                                                     <CheckCircle size={16} />
                                                 </button>
-                                                <button className={`${styles.actionBtn} ${styles.skipped}`} title="Skip">
+                                                <button
+                                                    className={`${styles.actionBtn} ${styles.skipped}`}
+                                                    title="Skip"
+                                                    onClick={() => handleSkipDelivery(customer)}
+                                                    disabled={isDelivered}
+                                                >
                                                     <XCircle size={16} />
                                                 </button>
                                             </div>

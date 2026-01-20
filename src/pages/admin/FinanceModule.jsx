@@ -269,13 +269,7 @@ function FinanceModule() {
                             </div>
                         </div>
 
-                        <DataChart
-                            data={incomeData}
-                            type="bar"
-                            dataKeys={['income']}
-                            colors={['#00e5a0']}
-                            height={200}
-                        />
+
 
                         <div className={styles.transactionsList}>
                             <h4 className={styles.listTitle}>Recent Income</h4>

@@ -11,7 +11,8 @@ import {
     Trash,
     X,
     Wallet,
-    FileText
+    FileText,
+    AlertTriangle
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -23,6 +24,7 @@ function Vendors() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingVendor, setEditingVendor] = useState(null)
+    const [vendorToDelete, setVendorToDelete] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
@@ -69,10 +71,15 @@ function Vendors() {
         }
     }
 
-    const handleDelete = async (vendor) => {
-        if (confirm(`Are you sure you want to delete ${vendor.name}?`)) {
+    const handleDeleteClick = (vendor) => {
+        setVendorToDelete(vendor)
+    }
+
+    const confirmDelete = async () => {
+        if (vendorToDelete) {
             try {
-                await deleteVendor(vendor.id)
+                await deleteVendor(vendorToDelete.id)
+                setVendorToDelete(null)
             } catch (error) {
                 console.error('Error deleting vendor:', error)
                 alert('Failed to delete vendor. Please try again.')
@@ -226,7 +233,7 @@ function Vendors() {
                                     <button className={styles.actionBtn} onClick={() => handleEdit(vendor)}>
                                         <Edit size={16} />
                                     </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(vendor)}>
+                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDeleteClick(vendor)}>
                                         <Trash size={16} />
                                     </button>
                                 </div>
@@ -332,6 +339,43 @@ function Vendors() {
                                 {isSubmitting ? 'Saving...' : (editingVendor ? 'Update Vendor' : 'Add Vendor')}
                             </Button>
                         </form>
+                    </GlassCard>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {vendorToDelete && (
+                <div className={styles.modalOverlay} onClick={() => setVendorToDelete(null)}>
+                    <GlassCard className={`${styles.modal} ${styles.deleteModal}`} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3 className={styles.deleteTitle}>
+                                <AlertTriangle size={24} className={styles.warningIcon} />
+                                Delete Vendor
+                            </h3>
+                            <button className={styles.closeBtn} onClick={() => setVendorToDelete(null)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className={styles.modalContent}>
+                            <p>Are you sure you want to delete <strong>{vendorToDelete.name}</strong>?</p>
+                            <p className={styles.warningText}>This action cannot be undone.</p>
+                        </div>
+
+                        <div className={styles.modalActions}>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setVendorToDelete(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="danger"
+                                onClick={confirmDelete}
+                            >
+                                Delete Vendor
+                            </Button>
+                        </div>
                     </GlassCard>
                 </div>
             )}

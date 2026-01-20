@@ -8,7 +8,10 @@ import {
     Wrench,
     Fuel,
     Plus,
-    X
+    X,
+    Tag,
+    Edit,
+    Trash2
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -33,6 +36,10 @@ const expenseColors = {
 function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
+    const [showCategoryModal, setShowCategoryModal] = useState(false)
+    const [categoryType, setCategoryType] = useState('') // 'income' or 'expense'
+    const [editingIncome, setEditingIncome] = useState(null)
+    const [editingExpense, setEditingExpense] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         category: '',
@@ -179,9 +186,14 @@ function FinanceModule() {
                                 <TrendingUp size={20} className={styles.panelTitleIcon} />
                                 Incoming Money
                             </h3>
-                            <Button variant="success" size="sm" icon={Plus} onClick={() => setShowIncomeModal(true)}>
-                                Add Income
-                            </Button>
+                            <div className={styles.headerButtons}>
+                                <Button variant="ghost" size="sm" icon={Tag} onClick={() => { setCategoryType('income'); setShowCategoryModal(true); }}>
+                                    Add Category
+                                </Button>
+                                <Button variant="success" size="sm" icon={Plus} onClick={() => setShowIncomeModal(true)}>
+                                    Add Income
+                                </Button>
+                            </div>
                         </div>
 
                         <DataChart
@@ -206,9 +218,26 @@ function FinanceModule() {
                                         <span className={styles.transactionDesc}>{investment.investmentDetail || investment.investorName}</span>
                                         <span className={styles.transactionDate}>{investment.investmentDate}</span>
                                     </div>
-                                    <span className={`${styles.transactionAmount} ${styles.incomeAmount}`}>
-                                        +Rs {investment.amount.toLocaleString()}
-                                    </span>
+                                    <div className={styles.transactionActions}>
+                                        <span className={`${styles.transactionAmount} ${styles.incomeAmount}`}>
+                                            +Rs {investment.amount.toLocaleString()}
+                                        </span>
+                                        <button
+                                            className={styles.editBtn}
+                                            onClick={() => {
+                                                setEditingIncome(investment);
+                                                setFormData({
+                                                    category: investment.investorName,
+                                                    amount: investment.amount,
+                                                    description: investment.investmentDetail || '',
+                                                    date: investment.investmentDate
+                                                });
+                                                setShowIncomeModal(true);
+                                            }}
+                                        >
+                                            <Edit size={14} />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             ))}
                             {investments.length === 0 && (
@@ -228,9 +257,14 @@ function FinanceModule() {
                                 <TrendingDown size={20} className={styles.panelTitleIcon} />
                                 Outgoing Expenses
                             </h3>
-                            <Button variant="danger" size="sm" icon={Plus} onClick={() => setShowExpenseModal(true)}>
-                                Add Expense
-                            </Button>
+                            <div className={styles.headerButtons}>
+                                <Button variant="ghost" size="sm" icon={Tag} onClick={() => { setCategoryType('expense'); setShowCategoryModal(true); }}>
+                                    Add Category
+                                </Button>
+                                <Button variant="danger" size="sm" icon={Plus} onClick={() => setShowExpenseModal(true)}>
+                                    Add Expense
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Expense Categories */}
@@ -283,9 +317,26 @@ function FinanceModule() {
                                         <span className={styles.transactionDesc}>{expenditure.description}</span>
                                         <span className={styles.transactionDate}>{expenditure.expenseDate}</span>
                                     </div>
-                                    <span className={`${styles.transactionAmount} ${styles.expenseAmount}`}>
-                                        -Rs {expenditure.amount.toLocaleString()}
-                                    </span>
+                                    <div className={styles.transactionActions}>
+                                        <span className={`${styles.transactionAmount} ${styles.expenseAmount}`}>
+                                            -Rs {expenditure.amount.toLocaleString()}
+                                        </span>
+                                        <button
+                                            className={styles.editBtn}
+                                            onClick={() => {
+                                                setEditingExpense(expenditure);
+                                                setFormData({
+                                                    category: expenditure.category,
+                                                    amount: expenditure.amount,
+                                                    description: expenditure.description || '',
+                                                    date: expenditure.expenseDate
+                                                });
+                                                setShowExpenseModal(true);
+                                            }}
+                                        >
+                                            <Edit size={14} />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             ))}
                             {expenditures.length === 0 && (
@@ -303,7 +354,7 @@ function FinanceModule() {
                 <div className={styles.modalOverlay} onClick={() => setShowIncomeModal(false)}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>Add Income</h3>
+                            <h3>{editingIncome ? 'Edit Income' : 'Add Income'}</h3>
                             <button className={styles.closeBtn} onClick={() => setShowIncomeModal(false)}>
                                 <X size={20} />
                             </button>
@@ -355,7 +406,7 @@ function FinanceModule() {
                 <div className={styles.modalOverlay} onClick={() => setShowExpenseModal(false)}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>Add Expense</h3>
+                            <h3>{editingExpense ? 'Edit Expense' : 'Add Expense'}</h3>
                             <button className={styles.closeBtn} onClick={() => setShowExpenseModal(false)}>
                                 <X size={20} />
                             </button>
@@ -399,6 +450,52 @@ function FinanceModule() {
                             </div>
                             <Button type="submit" variant="danger" fullWidth disabled={isSubmitting}>
                                 {isSubmitting ? 'Adding...' : 'Add Expense'}
+                            </Button>
+                        </form>
+                    </GlassCard>
+                </div>
+            )}
+
+            {/* Category Modal */}
+            {showCategoryModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowCategoryModal(false)}>
+                    <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>Add {categoryType === 'income' ? 'Income' : 'Expense'} Category</h3>
+                            <button className={styles.closeBtn} onClick={() => setShowCategoryModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={(e) => e.preventDefault()}>
+                            <div className={styles.formGroup}>
+                                <label>Category Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter category name"
+                                    required
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Icon</label>
+                                <select required>
+                                    <option value="">Select an icon</option>
+                                    <option value="zap">⚡ Electricity</option>
+                                    <option value="beaker">🧪 Chemicals</option>
+                                    <option value="wrench">🔧 Maintenance</option>
+                                    <option value="fuel">⛽ Fuel</option>
+                                    <option value="dollar">💰 Money</option>
+                                    <option value="package">📦 Supplies</option>
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Color</label>
+                                <input
+                                    type="color"
+                                    defaultValue="#00d4ff"
+                                />
+                            </div>
+                            <Button type="submit" variant="primary" fullWidth>
+                                Add Category
                             </Button>
                         </form>
                     </GlassCard>

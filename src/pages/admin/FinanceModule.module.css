@@ -106,6 +106,40 @@
     color: var(--text-muted);
 }
 
+.headerButtons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+/* Transaction Actions */
+.transactionActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.editBtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.editBtn:hover {
+    background: var(--primary-cyan-subtle);
+    border-color: var(--primary-cyan);
+    color: var(--primary-cyan);
+    transform: scale(1.1);
+}
+
 /* Expense Categories */
 .expenseCategories {
     display: flex;

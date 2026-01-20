@@ -299,8 +299,8 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.status) dbUpdates.status = updates.status
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
-    if (updates.customerId) dbUpdates.customer_id = updates.customerId
-    if (updates.salesmanId) dbUpdates.salesman_id = updates.salesmanId
+    // Note: customer_id and salesman_id should not be changed after order creation
+    // If needed, these would require UUID conversion from local IDs
 
     // Handle order items update separately if needed
     // For now, complicated updates might require deleting and re-inserting items

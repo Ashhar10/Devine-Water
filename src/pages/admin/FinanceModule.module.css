@@ -545,6 +545,31 @@
     color: #ff3b30;
 }
 
+.editBtn,
+.deleteBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.editBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.deleteBtn:hover {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+}
+
 .noCategories {
     text-align: center;
     color: rgba(255, 255, 255, 0.4);

@@ -1030,6 +1030,19 @@ export const useDataStore = create(
                 return newInvestment
             },
 
+            deleteInvestment: async (id) => {
+                set(state => ({
+                    investments: state.investments.filter(i => i.id !== id)
+                }))
+
+                try {
+                    await deleteInvestmentFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete investment from DB:', error)
+                    // Revert state if needed (optional implementation vs optimistic update)
+                }
+            },
+
             // ===== EXPENDITURE ACTIONS (Expense) =====
             getExpenditures: () => get().expenditures,
 
@@ -1064,6 +1077,18 @@ export const useDataStore = create(
                 }
 
                 return newExpenditure
+            },
+
+            deleteExpenditure: async (id) => {
+                set(state => ({
+                    expenditures: state.expenditures.filter(e => e.id !== id)
+                }))
+
+                try {
+                    await deleteExpenditureFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete expenditure from DB:', error)
+                }
             },
 
             // ===== Categories =====

@@ -1442,6 +1442,20 @@ export const deleteIncomeCategoryFromDb = async (id) => {
     return true
 }
 
+export const deleteInvestmentFromDb = async (id) => {
+    if (!isSupabaseConfigured()) return null
+    const { error } = await supabase.from('investments').delete().eq('investment_id', id)
+    if (error) handleError(error, 'delete investment')
+    return true
+}
+
+export const deleteExpenditureFromDb = async (id) => {
+    if (!isSupabaseConfigured()) return null
+    const { error } = await supabase.from('expenditures').delete().eq('expenditure_id', id)
+    if (error) handleError(error, 'delete expenditure')
+    return true
+}
+
 export const deleteExpenseCategoryFromDb = async (id) => {
     if (!isSupabaseConfigured()) return null
     const { error } = await supabase.from('expense_categories').delete().eq('id', id)

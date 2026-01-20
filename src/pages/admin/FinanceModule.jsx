@@ -65,6 +65,8 @@ function FinanceModule() {
     const addExpenseCategory = useDataStore(state => state.addExpenseCategory)
     const deleteIncomeCategory = useDataStore(state => state.deleteIncomeCategory)
     const deleteExpenseCategory = useDataStore(state => state.deleteExpenseCategory)
+    const deleteInvestment = useDataStore(state => state.deleteInvestment)
+    const deleteExpenditure = useDataStore(state => state.deleteExpenditure)
 
     // Compute financial summary with useMemo
     const { income, expenses, profit } = useMemo(() => {
@@ -208,6 +210,26 @@ function FinanceModule() {
         }
     }
 
+    const handleDeleteInvestment = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this income entry?')) return
+        try {
+            await deleteInvestment(id)
+        } catch (error) {
+            console.error('Error deleting investment:', error)
+            alert('Failed to delete income entry.')
+        }
+    }
+
+    const handleDeleteExpenditure = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this expense entry?')) return
+        try {
+            await deleteExpenditure(id)
+        } catch (error) {
+            console.error('Error deleting expenditure:', error)
+            alert('Failed to delete expense entry.')
+        }
+    }
+
     return (
         <div className={styles.finance}>
             {/* Summary Cards */}
@@ -302,8 +324,16 @@ function FinanceModule() {
                                                 });
                                                 setShowIncomeModal(true);
                                             }}
+                                            title="Edit"
                                         >
                                             <Edit size={14} />
+                                        </button>
+                                        <button
+                                            className={styles.deleteBtn}
+                                            onClick={() => handleDeleteInvestment(investment.id)}
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </motion.div>

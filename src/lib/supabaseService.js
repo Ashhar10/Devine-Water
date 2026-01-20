@@ -1443,6 +1443,26 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
     }
 }
 
+export const updateDeliveryInDb = async (id, updates) => {
+    if (!isSupabaseConfigured()) return
+
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.bottlesDelivered !== undefined) dbUpdates.bottles_delivered = updates.bottlesDelivered
+    if (updates.receiveBottles !== undefined) dbUpdates.receive_bottles = updates.receiveBottles
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes
+    if (updates.status) dbUpdates.status = updates.status
+
+    const { error } = await supabase
+        .from('deliveries')
+        .update(dbUpdates)
+        .eq('delivery_id', id)
+
+    if (error) {
+        console.error('Update delivery error:', error)
+        throw error
+    }
+}
+
 // =====================================================
 // INITIALIZE ALL DATA
 // =====================================================

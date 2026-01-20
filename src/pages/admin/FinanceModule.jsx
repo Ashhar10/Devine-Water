@@ -288,7 +288,8 @@ function FinanceModule() {
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <div className={styles.transactionInfo}>
-                                        <span className={styles.transactionDesc}>{investment.investmentDetail || investment.investorName}</span>
+                                        <span className={styles.transactionCategory}>{investment.investorName}</span>
+                                        <span className={styles.transactionDesc}>{investment.investmentDetail}</span>
                                         <span className={styles.transactionDate}>{investment.investmentDate}</span>
                                     </div>
                                     <div className={styles.transactionActions}>
@@ -387,6 +388,7 @@ function FinanceModule() {
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <div className={styles.transactionInfo}>
+                                        <span className={styles.transactionCategory}>{expenditure.category}</span>
                                         <span className={styles.transactionDesc}>{expenditure.description}</span>
                                         <span className={styles.transactionDate}>{expenditure.expenseDate}</span>
                                     </div>

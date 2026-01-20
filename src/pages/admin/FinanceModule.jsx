@@ -336,39 +336,7 @@ function FinanceModule() {
                         </div>
 
                         {/* Expense Categories */}
-                        <div className={styles.expenseCategories}>
-                            {expenseCategories.map((category, index) => (
-                                <motion.div
-                                    key={category.id}
-                                    className={styles.categoryCard}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    whileHover={{ scale: 1.02 }}
-                                >
-                                    <div
-                                        className={styles.categoryIcon}
-                                        style={{ backgroundColor: `${category.color}20`, color: category.color }}
-                                    >
-                                        <category.icon size={20} />
-                                    </div>
-                                    <div className={styles.categoryInfo}>
-                                        <span className={styles.categoryName}>{category.name}</span>
-                                        <span className={styles.categoryAmount}>Rs {category.amount.toLocaleString()}</span>
-                                    </div>
-                                    <div className={styles.categoryProgress}>
-                                        <div
-                                            className={styles.progressBar}
-                                            style={{
-                                                width: `${category.percentage}%`,
-                                                backgroundColor: category.color
-                                            }}
-                                        />
-                                    </div>
-                                    <span className={styles.categoryPercentage}>{category.percentage}%</span>
-                                </motion.div>
-                            ))}
-                        </div>
+
 
                         {/* Recent Expenses */}
                         <div className={styles.transactionsList}>

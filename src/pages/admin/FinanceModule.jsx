@@ -41,6 +41,13 @@ function FinanceModule() {
     const [categoryType, setCategoryType] = useState('') // 'income' or 'expense'
     const [editingIncome, setEditingIncome] = useState(null)
     const [editingExpense, setEditingExpense] = useState(null)
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
+    })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         category: '',

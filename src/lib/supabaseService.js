@@ -204,6 +204,7 @@ export const fetchOrders = async () => {
             total: total,  // Calculated from items
             status: o.status,
             paymentStatus: o.payment_status,
+            orderDate: o.order_date,
             createdAt: o.created_at
         }
     }) || []

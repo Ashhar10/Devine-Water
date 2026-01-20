@@ -269,7 +269,7 @@ function OrdersBilling() {
                                     <span className={styles.orderId}>{order.id}</span>
                                     <span className={styles.orderCustomer}>{order.customerName}</span>
                                     <span className={styles.orderDate}>
-                                        {new Date(order.createdAt).toLocaleDateString()}
+                                        {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
                                 <div className={styles.orderMeta}>

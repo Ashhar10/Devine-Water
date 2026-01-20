@@ -12,7 +12,8 @@ import {
     Filter,
     CheckCircle,
     Clock,
-    XCircle
+    XCircle,
+    Edit
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -40,6 +41,7 @@ function Delivery() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showDeliveryModal, setShowDeliveryModal] = useState(false)
     const [selectedCustomer, setSelectedCustomer] = useState(null)
+    const [editingDelivery, setEditingDelivery] = useState(null)
     const [deliveryForm, setDeliveryForm] = useState({
         bottlesDelivered: '',
         receiveBottles: '',
@@ -58,6 +60,7 @@ function Delivery() {
     const areas = useDataStore(state => state.areas)
     const products = useDataStore(state => state.products)
     const addDelivery = useDataStore(state => state.addDelivery)
+    const updateDelivery = useDataStore(state => state.updateDelivery)
     const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
     const addOrder = useDataStore(state => state.addOrder)
 
@@ -109,10 +112,22 @@ function Delivery() {
 
     const handleMarkDelivered = (customer) => {
         setSelectedCustomer(customer)
+        setEditingDelivery(null)
         setDeliveryForm({
             bottlesDelivered: customer.requiredBottles || 1,
             receiveBottles: 0,
             notes: ''
+        })
+        setShowDeliveryModal(true)
+    }
+
+    const handleEditDelivery = (customer, delivery) => {
+        setSelectedCustomer(customer)
+        setEditingDelivery(delivery)
+        setDeliveryForm({
+            bottlesDelivered: delivery.bottlesDelivered,
+            receiveBottles: delivery.receiveBottles,
+            notes: delivery.notes || ''
         })
         setShowDeliveryModal(true)
     }
@@ -135,47 +150,56 @@ function Delivery() {
         const unitPrice = waterProduct.price || 0
         const total = bottlesDelivered * unitPrice
 
-        // Create order with auto-populated customer details
-        await addOrder({
-            customerId: selectedCustomer.id,
-            customerUuid: selectedCustomer.uuid,
-            customerName: selectedCustomer.name,
-            customerPhone: selectedCustomer.phone,
-            customerAddress: selectedCustomer.address,
-            items: [{
-                productId: waterProduct.id,
-                productName: waterProduct.name,
-                quantity: bottlesDelivered,
-                price: unitPrice
-            }],
-            total: total,
-            bottlesDelivered: bottlesDelivered,
-            receiveBottles: receiveBottles,
-            deliveryDate: todayDate,
-            notes: deliveryForm.notes
-        })
+        // Update or Create delivery
+        if (editingDelivery) {
+            await updateDelivery(editingDelivery.id, {
+                bottlesDelivered: bottlesDelivered,
+                receiveBottles: receiveBottles,
+                notes: deliveryForm.notes
+            })
+        } else {
+            // Only create order if it's a new delivery
+            await addOrder({
+                customerId: selectedCustomer.id,
+                customerUuid: selectedCustomer.uuid,
+                customerName: selectedCustomer.name,
+                customerPhone: selectedCustomer.phone,
+                customerAddress: selectedCustomer.address,
+                items: [{
+                    productId: waterProduct.id,
+                    productName: waterProduct.name,
+                    quantity: bottlesDelivered,
+                    price: unitPrice
+                }],
+                total: total,
+                bottlesDelivered: bottlesDelivered,
+                receiveBottles: receiveBottles,
+                deliveryDate: todayDate,
+                notes: deliveryForm.notes
+            })
 
-        // Record delivery
-        await addDelivery({
-            customerId: selectedCustomer.id,
-            customerName: selectedCustomer.name,
-            deliveryDate: todayDate,
-            bottlesDelivered: bottlesDelivered,
-            receiveBottles: receiveBottles,
-            notes: deliveryForm.notes,
-            deliveryDay: selectedDay
-        })
+            await addDelivery({
+                customerId: selectedCustomer.id,
+                customerName: selectedCustomer.name,
+                deliveryDate: todayDate,
+                bottlesDelivered: bottlesDelivered,
+                receiveBottles: receiveBottles,
+                notes: deliveryForm.notes,
+                deliveryDay: selectedDay
+            })
+        }
 
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
+        setEditingDelivery(null)
         setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
     }
 
     const handleSkipDelivery = (customer) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Skip Delivery',
-            message: `Are you sure you want to skip delivery for ${customer.name}?`,
+            title: 'Skip Customer Delivery',
+            message: `Are you sure you want to skip delivery for ${customer.name}? This will mark it as skipped, not delete it.`,
             type: 'warning',
             confirmText: 'Skip',
             onConfirm: async () => {
@@ -365,17 +389,15 @@ function Delivery() {
                                             <div className={styles.actionBtns}>
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.delivered}`}
-                                                    title="Mark Delivered"
-                                                    onClick={() => handleMarkDelivered(customer)}
-                                                    disabled={isDelivered}
+                                                    title={isDelivered ? "Edit Delivery" : "Mark Delivered"}
+                                                    onClick={() => isDelivered ? handleEditDelivery(customer, delivery) : handleMarkDelivered(customer)}
                                                 >
-                                                    <CheckCircle size={16} />
+                                                    {isDelivered && status === 'delivered' ? <Edit size={16} /> : <CheckCircle size={16} />}
                                                 </button>
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.skipped}`}
                                                     title="Skip"
                                                     onClick={() => handleSkipDelivery(customer)}
-                                                    disabled={isDelivered}
                                                 >
                                                     <XCircle size={16} />
                                                 </button>
@@ -402,7 +424,7 @@ function Delivery() {
                 <div className={styles.modalOverlay} onClick={handleCloseModal}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h2>Mark Delivery</h2>
+                            <h2>{editingDelivery ? 'Edit Delivery' : 'Mark Delivery'}</h2>
                             <button className={styles.closeBtn} onClick={handleCloseModal}>
                                 <XCircle size={24} />
                             </button>

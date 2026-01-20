@@ -1352,6 +1352,21 @@ export const useDataStore = create(
                 return newDelivery
             },
 
+            updateDelivery: async (id, updates) => {
+                set(state => ({
+                    deliveries: state.deliveries.map(d =>
+                        d.id === id ? { ...d, ...updates } : d
+                    )
+                }))
+
+                try {
+                    await updateDeliveryInDb(id, updates)
+                } catch (error) {
+                    console.error('Failed to update delivery:', error)
+                    // Revert? (Optional complexity)
+                }
+            },
+
             syncPendingDeliveries: async () => {
                 const pendingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
                 if (pendingDeliveries.length === 0) return

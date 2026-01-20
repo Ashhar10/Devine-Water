@@ -368,10 +368,21 @@ export const useDataStore = create(
                     return
                 }
 
-                // Optimistic update to local state
+                // Prepare full local updates with all related fields
+                const localUpdates = { ...updates }
+
+                // If customer is being changed, also update customerName for UI display
+                if (updates.customerId) {
+                    const customer = get().customers.find(c => c.id === updates.customerId)
+                    if (customer) {
+                        localUpdates.customerName = customer.name
+                    }
+                }
+
+                // Optimistic update to local state with complete data
                 set(state => ({
                     orders: state.orders.map(o =>
-                        o.id === id ? { ...o, ...updates } : o
+                        o.id === id ? { ...o, ...localUpdates } : o
                     )
                 }))
 

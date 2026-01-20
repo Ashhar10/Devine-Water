@@ -44,7 +44,6 @@ function Delivery() {
         bottlesDelivered: '',
         receiveBottles: '',
         notes: ''
-        notes: ''
     })
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
@@ -167,9 +166,6 @@ function Delivery() {
             deliveryDay: selectedDay
         })
 
-        setShowDeliveryModal(false)
-        setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
         setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })

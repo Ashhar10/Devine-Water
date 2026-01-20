@@ -17,6 +17,7 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import DataChart from '../../components/charts/DataChart'
+import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './FinanceModule.module.css'
 
 const expenseIcons = {
@@ -195,40 +196,7 @@ function FinanceModule() {
         }
     }
 
-    const handleDeleteCategory = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to delete the category "${name}"?`)) return
 
-        try {
-            if (categoryType === 'income') {
-                await deleteIncomeCategory(id)
-            } else {
-                await deleteExpenseCategory(id)
-            }
-        } catch (error) {
-            console.error('Error deleting category:', error)
-            alert('Failed to delete category.')
-        }
-    }
-
-    const handleDeleteInvestment = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this income entry?')) return
-        try {
-            await deleteInvestment(id)
-        } catch (error) {
-            console.error('Error deleting investment:', error)
-            alert('Failed to delete income entry.')
-        }
-    }
-
-    const handleDeleteExpenditure = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this expense entry?')) return
-        try {
-            await deleteExpenditure(id)
-        } catch (error) {
-            console.error('Error deleting expenditure:', error)
-            alert('Failed to delete expense entry.')
-        }
-    }
 
     return (
         <div className={styles.finance}>
@@ -590,6 +558,15 @@ function FinanceModule() {
                     </GlassCard>
                 </div>
             )}
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+            />
         </div>
     )
 }

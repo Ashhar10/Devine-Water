@@ -63,6 +63,8 @@ function FinanceModule() {
     const storedExpenseCategories = useDataStore(state => state.expenseCategories || [])
     const addIncomeCategory = useDataStore(state => state.addIncomeCategory)
     const addExpenseCategory = useDataStore(state => state.addExpenseCategory)
+    const deleteIncomeCategory = useDataStore(state => state.deleteIncomeCategory)
+    const deleteExpenseCategory = useDataStore(state => state.deleteExpenseCategory)
 
     // Compute financial summary with useMemo
     const { income, expenses, profit } = useMemo(() => {
@@ -188,6 +190,21 @@ function FinanceModule() {
             alert('Failed to add category. Please try again.')
         } finally {
             setIsSubmitting(false)
+        }
+    }
+
+    const handleDeleteCategory = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to delete the category "${name}"?`)) return
+
+        try {
+            if (categoryType === 'income') {
+                await deleteIncomeCategory(id)
+            } else {
+                await deleteExpenseCategory(id)
+            }
+        } catch (error) {
+            console.error('Error deleting category:', error)
+            alert('Failed to delete category.')
         }
     }
 
@@ -424,12 +441,9 @@ function FinanceModule() {
                                     required
                                 >
                                     <option value="">Select category</option>
-                                    <option value="Water Sales">Water Sales</option>
-                                    <option value="Bill Payment">Bill Payment</option>
                                     {storedIncomeCategories.map(cat => (
                                         <option key={cat.id} value={cat.name}>{cat.name}</option>
                                     ))}
-                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div className={styles.formGroup}>
@@ -479,15 +493,9 @@ function FinanceModule() {
                                     required
                                 >
                                     <option value="">Select category</option>
-                                    <option value="Electricity">Electricity</option>
-                                    <option value="Chemicals">Chemicals</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Fuel">Fuel</option>
-                                    <option value="Salaries">Salaries</option>
                                     {storedExpenseCategories.map(cat => (
                                         <option key={cat.id} value={cat.name}>{cat.name}</option>
                                     ))}
-                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div className={styles.formGroup}>
@@ -558,6 +566,33 @@ function FinanceModule() {
                                 {isSubmitting ? 'Adding...' : 'Add Category'}
                             </Button>
                         </form>
+
+                        <div className={styles.categoryList}>
+                            <h4>Existing Categories</h4>
+                            <div className={styles.categoryListContent}>
+                                {(categoryType === 'income' ? storedIncomeCategories : storedExpenseCategories).map(cat => (
+                                    <div key={cat.id} className={styles.miniCategoryItem}>
+                                        <div className={styles.miniCategoryInfo}>
+                                            <div
+                                                className={styles.miniSphere}
+                                                style={{ backgroundColor: cat.color || '#ccc' }}
+                                            />
+                                            <span>{cat.name}</span>
+                                        </div>
+                                        <button
+                                            className={styles.deleteCategoryBtn}
+                                            onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {(categoryType === 'income' ? storedIncomeCategories : storedExpenseCategories).length === 0 && (
+                                    <p className={styles.noCategories}>No custom categories yet</p>
+                                )}
+                            </div>
+                        </div>
                     </GlassCard>
                 </div>
             )}

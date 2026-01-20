@@ -38,7 +38,9 @@ import {
     updateInvestmentInDb,
     updateExpenditureInDb,
     addIncomeCategoryToDb,
-    addExpenseCategoryToDb
+    addExpenseCategoryToDb,
+    deleteIncomeCategoryFromDb,
+    deleteExpenseCategoryFromDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -1106,6 +1108,30 @@ export const useDataStore = create(
                     }
                 } catch (error) {
                     console.error('Failed to add expense category to DB:', error)
+                }
+            },
+
+            deleteIncomeCategory: async (id) => {
+                set(state => ({
+                    incomeCategories: state.incomeCategories.filter(c => c.id !== id)
+                }))
+
+                try {
+                    await deleteIncomeCategoryFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete income category from DB:', error)
+                }
+            },
+
+            deleteExpenseCategory: async (id) => {
+                set(state => ({
+                    expenseCategories: state.expenseCategories.filter(c => c.id !== id)
+                }))
+
+                try {
+                    await deleteExpenseCategoryFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete expense category from DB:', error)
                 }
             },
 

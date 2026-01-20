@@ -22,6 +22,8 @@ import {
     updateVendorInDb,
     deleteVendorFromDb,
     addPaymentToDb,
+    updatePaymentInDb,
+    deletePaymentFromDb,
     addInvestmentToDb,
     addExpenditureToDb,
     deleteInvestmentFromDb,
@@ -994,6 +996,100 @@ export const useDataStore = create(
                 }
 
                 return newPayment
+            },
+
+            updatePayment: async (id, updates) => {
+                const oldPayment = get().payments.find(p => p.id === id)
+                if (!oldPayment) return
+
+                set(state => ({
+                    payments: state.payments.map(p =>
+                        p.id === id ? { ...p, ...updates } : p
+                    )
+                }))
+
+                try {
+                    const dbPayment = await updatePaymentInDb(id, updates)
+
+                    // Handle balance updates logic - Simplified REVERSAL and RE-APPLICATION
+                    // Check if amount or type changed
+                    if (oldPayment.amount !== updates.amount || oldPayment.referenceId !== updates.referenceId || oldPayment.paymentType !== updates.paymentType) {
+                        // 1. Revert Old Payment
+                        const oldAmount = parseFloat(oldPayment.amount)
+                        if (oldPayment.paymentType === 'customer') {
+                            const customer = get().customers.find(c => c.uuid === oldPayment.referenceId)
+                            if (customer) {
+                                get().updateCustomer(customer.id, {
+                                    currentBalance: (customer.currentBalance || 0) + oldAmount // Add back if it was a payment received (reduced balance)
+                                })
+                            }
+                        } else {
+                            const vendor = get().vendors.find(v => v.uuid === oldPayment.referenceId)
+                            if (vendor) {
+                                get().updateVendor(vendor.id, {
+                                    currentBalance: (vendor.currentBalance || 0) + oldAmount // Add back if it was paid to vendor (reduced debt... wait. vendor balance usually implies how much we owe? or how much we paid?)
+                                    // Let's assume standard logic: reference.currentBalance is "Account Receivable" for Customer, "Account Payable" for Vendor.
+                                    // If we pay vendor, balance (debt) decreases. So reverting means adding back.
+                                })
+                            }
+                        }
+
+                        // 2. Apply New Payment
+                        const newAmount = parseFloat(updates.amount)
+                        if (updates.paymentType === 'customer') {
+                            const customer = get().customers.find(c => c.uuid === updates.referenceId)
+                            if (customer) {
+                                get().updateCustomer(customer.id, {
+                                    currentBalance: (customer.currentBalance || 0) - newAmount
+                                })
+                            }
+                        } else {
+                            const vendor = get().vendors.find(v => v.uuid === updates.referenceId)
+                            if (vendor) {
+                                get().updateVendor(vendor.id, {
+                                    currentBalance: (vendor.currentBalance || 0) - newAmount
+                                })
+                            }
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Failed to update payment:', error)
+                }
+            },
+
+            deletePayment: async (id) => {
+                const paymentToDelete = get().payments.find(p => p.id === id)
+
+                set(state => ({
+                    payments: state.payments.filter(p => p.id !== id)
+                }))
+
+                try {
+                    await deletePaymentFromDb(id)
+
+                    // Revert balance
+                    if (paymentToDelete) {
+                        const amount = parseFloat(paymentToDelete.amount)
+                        if (paymentToDelete.paymentType === 'customer') {
+                            const customer = get().customers.find(c => c.uuid === paymentToDelete.referenceId)
+                            if (customer) {
+                                get().updateCustomer(customer.id, {
+                                    currentBalance: (customer.currentBalance || 0) + amount
+                                })
+                            }
+                        } else if (paymentToDelete.paymentType === 'vendor') {
+                            const vendor = get().vendors.find(v => v.uuid === paymentToDelete.referenceId)
+                            if (vendor) {
+                                get().updateVendor(vendor.id, {
+                                    currentBalance: (vendor.currentBalance || 0) + amount
+                                })
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to delete payment:', error)
+                }
             },
 
             // ===== INVESTMENT ACTIONS (Income) =====

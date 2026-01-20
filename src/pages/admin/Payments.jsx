@@ -11,12 +11,15 @@ import {
     X,
     FileText,
     TrendingUp,
-    Clock
+    Clock,
+    Edit,
+    Trash2
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './Payments.module.css'
 
 const PAYMENT_MODES = [
@@ -29,6 +32,14 @@ const PAYMENT_MODES = [
 function Payments() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [editingPayment, setEditingPayment] = useState(null)
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
+    })
     const [filterType, setFilterType] = useState('all')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedBalance, setSelectedBalance] = useState(0)
@@ -48,6 +59,8 @@ function Payments() {
     const banks = useDataStore(state => state.banks)
     const payments = useDataStore(state => state.payments)
     const addPayment = useDataStore(state => state.addPayment)
+    const updatePayment = useDataStore(state => state.updatePayment)
+    const deletePayment = useDataStore(state => state.deletePayment)
 
     const filteredPayments = payments.filter(p => {
         const matchesType = filterType === 'all' || p.paymentType === filterType
@@ -91,8 +104,16 @@ function Payments() {
         setIsSubmitting(true)
 
         try {
-            await addPayment(formData)
+            if (editingPayment) {
+                await updatePayment(editingPayment.id, {
+                    ...formData,
+                    amount: parseFloat(formData.amount)
+                })
+            } else {
+                await addPayment(formData)
+            }
             setShowPaymentModal(false)
+            setEditingPayment(null)
             resetForm()
         } catch (error) {
             console.error('Error recording payment:', error)
@@ -114,6 +135,38 @@ function Payments() {
             paymentDate: new Date().toISOString().split('T')[0]
         })
         setSelectedBalance(0)
+    }
+
+    const handleEditPayment = (payment) => {
+        setEditingPayment(payment)
+        setFormData({
+            paymentType: payment.paymentType,
+            referenceId: payment.referenceId,
+            amount: payment.amount,
+            paymentMode: payment.paymentMode,
+            bankId: payment.bankId || '',
+            chequeNo: payment.chequeNo || '',
+            remarks: payment.remarks || '',
+            paymentDate: payment.paymentDate
+        })
+        setShowPaymentModal(true)
+    }
+
+    const handleDeletePayment = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Payment',
+            message: 'Are you sure you want to delete this payment record? This will adjust the balance accordingly. This action cannot be undone.',
+            type: 'danger',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                try {
+                    await deletePayment(id)
+                } catch (error) {
+                    console.error('Error deleting payment:', error)
+                }
+            }
+        })
     }
 
     // Get reference list based on payment type
@@ -205,6 +258,7 @@ function Payments() {
                             <th>Mode</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -248,6 +302,24 @@ function Payments() {
                                     <td>
                                         <StatusBadge status={payment.status} size="sm" />
                                     </td>
+                                    <td>
+                                        <div className={styles.actions}>
+                                            <button
+                                                className={styles.actionBtn}
+                                                onClick={() => handleEditPayment(payment)}
+                                                title="Edit"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button
+                                                className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                                                onClick={() => handleDeletePayment(payment.id)}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </motion.tr>
                             )
                         })}
@@ -268,7 +340,7 @@ function Payments() {
                 <div className={styles.modalOverlay} onClick={() => setShowPaymentModal(false)}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>Record Payment</h3>
+                            <h3>{editingPayment ? 'Edit Payment' : 'Record Payment'}</h3>
                             <button className={styles.closeBtn} onClick={() => setShowPaymentModal(false)}>
                                 <X size={20} />
                             </button>
@@ -435,6 +507,15 @@ function Payments() {
                     </GlassCard>
                 </div>
             )}
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+            />
         </div>
     )
 }

@@ -1201,6 +1201,51 @@ export const addPaymentToDb = async (paymentData) => {
         createdAt: data.created_at
     }
 }
+}
+
+export const updatePaymentInDb = async (id, updates) => {
+    if (!isSupabaseConfigured()) return null
+
+    const { data, error } = await supabase
+        .from('payments')
+        .update({
+            payment_type: updates.paymentType,
+            reference_id: updates.referenceId,
+            amount: updates.amount,
+            payment_mode: updates.paymentMode,
+            bank_id: updates.bankId,
+            cheque_no: updates.chequeNo,
+            remarks: updates.remarks,
+            payment_date: updates.paymentDate
+        })
+        .eq('payment_id', id)
+        .select()
+        .single()
+
+    if (error) handleError(error, 'update payment')
+
+    return {
+        id: data.payment_id,
+        uuid: data.id,
+        paymentType: data.payment_type,
+        referenceId: data.reference_id,
+        amount: parseFloat(data.amount),
+        paymentMode: data.payment_mode,
+        paymentDate: data.payment_date,
+        bankId: data.bank_id,
+        chequeNo: data.cheque_no,
+        remarks: data.remarks,
+        status: data.status,
+        createdAt: data.created_at
+    }
+}
+
+export const deletePaymentFromDb = async (id) => {
+    if (!isSupabaseConfigured()) return null
+    const { error } = await supabase.from('payments').delete().eq('payment_id', id)
+    if (error) handleError(error, 'delete payment')
+    return true
+}
 
 
 

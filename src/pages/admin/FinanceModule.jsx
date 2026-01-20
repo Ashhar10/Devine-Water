@@ -57,6 +57,8 @@ function FinanceModule() {
     const expenditures = useDataStore(state => state.expenditures)
     const addInvestment = useDataStore(state => state.addInvestment)
     const addExpenditure = useDataStore(state => state.addExpenditure)
+    const updateInvestment = useDataStore(state => state.updateInvestment)
+    const updateExpenditure = useDataStore(state => state.updateExpenditure)
     const storedIncomeCategories = useDataStore(state => state.incomeCategories || [])
     const storedExpenseCategories = useDataStore(state => state.expenseCategories || [])
     const addIncomeCategory = useDataStore(state => state.addIncomeCategory)
@@ -108,16 +110,26 @@ function FinanceModule() {
         setIsSubmitting(true)
 
         try {
-            await addInvestment({
-                investorName: formData.category || 'Water Sales',
-                investmentDetail: formData.description,
-                amount: parseFloat(formData.amount),
-            })
+            if (editingIncome) {
+                await updateInvestment(editingIncome.id, {
+                    investorName: formData.category, // Using category as investorName/source
+                    investmentDetail: formData.description,
+                    amount: parseFloat(formData.amount),
+                    investmentDate: formData.date
+                })
+            } else {
+                await addInvestment({
+                    investorName: formData.category || 'Water Sales', // Default or selected category
+                    investmentDetail: formData.description,
+                    amount: parseFloat(formData.amount),
+                })
+            }
             setShowIncomeModal(false)
+            setEditingIncome(null)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
         } catch (error) {
-            console.error('Error adding income:', error)
-            alert('Failed to add income. Please try again.')
+            console.error('Error adding/updating income:', error)
+            alert('Failed to save income. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -128,16 +140,26 @@ function FinanceModule() {
         setIsSubmitting(true)
 
         try {
-            await addExpenditure({
-                category: formData.category,
-                description: formData.description,
-                amount: parseFloat(formData.amount),
-            })
+            if (editingExpense) {
+                await updateExpenditure(editingExpense.id, {
+                    category: formData.category,
+                    description: formData.description,
+                    amount: parseFloat(formData.amount),
+                    expenseDate: formData.date
+                })
+            } else {
+                await addExpenditure({
+                    category: formData.category,
+                    description: formData.description,
+                    amount: parseFloat(formData.amount),
+                })
+            }
             setShowExpenseModal(false)
+            setEditingExpense(null)
             setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
         } catch (error) {
-            console.error('Error adding expense:', error)
-            alert('Failed to add expense. Please try again.')
+            console.error('Error adding/updating expense:', error)
+            alert('Failed to save expense. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -404,6 +426,9 @@ function FinanceModule() {
                                     <option value="">Select category</option>
                                     <option value="Water Sales">Water Sales</option>
                                     <option value="Bill Payment">Bill Payment</option>
+                                    {storedIncomeCategories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -428,7 +453,7 @@ function FinanceModule() {
                                 />
                             </div>
                             <Button type="submit" variant="success" fullWidth disabled={isSubmitting}>
-                                {isSubmitting ? 'Adding...' : 'Add Income'}
+                                {isSubmitting ? 'Saving...' : (editingIncome ? 'Update Income' : 'Add Income')}
                             </Button>
                         </form>
                     </GlassCard>
@@ -459,6 +484,9 @@ function FinanceModule() {
                                     <option value="Maintenance">Maintenance</option>
                                     <option value="Fuel">Fuel</option>
                                     <option value="Salaries">Salaries</option>
+                                    {storedExpenseCategories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -483,7 +511,7 @@ function FinanceModule() {
                                 />
                             </div>
                             <Button type="submit" variant="danger" fullWidth disabled={isSubmitting}>
-                                {isSubmitting ? 'Adding...' : 'Add Expense'}
+                                {isSubmitting ? 'Saving...' : (editingExpense ? 'Update Expense' : 'Add Expense')}
                             </Button>
                         </form>
                     </GlassCard>

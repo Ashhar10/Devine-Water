@@ -123,6 +123,8 @@ export const useDataStore = create(
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
                         deliveries: mergedDeliveries,
+                        incomeCategories: data?.incomeCategories || [],
+                        expenseCategories: data?.expenseCategories || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -1060,6 +1062,81 @@ export const useDataStore = create(
                 }
 
                 return newExpenditure
+            },
+
+            // ===== Categories =====
+            addIncomeCategory: async (category) => {
+                const newCategory = { ...category, id: generateId() }
+
+                // Optimistic update
+                set(state => ({
+                    incomeCategories: [...(state.incomeCategories || []), newCategory]
+                }))
+
+                try {
+                    const dbCategory = await addIncomeCategoryToDb(newCategory)
+                    if (dbCategory) {
+                        set(state => ({
+                            incomeCategories: (state.incomeCategories || []).map(c =>
+                                c.id === newCategory.id ? dbCategory : c
+                            )
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Failed to add income category to DB:', error)
+                }
+            },
+
+            addExpenseCategory: async (category) => {
+                const newCategory = { ...category, id: generateId() }
+
+                // Optimistic update
+                set(state => ({
+                    expenseCategories: [...(state.expenseCategories || []), newCategory]
+                }))
+
+                try {
+                    const dbCategory = await addExpenseCategoryToDb(newCategory)
+                    if (dbCategory) {
+                        set(state => ({
+                            expenseCategories: (state.expenseCategories || []).map(c =>
+                                c.id === newCategory.id ? dbCategory : c
+                            )
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Failed to add expense category to DB:', error)
+                }
+            },
+
+            updateInvestment: async (id, updates) => {
+                // Optimistic update
+                set(state => ({
+                    investments: state.investments.map(i =>
+                        i.id === id ? { ...i, ...updates } : i
+                    )
+                }))
+
+                try {
+                    await updateInvestmentInDb(id, updates)
+                } catch (error) {
+                    console.error('Failed to update investment in DB:', error)
+                }
+            },
+
+            updateExpenditure: async (id, updates) => {
+                // Optimistic update
+                set(state => ({
+                    expenditures: state.expenditures.map(e =>
+                        e.id === id ? { ...e, ...updates } : e
+                    )
+                }))
+
+                try {
+                    await updateExpenditureInDb(id, updates)
+                } catch (error) {
+                    console.error('Failed to update expenditure in DB:', error)
+                }
             },
 
             // ===== DELIVERY ACTIONS =====

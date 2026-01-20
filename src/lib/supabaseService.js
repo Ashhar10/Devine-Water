@@ -1201,7 +1201,6 @@ export const addPaymentToDb = async (paymentData) => {
         createdAt: data.created_at
     }
 }
-}
 
 export const updatePaymentInDb = async (id, updates) => {
     if (!isSupabaseConfigured()) return null

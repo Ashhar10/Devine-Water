@@ -299,19 +299,48 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.status) dbUpdates.status = updates.status
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
+    if (updates.discount !== undefined) dbUpdates.discount = updates.discount
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes
     // Note: customer_id and salesman_id should not be changed after order creation
     // If needed, these would require UUID conversion from local IDs
 
-    // Handle order items update separately if needed
-    // For now, complicated updates might require deleting and re-inserting items
-    // ignoring item updates here for simplicity or handling later
-
-    const { error } = await supabase
+    // Update the order record
+    const { error: orderError } = await supabase
         .from('orders')
         .update(dbUpdates)
         .eq('id', orderUuid)
 
-    if (error) handleError(error, 'update order')
+    if (orderError) handleError(orderError, 'update order')
+
+    // Handle order items update if provided
+    if (updates.items && updates.items.length > 0) {
+        // Delete existing order items
+        const { error: deleteError } = await supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', orderUuid)
+
+        if (deleteError) {
+            console.error('Failed to delete old order items:', deleteError)
+        }
+
+        // Insert new order items
+        const orderItems = updates.items.map(item => ({
+            order_id: orderUuid,  // UUID
+            product_id: item.productId || null,
+            quantity: item.qty,
+            unit_price: item.price,
+            total_price: item.price * item.qty
+        }))
+
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems)
+
+        if (itemsError) {
+            console.error('Failed to update order items:', itemsError)
+        }
+    }
 }
 
 export const deleteOrderFromDb = async (orderUuid) => {

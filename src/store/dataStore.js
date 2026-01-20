@@ -34,7 +34,11 @@ import {
     deleteProductFromDb,
     addStockMovement,
     addDeliveryToDb,
-    addAreaToDb
+    addAreaToDb,
+    updateInvestmentInDb,
+    updateExpenditureInDb,
+    addIncomeCategoryToDb,
+    addExpenseCategoryToDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -68,6 +72,8 @@ export const useDataStore = create(
             payments: [],
             investments: [],
             expenditures: [],
+            incomeCategories: [],
+            expenseCategories: [],
             deliveries: [],
             isLoading: false,
             isInitialized: false,
@@ -1166,6 +1172,10 @@ export const useDataStore = create(
                 waterProduction: [],
                 supportTickets: [],
                 users: [],
+                investments: [],
+                expenditures: [],
+                incomeCategories: [],
+                expenseCategories: [],
                 isInitialized: false
             }),
         }),

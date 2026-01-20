@@ -1391,6 +1391,70 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
 // INITIALIZE ALL DATA
 // =====================================================
 
+// ===== Category Operations =====
+export const addIncomeCategoryToDb = async (category) => {
+    if (!isSupabaseConfigured()) return null
+    const { data, error } = await supabase.from('income_categories').insert(category).select().single()
+    if (error) handleError(error, 'add income category')
+    return data
+}
+
+export const fetchIncomeCategories = async () => {
+    if (!isSupabaseConfigured()) return []
+    const { data, error } = await supabase.from('income_categories').select('*')
+    if (error) {
+        handleError(error, 'fetch income categories')
+        return []
+    }
+    return data
+}
+
+export const addExpenseCategoryToDb = async (category) => {
+    if (!isSupabaseConfigured()) return null
+    const { data, error } = await supabase.from('expense_categories').insert(category).select().single()
+    if (error) handleError(error, 'add expense category')
+    return data
+}
+
+export const fetchExpenseCategories = async () => {
+    if (!isSupabaseConfigured()) return []
+    const { data, error } = await supabase.from('expense_categories').select('*')
+    if (error) {
+        handleError(error, 'fetch expense categories')
+        return []
+    }
+    return data
+}
+
+// ===== Finances Updates =====
+export const updateInvestmentInDb = async (id, updates) => {
+    if (!isSupabaseConfigured()) return null
+    // Map frontend fields to DB columns if needed, or assume they match
+    // investmentDetail -> investment_detail, investmentDate -> investment_date, investorName -> investor_name
+    const dbUpdates = {}
+    if (updates.investorName) dbUpdates.investor_name = updates.investorName
+    if (updates.investmentDetail) dbUpdates.investment_detail = updates.investmentDetail
+    if (updates.amount) dbUpdates.amount = updates.amount
+    if (updates.investmentDate) dbUpdates.investment_date = updates.investmentDate
+
+    const { data, error } = await supabase.from('investments').update(dbUpdates).eq('id', id).select().single()
+    if (error) handleError(error, 'update investment')
+    return data
+}
+
+export const updateExpenditureInDb = async (id, updates) => {
+    if (!isSupabaseConfigured()) return null
+    const dbUpdates = {}
+    if (updates.category) dbUpdates.category = updates.category
+    if (updates.description) dbUpdates.description = updates.description
+    if (updates.amount) dbUpdates.amount = updates.amount
+    if (updates.expenseDate) dbUpdates.expense_date = updates.expenseDate
+
+    const { data, error } = await supabase.from('expenditures').update(dbUpdates).eq('id', id).select().single()
+    if (error) handleError(error, 'update expenditure')
+    return data
+}
+
 export const initializeAllData = async () => {
     if (!isSupabaseConfigured()) {
         console.log('Supabase not configured, using mock data')

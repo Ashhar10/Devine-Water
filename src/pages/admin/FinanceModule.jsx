@@ -47,12 +47,20 @@ function FinanceModule() {
         description: '',
         date: new Date().toISOString().split('T')[0]  // Default to today
     })
+    const [categoryFormData, setCategoryFormData] = useState({
+        name: '',
+        color: '#00d4ff'
+    })
 
     // Get data from store
     const investments = useDataStore(state => state.investments)
     const expenditures = useDataStore(state => state.expenditures)
     const addInvestment = useDataStore(state => state.addInvestment)
     const addExpenditure = useDataStore(state => state.addExpenditure)
+    const storedIncomeCategories = useDataStore(state => state.incomeCategories || [])
+    const storedExpenseCategories = useDataStore(state => state.expenseCategories || [])
+    const addIncomeCategory = useDataStore(state => state.addIncomeCategory)
+    const addExpenseCategory = useDataStore(state => state.addExpenseCategory)
 
     // Compute financial summary with useMemo
     const { income, expenses, profit } = useMemo(() => {
@@ -130,6 +138,32 @@ function FinanceModule() {
         } catch (error) {
             console.error('Error adding expense:', error)
             alert('Failed to add expense. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleAddCategory = async (e) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        try {
+            const categoryData = {
+                name: categoryFormData.name,
+                color: categoryFormData.color
+            }
+
+            if (categoryType === 'income') {
+                await addIncomeCategory(categoryData)
+            } else {
+                await addExpenseCategory(categoryData)
+            }
+
+            setShowCategoryModal(false)
+            setCategoryFormData({ name: '', color: '#00d4ff' })
+        } catch (error) {
+            console.error('Error adding category:', error)
+            alert('Failed to add category. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -466,12 +500,14 @@ function FinanceModule() {
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={(e) => e.preventDefault()}>
+                        <form onSubmit={handleAddCategory}>
                             <div className={styles.formGroup}>
                                 <label>Category Name *</label>
                                 <input
                                     type="text"
                                     placeholder="Enter category name"
+                                    value={categoryFormData.name}
+                                    onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
                                     required
                                 />
                             </div>
@@ -480,17 +516,18 @@ function FinanceModule() {
                                 <div className={styles.colorPickerGroup}>
                                     <input
                                         type="color"
-                                        defaultValue="#00d4ff"
+                                        value={categoryFormData.color}
+                                        onChange={(e) => setCategoryFormData({ ...categoryFormData, color: e.target.value })}
                                         className={styles.colorInput}
                                     />
                                     <div className={styles.colorPreview}>
-                                        <div className={styles.sphereIcon} style={{ backgroundColor: '#00d4ff' }}></div>
+                                        <div className={styles.sphereIcon} style={{ backgroundColor: categoryFormData.color }}></div>
                                         <span>This color will appear as a sphere icon</span>
                                     </div>
                                 </div>
                             </div>
-                            <Button type="submit" variant="primary" fullWidth>
-                                Add Category
+                            <Button type="submit" variant="primary" fullWidth disabled={isSubmitting}>
+                                {isSubmitting ? 'Adding...' : 'Add Category'}
                             </Button>
                         </form>
                     </GlassCard>

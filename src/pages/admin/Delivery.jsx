@@ -18,6 +18,7 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './Delivery.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -43,6 +44,14 @@ function Delivery() {
         bottlesDelivered: '',
         receiveBottles: '',
         notes: ''
+        notes: ''
+    })
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
     })
 
     const customers = useDataStore(state => state.customers)
@@ -166,18 +175,25 @@ function Delivery() {
         setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
     }
 
-    const handleSkipDelivery = async (customer) => {
-        if (!confirm('Mark this delivery as skipped/not delivered?')) return
-
-        await addDelivery({
-            customerId: customer.id,
-            customerName: customer.name,
-            deliveryDate: todayDate,
-            bottlesDelivered: 0,
-            receiveBottles: 0,
-            notes: 'Skipped',
-            deliveryDay: selectedDay,
-            status: 'skipped'
+    const handleSkipDelivery = (customer) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Skip Delivery',
+            message: `Are you sure you want to skip delivery for ${customer.name}?`,
+            type: 'warning',
+            confirmText: 'Skip',
+            onConfirm: async () => {
+                await addDelivery({
+                    customerId: customer.id,
+                    customerName: customer.name,
+                    deliveryDate: todayDate,
+                    bottlesDelivered: 0,
+                    receiveBottles: 0,
+                    notes: 'Skipped',
+                    deliveryDay: selectedDay,
+                    status: 'skipped'
+                })
+            }
         })
     }
 

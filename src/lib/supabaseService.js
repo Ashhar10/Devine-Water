@@ -1253,7 +1253,11 @@ export const addInvestmentToDb = async (investmentData) => {
     return {
         id: data.investment_id,
         uuid: data.id,
-        amount: parseFloat(data.amount)
+        investorName: data.investor_name,
+        investmentDetail: data.investment_detail || '',
+        amount: parseFloat(data.amount),
+        investmentDate: data.investment_date,
+        createdAt: data.created_at
     }
 }
 

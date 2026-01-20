@@ -155,7 +155,8 @@ function Delivery() {
             await updateDelivery(editingDelivery.id, {
                 bottlesDelivered: bottlesDelivered,
                 receiveBottles: receiveBottles,
-                notes: deliveryForm.notes
+                notes: deliveryForm.notes,
+                status: 'delivered'
             })
         } else {
             // Only create order if it's a new delivery
@@ -185,7 +186,8 @@ function Delivery() {
                 bottlesDelivered: bottlesDelivered,
                 receiveBottles: receiveBottles,
                 notes: deliveryForm.notes,
-                deliveryDay: selectedDay
+                deliveryDay: selectedDay,
+                status: 'delivered'
             })
         }
 

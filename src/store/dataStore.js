@@ -306,10 +306,12 @@ export const useDataStore = create(
                                 )
                             }))
 
-                            // Update customer stats
+                            // Update customer stats locally
+                            const currentBalance = (customer.currentBalance || 0) + data.total
                             get().updateCustomer(data.customerId, {
                                 totalOrders: (customer.totalOrders || 0) + 1,
                                 totalSpent: (customer.totalSpent || 0) + data.total,
+                                currentBalance: currentBalance
                             })
 
                             return dbOrder

@@ -176,7 +176,7 @@ function Delivery() {
                 customerPhone: selectedCustomer.phone,
                 customerAddress: selectedCustomer.address,
                 items: [{
-                    productId: selectedProduct.id,
+                    productId: selectedProduct.uuid, // Use UUID for DB link
                     productName: selectedProduct.name,
                     quantity: bottlesDelivered,
                     price: unitPrice
@@ -185,7 +185,7 @@ function Delivery() {
                 bottlesDelivered: bottlesDelivered,
                 receiveBottles: receiveBottles,
                 deliveryDate: todayDate,
-                notes: deliveryForm.notes
+                notes: deliveryForm.notes || null
             })
 
             await addDelivery({

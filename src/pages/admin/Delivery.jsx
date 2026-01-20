@@ -390,7 +390,7 @@ function Delivery() {
                                         </td>
                                         <td>
                                             <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
-                                                Rs {customer.currentBalance?.toLocaleString() || 0}
+                                                Rs {status === 'skipped' ? 0 : (customer.currentBalance?.toLocaleString() || 0)}
                                             </span>
                                         </td>
                                         <td>

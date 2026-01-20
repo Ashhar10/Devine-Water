@@ -1403,7 +1403,7 @@ export const fetchIncomeCategories = async () => {
     if (!isSupabaseConfigured()) return []
     const { data, error } = await supabase.from('income_categories').select('*')
     if (error) {
-        handleError(error, 'fetch income categories')
+        console.error('Supabase fetch income categories error:', error)
         return []
     }
     return data
@@ -1420,7 +1420,7 @@ export const fetchExpenseCategories = async () => {
     if (!isSupabaseConfigured()) return []
     const { data, error } = await supabase.from('expense_categories').select('*')
     if (error) {
-        handleError(error, 'fetch expense categories')
+        console.error('Supabase fetch expense categories error:', error)
         return []
     }
     return data

@@ -1315,7 +1315,12 @@ export const addExpenditureToDb = async (expenseData) => {
     return {
         id: data.expenditure_id,
         uuid: data.id,
-        amount: parseFloat(data.amount)
+        category: data.category,
+        description: data.description,
+        amount: parseFloat(data.amount),
+        expenseDate: data.expense_date,
+        paymentMode: data.payment_mode,
+        createdAt: data.created_at
     }
 }
 

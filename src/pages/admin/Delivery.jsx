@@ -45,7 +45,8 @@ function Delivery() {
     const [deliveryForm, setDeliveryForm] = useState({
         bottlesDelivered: '',
         receiveBottles: '',
-        notes: ''
+        notes: '',
+        productId: ''
     })
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
@@ -111,23 +112,31 @@ function Delivery() {
     })
 
     const handleMarkDelivered = (customer) => {
+        // Default to first water product or first available
+        const defaultProduct = products.find(p => p.name.toLowerCase().includes('water')) || products[0]
+
         setSelectedCustomer(customer)
         setEditingDelivery(null)
         setDeliveryForm({
             bottlesDelivered: customer.requiredBottles || 1,
             receiveBottles: 0,
-            notes: ''
+            notes: '',
+            productId: defaultProduct ? defaultProduct.id : ''
         })
         setShowDeliveryModal(true)
     }
 
     const handleEditDelivery = (customer, delivery) => {
+        // Try to find the product used in previous order, or default
+        const defaultProduct = products.find(p => p.name.toLowerCase().includes('water')) || products[0]
+
         setSelectedCustomer(customer)
         setEditingDelivery(delivery)
         setDeliveryForm({
             bottlesDelivered: delivery.bottlesDelivered,
             receiveBottles: delivery.receiveBottles,
-            notes: delivery.notes || ''
+            notes: delivery.notes || '',
+            productId: defaultProduct ? defaultProduct.id : '' // Ideally we'd have the product ID from delivery, but current schema doesn't store it. Defaulting.
         })
         setShowDeliveryModal(true)
     }
@@ -139,15 +148,15 @@ function Delivery() {
         const bottlesDelivered = parseInt(deliveryForm.bottlesDelivered)
         const receiveBottles = parseInt(deliveryForm.receiveBottles) || 0
 
-        // Find water product (assuming first product or specific water product)
-        const waterProduct = products.find(p => p.name.toLowerCase().includes('water')) || products[0]
+        // Find selected product
+        const selectedProduct = products.find(p => p.id === deliveryForm.productId)
 
-        if (!waterProduct) {
-            alert('No water product found. Please add a product first.')
+        if (!selectedProduct) {
+            alert('Please select a product.')
             return
         }
 
-        const unitPrice = waterProduct.price || 0
+        const unitPrice = selectedProduct.price || 0
         const total = bottlesDelivered * unitPrice
 
         // Update or Create delivery
@@ -167,8 +176,8 @@ function Delivery() {
                 customerPhone: selectedCustomer.phone,
                 customerAddress: selectedCustomer.address,
                 items: [{
-                    productId: waterProduct.id,
-                    productName: waterProduct.name,
+                    productId: selectedProduct.id,
+                    productName: selectedProduct.name,
                     quantity: bottlesDelivered,
                     price: unitPrice
                 }],
@@ -194,7 +203,7 @@ function Delivery() {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
         setEditingDelivery(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '' })
     }
 
     const handleSkipDelivery = (customer) => {
@@ -222,7 +231,7 @@ function Delivery() {
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '' })
     }
 
     return (
@@ -455,6 +464,23 @@ function Delivery() {
                                         <span className={styles.infoValue}>{selectedCustomer.phone}</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label>Select Product</label>
+                                <select
+                                    value={deliveryForm.productId}
+                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
+                                    className={styles.formSelect}
+                                    required
+                                >
+                                    <option value="">Select Product...</option>
+                                    {products.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} (Rs {p.price})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className={styles.formGroup}>

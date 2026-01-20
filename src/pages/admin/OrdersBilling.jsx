@@ -262,7 +262,7 @@ function OrdersBilling() {
                     className={`${styles.tab} ${activeTab === 'all' ? styles.activeTab : ''}`}
                     onClick={() => setActiveTab('all')}
                 >
-                    All Orders
+                    Customer Orders
                     <span className={styles.tabCount}>{orders.length}</span>
                 </button>
                 <button

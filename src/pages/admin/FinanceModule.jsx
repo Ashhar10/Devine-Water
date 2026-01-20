@@ -323,7 +323,7 @@ function FinanceModule() {
 
                         <div className={styles.transactionsList}>
                             <h4 className={styles.listTitle}>Recent Income</h4>
-                            {investments.slice(0, 4).map((investment, index) => (
+                            {investments.map((investment, index) => (
                                 <motion.div
                                     key={investment.id}
                                     className={styles.transactionItem}
@@ -399,7 +399,7 @@ function FinanceModule() {
                         {/* Recent Expenses */}
                         <div className={styles.transactionsList}>
                             <h4 className={styles.listTitle}>Recent Expenses</h4>
-                            {expenditures.slice(0, 3).map((expenditure, index) => (
+                            {expenditures.map((expenditure, index) => (
                                 <motion.div
                                     key={expenditure.id}
                                     className={styles.transactionItem}
@@ -428,8 +428,16 @@ function FinanceModule() {
                                                 });
                                                 setShowExpenseModal(true);
                                             }}
+                                            title="Edit"
                                         >
                                             <Edit size={14} />
+                                        </button>
+                                        <button
+                                            className={styles.deleteBtn}
+                                            onClick={() => handleDeleteExpenditure(expenditure.id)}
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </motion.div>

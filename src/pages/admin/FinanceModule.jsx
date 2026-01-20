@@ -468,7 +468,7 @@ function FinanceModule() {
                         </div>
                         <form onSubmit={(e) => e.preventDefault()}>
                             <div className={styles.formGroup}>
-                                <label>Category Name</label>
+                                <label>Category Name *</label>
                                 <input
                                     type="text"
                                     placeholder="Enter category name"
@@ -476,23 +476,18 @@ function FinanceModule() {
                                 />
                             </div>
                             <div className={styles.formGroup}>
-                                <label>Icon</label>
-                                <select required>
-                                    <option value="">Select an icon</option>
-                                    <option value="zap">⚡ Electricity</option>
-                                    <option value="beaker">🧪 Chemicals</option>
-                                    <option value="wrench">🔧 Maintenance</option>
-                                    <option value="fuel">⛽ Fuel</option>
-                                    <option value="dollar">💰 Money</option>
-                                    <option value="package">📦 Supplies</option>
-                                </select>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Color</label>
-                                <input
-                                    type="color"
-                                    defaultValue="#00d4ff"
-                                />
+                                <label>Icon Color *</label>
+                                <div className={styles.colorPickerGroup}>
+                                    <input
+                                        type="color"
+                                        defaultValue="#00d4ff"
+                                        className={styles.colorInput}
+                                    />
+                                    <div className={styles.colorPreview}>
+                                        <div className={styles.sphereIcon} style={{ backgroundColor: '#00d4ff' }}></div>
+                                        <span>This color will appear as a sphere icon</span>
+                                    </div>
+                                </div>
                             </div>
                             <Button type="submit" variant="primary" fullWidth>
                                 Add Category

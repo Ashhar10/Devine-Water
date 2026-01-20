@@ -363,17 +363,44 @@ export const useDataStore = create(
 
             updateOrder: async (id, updates) => {
                 const order = get().orders.find(o => o.id === id)
+                if (!order) {
+                    console.error('Order not found:', id)
+                    return
+                }
 
+                // Optimistic update to local state
                 set(state => ({
                     orders: state.orders.map(o =>
                         o.id === id ? { ...o, ...updates } : o
                     )
                 }))
 
+                // Prepare database updates with UUID conversion
+                const dbUpdates = { ...updates }
+
+                // Convert customer local ID to UUID if provided
+                if (updates.customerId) {
+                    const customer = get().customers.find(c => c.id === updates.customerId)
+                    if (customer?.uuid) {
+                        dbUpdates.customerUuid = customer.uuid
+                        delete dbUpdates.customerId // Remove local ID
+                    }
+                }
+
+                // salesmanId should already be a UUID from the form
+                // No conversion needed
+
                 try {
-                    await updateOrderInDb(order.uuid, updates)
+                    await updateOrderInDb(order.uuid, dbUpdates)
+                    console.log('Order update completed successfully')
                 } catch (error) {
                     console.error('Failed to update order in DB:', error)
+                    // Rollback optimistic update on error
+                    set(state => ({
+                        orders: state.orders.map(o =>
+                            o.id === id ? order : o
+                        )
+                    }))
                 }
             },
 

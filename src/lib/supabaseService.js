@@ -301,9 +301,12 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.status) dbUpdates.status = updates.status
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
+
+    // Customer and salesman updates (using UUIDs)
+    if (updates.customerUuid) dbUpdates.customer_id = updates.customerUuid
+    if (updates.salesmanId) dbUpdates.salesman_id = updates.salesmanId
+
     // Note: discount and notes columns don't exist in the orders table schema
-    // Note: customer_id and salesman_id should not be changed after order creation
-    // If needed, these would require UUID conversion from local IDs
 
     // Update the order record
     console.log('Order updates to apply:', dbUpdates)

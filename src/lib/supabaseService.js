@@ -1398,6 +1398,7 @@ export const fetchDeliveries = async () => {
         receiveBottles: d.receive_bottles || 0,
         notes: d.notes,
         deliveryDay: d.delivery_day,
+        status: d.status || 'delivered',
         createdAt: d.created_at
     })) || []
 }

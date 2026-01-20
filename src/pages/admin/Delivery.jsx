@@ -510,6 +510,7 @@ function Delivery() {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 type={confirmModal.type}
+                confirmText={confirmModal.confirmText}
             />
         </div>
     )

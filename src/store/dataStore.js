@@ -38,6 +38,7 @@ import {
     deleteProductFromDb,
     addStockMovement,
     addDeliveryToDb,
+    updateDeliveryInDb,
     addAreaToDb,
     updateInvestmentInDb,
     updateExpenditureInDb,

@@ -108,17 +108,36 @@ function Delivery() {
         return getPriority(aStatus) - getPriority(bStatus)
     })
 
-    // Calculate totals for the selected date only
+    // Calculate totals for the selected date only (excluding skipped deliveries)
     const totals = {
-        customers: deliveryList.length,
-        // Count actual bottles delivered on this date (from deliveries)
+        // Only count customers who were delivered to (not skipped)
+        customers: deliveryList.filter(c => {
+            const delivery = getDeliveryForCustomer(c.id, todayDate)
+            return delivery?.status === 'delivered'
+        }).length,
+        // Count actual bottles delivered on this date (excluding skipped)
         requiredBottles: deliveryList.reduce((sum, c) => {
             const delivery = getDeliveryForCustomer(c.id, todayDate)
-            // If delivered today, count bottlesDelivered; otherwise count required bottles
-            return sum + (delivery?.bottlesDelivered || c.requiredBottles || 1)
+            // Only count if delivered (not skipped or pending)
+            if (delivery?.status === 'delivered') {
+                return sum + (delivery.bottlesDelivered || 0)
+            }
+            // If no delivery yet (pending), count required bottles
+            if (!delivery) {
+                return sum + (c.requiredBottles || 1)
+            }
+            // If skipped, don't count
+            return sum
         }, 0),
-        // Sum outstanding balance only for customers scheduled for today
-        outstanding: deliveryList.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
+        // Sum outstanding balance only for customers who still need delivery (not skipped)
+        outstanding: deliveryList.reduce((sum, c) => {
+            const delivery = getDeliveryForCustomer(c.id, todayDate)
+            // Only count outstanding if not yet delivered or skipped
+            if (!delivery || delivery.status === 'pending') {
+                return sum + (c.currentBalance || 0)
+            }
+            return sum
+        }, 0)
     }
 
     const today = new Date().toLocaleDateString('en-PK', {

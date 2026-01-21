@@ -52,6 +52,38 @@
     gap: var(--space-md);
 }
 
+/* Date Picker Styles (like Delivery panel) */
+.datePickerWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.calendarIcon {
+    position: absolute;
+    left: var(--space-md);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.dateInput {
+    padding: var(--space-md);
+    padding-left: 44px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.dateInput:focus {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 0 3px var(--primary-cyan-subtle);
+}
+
 .filterSelect {
     padding: var(--space-md) var(--space-lg);
     background: var(--glass-bg);

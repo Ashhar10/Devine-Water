@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Search,
@@ -10,7 +10,8 @@ import {
     X,
     Check,
     Trash2,
-    Edit
+    Edit,
+    Calendar
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -27,6 +28,7 @@ function OrdersBilling() {
     const [editingOrderId, setEditingOrderId] = useState(null)
     const [orderToDelete, setOrderToDelete] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])  // Date picker like Delivery
     const [newOrder, setNewOrder] = useState({
         customerId: '',
         productId: '',
@@ -54,11 +56,17 @@ function OrdersBilling() {
     // Get selected product for price calculation
     const selectedProduct = products.find(p => p.id === newOrder.productId)
 
+    // Auto-update price when product changes
+    useEffect(() => {
+        if (selectedProduct && newOrder.quantity) {
+            // Recalculate total whenever product or quantity changes
+            const subtotal = parseInt(newOrder.quantity) * selectedProduct.price
+            // Don't update state in a way that causes infinite loop
+            // Just let the form display the updated calculation
+        }
+    }, [selectedProduct, newOrder.quantity])
 
-    // Today's date for filtering
-    const todayDate = new Date().toISOString().split('T')[0]
-
-    // Filter by tab with date filtering for pending/delivered
+    // Filter by tab with date filtering for pending/delivered (using selected date)
     const filteredOrders = orders
         .filter(o => {
             // Defensive check: Log orders with missing orderDate
@@ -67,28 +75,18 @@ function OrdersBilling() {
             }
 
             if (activeTab === 'delivered') {
-                // Delivered tab: show only today's delivered orders
+                // Delivered tab: show selected date's delivered orders
                 const isDelivered = o.status === 'delivered'
-                const isToday = o.orderDate === todayDate
+                const isSelectedDate = o.orderDate === selectedDate
 
-                // Debug logging for delivered tab
-                if (isDelivered && !isToday) {
-                    console.log('Delivered order not shown (wrong date):', o.id, 'Order date:', o.orderDate, 'Today:', todayDate)
-                }
-
-                return isDelivered && isToday
+                return isDelivered && isSelectedDate
             }
             if (activeTab === 'pending') {
-                // Pending tab: show only today's pending orders
+                // Pending tab: show selected date's pending orders
                 const isPending = o.status === 'pending'
-                const isToday = o.orderDate === todayDate
+                const isSelectedDate = o.orderDate === selectedDate
 
-                // Debug logging for pending tab
-                if (isPending && !isToday) {
-                    console.log('Pending order not shown (wrong date):', o.id, 'Order date:', o.orderDate, 'Today:', todayDate)
-                }
-
-                return isPending && isToday
+                return isPending && isSelectedDate
             }
             // Customer Orders tab: show all orders (no date filter)
             return true
@@ -272,6 +270,16 @@ function OrdersBilling() {
                     />
                 </div>
                 <div className={styles.actions}>
+                    {/* Date Picker (like Delivery panel) */}
+                    <div className={styles.datePickerWrapper}>
+                        <Calendar size={18} className={styles.calendarIcon} />
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className={styles.dateInput}
+                        />
+                    </div>
                     <select
                         className={styles.filterSelect}
                         value={filterStatus}

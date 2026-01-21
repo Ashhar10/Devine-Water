@@ -306,12 +306,11 @@ export const useDataStore = create(
                                 )
                             }))
 
-                            // Update customer stats locally
-                            const currentBalance = (customer.currentBalance || 0) + data.total
+                            // Update customer stats (but NOT balance - balance updates only when delivered)
                             get().updateCustomer(data.customerId, {
                                 totalOrders: (customer.totalOrders || 0) + 1,
                                 totalSpent: (customer.totalSpent || 0) + data.total,
-                                currentBalance: currentBalance
+                                // currentBalance updated only when order status changes to 'delivered'
                             })
 
                             return dbOrder

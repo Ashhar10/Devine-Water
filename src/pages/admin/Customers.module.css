@@ -573,3 +573,188 @@
         justify-content: center;
     }
 }
+
+/* Customer Details Modal */
+.detailsModal {
+    max-width: 700px;
+}
+
+.detailsTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.avatarLarge {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
+    border-radius: var(--radius-lg);
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: var(--bg-deep-space);
+}
+
+.detailsSubtitle {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.detailsContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+.detailsSection {
+    padding: var(--space-lg);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+}
+
+.detailsSection h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: 0 0 var(--space-lg) 0;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.detailItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+}
+
+.detailItem svg {
+    color: var(--primary-cyan);
+    flex-shrink: 0;
+}
+
+.detailLabel {
+    color: var(--text-muted);
+}
+
+.detailValue {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Financial Stats */
+.statBox {
+    text-align: center;
+    padding: var(--space-md);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-md);
+}
+
+.statBox .statValue {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.statBox .statValue.warning {
+    color: var(--warning);
+}
+
+.statBox .statLabel {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* Orders List */
+.ordersList,
+.deliveriesList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.orderItem,
+.deliveryItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+}
+
+.orderItem div,
+.deliveryItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.orderId {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--primary-cyan);
+    font-size: var(--text-sm);
+}
+
+.orderDate,
+.deliveryDate {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.orderTotal {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+}
+
+.deliveryBottles {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.moreText {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: var(--space-sm);
+}
+
+.emptyText {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-align: center;
+    padding: var(--space-lg);
+}
+
+.statValue.pending {
+    color: var(--warning);
+}
+
+@media (max-width: 640px) {
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .detailsModal .statsRow {
+        grid-template-columns: 1fr;
+    }
+}

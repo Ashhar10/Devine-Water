@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -17,7 +17,11 @@ import {
     Package,
     RotateCcw,
     Map,
-    Settings
+    Settings,
+    Eye,
+    FileText,
+    TrendingUp,
+    User
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -52,8 +56,11 @@ function Customers() {
     const [gettingLocation, setGettingLocation] = useState(false)
     const [hasCachedData, setHasCachedData] = useState(false)
     const [formData, setFormData] = useState(getEmptyFormData())
+    const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
 
     const customers = useDataStore(state => state.customers)
+    const orders = useDataStore(state => state.orders)
+    const deliveries = useDataStore(state => state.deliveries)
     const [showAreaModal, setShowAreaModal] = useState(false)
     const [areaForm, setAreaForm] = useState({
         name: '',
@@ -327,6 +334,8 @@ function Customers() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
+                        onClick={() => setSelectedCustomerDetails(customer)}
+                        style={{ cursor: 'pointer' }}
                     >
                         <GlassCard className={styles.customerCard}>
                             <div className={styles.cardHeader}>
@@ -384,17 +393,17 @@ function Customers() {
                             <div className={styles.cardFooter}>
                                 <button
                                     className={styles.directionsBtn}
-                                    onClick={() => openDirections(customer)}
+                                    onClick={(e) => { e.stopPropagation(); openDirections(customer); }}
                                     title="Get Directions"
                                 >
                                     <Navigation size={16} />
                                     <span>Directions</span>
                                 </button>
                                 <div className={styles.actionBtns}>
-                                    <button className={styles.actionBtn} onClick={() => handleEdit(customer)}>
+                                    <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
                                         <Edit size={16} />
                                     </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(customer.id)}>
+                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
                                         <Trash size={16} />
                                     </button>
                                 </div>
@@ -670,6 +679,158 @@ function Customers() {
                     </GlassCard>
                 </div>
             )}
+
+            {/* Customer Details Modal */}
+            {selectedCustomerDetails && (() => {
+                // Filter customer's orders and deliveries
+                const customerOrders = orders.filter(o => o.customerId === selectedCustomerDetails.id)
+                const customerDeliveries = deliveries.filter(d => d.customerId === selectedCustomerDetails.id)
+
+                return (
+                    <div className={styles.modalOverlay} onClick={() => setSelectedCustomerDetails(null)}>
+                        <GlassCard className={`${styles.modal} ${styles.detailsModal}`} onClick={e => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <div className={styles.detailsTitle}>
+                                    <div className={styles.avatarLarge}>
+                                        {selectedCustomerDetails.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3>{selectedCustomerDetails.name}</h3>
+                                        <span className={styles.detailsSubtitle}>{selectedCustomerDetails.id}</span>
+                                    </div>
+                                </div>
+                                <button className={styles.closeBtn} onClick={() => setSelectedCustomerDetails(null)}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className={styles.detailsContent}>
+                                {/* Biography Section */}
+                                <div className={styles.detailsSection}>
+                                    <h4><User size={18} /> Personal Information</h4>
+                                    <div className={styles.detailsGrid}>
+                                        <div className={styles.detailItem}>
+                                            <Phone size={14} />
+                                            <span className={styles.detailLabel}>Phone:</span>
+                                            <span className={styles.detailValue}>{selectedCustomerDetails.phone}</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <MapPin size={14} />
+                                            <span className={styles.detailLabel}>Address:</span>
+                                            <span className={styles.detailValue}>{selectedCustomerDetails.address}</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <Calendar size={14} />
+                                            <span className={styles.detailLabel}>Joined:</span>
+                                            <span className={styles.detailValue}>{selectedCustomerDetails.createdAt}</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <Droplets size={14} />
+                                            <span className={styles.detailLabel}>Delivery Days:</span>
+                                            <span className={styles.detailValue}>
+                                                {selectedCustomerDetails.deliveryDays?.length > 0
+                                                    ? selectedCustomerDetails.deliveryDays.map(d => d.slice(0, 3)).join(', ')
+                                                    : 'Not set'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Financial Summary */}
+                                <div className={styles.detailsSection}>
+                                    <h4><Wallet size={18} /> Financial Summary</h4>
+                                    <div className={styles.statsRow}>
+                                        <div className={styles.statBox}>
+                                            <span className={styles.statValue}>Rs {selectedCustomerDetails.totalSpent?.toLocaleString() || 0}</span>
+                                            <span className={styles.statLabel}>Total Spent</span>
+                                        </div>
+                                        <div className={styles.statBox}>
+                                            <span className={`${styles.statValue} ${selectedCustomerDetails.currentBalance > 0 ? styles.warning : ''}`}>
+                                                Rs {selectedCustomerDetails.currentBalance?.toLocaleString() || 0}
+                                            </span>
+                                            <span className={styles.statLabel}>Current Balance</span>
+                                        </div>
+                                        <div className={styles.statBox}>
+                                            <span className={styles.statValue}>Rs {selectedCustomerDetails.securityDeposit?.toLocaleString() || 0}</span>
+                                            <span className={styles.statLabel}>Security Deposit</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Order History */}
+                                <div className={styles.detailsSection}>
+                                    <h4><FileText size={18} /> Order History ({customerOrders.length})</h4>
+                                    {customerOrders.length > 0 ? (
+                                        <div className={styles.ordersList}>
+                                            {customerOrders.slice(0, 5).map(order => (
+                                                <div key={order.id} className={styles.orderItem}>
+                                                    <div>
+                                                        <span className={styles.orderId}>{order.id}</span>
+                                                        <span className={styles.orderDate}>{order.orderDate}</span>
+                                                    </div>
+                                                    <div>
+                                                        <StatusBadge status={order.status} size="sm" />
+                                                        <span className={styles.orderTotal}>Rs {order.total}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {customerOrders.length > 5 && (
+                                                <p className={styles.moreText}>+ {customerOrders.length - 5} more orders</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className={styles.emptyText}>No orders yet</p>
+                                    )}
+                                </div>
+
+                                {/* Delivery History */}
+                                <div className={styles.detailsSection}>
+                                    <h4><Package size={18} /> Delivery History ({customerDeliveries.length})</h4>
+                                    {customerDeliveries.length > 0 ? (
+                                        <div className={styles.deliveriesList}>
+                                            {customerDeliveries.slice(0, 5).map((delivery, idx) => (
+                                                <div key={idx} className={styles.deliveryItem}>
+                                                    <span className={styles.deliveryDate}>{delivery.deliveryDate}</span>
+                                                    <span className={styles.deliveryBottles}>{delivery.bottlesDelivered} bottles</span>
+                                                    <StatusBadge status={delivery.status} size="sm" />
+                                                </div>
+                                            ))}
+                                            {customerDeliveries.length > 5 && (
+                                                <p className={styles.moreText}>+ {customerDeliveries.length - 5} more deliveries</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className={styles.emptyText}>No deliveries yet</p>
+                                    )}
+                                </div>
+
+                                {/* Stats */}
+                                <div className={styles.detailsSection}>
+                                    <h4><TrendingUp size={18} /> Statistics</h4>
+                                    <div className={styles.detailsGrid}>
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Total Orders:</span>
+                                            <span className={styles.detailValue}>{selectedCustomerDetails.totalOrders || 0}</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Required Bottles:</span>
+                                            <span className={styles.detailValue}>{selectedCustomerDetails.requiredBottles || 1}/delivery</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Opening Balance:</span>
+                                            <span className={styles.detailValue}>Rs {selectedCustomerDetails.openingBalance || 0}</span>
+                                        </div>
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Status:</span>
+                                            <StatusBadge status={selectedCustomerDetails.status} size="sm" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </GlassCard>
+                    </div>
+                )
+            })()}
 
         </div>
     )

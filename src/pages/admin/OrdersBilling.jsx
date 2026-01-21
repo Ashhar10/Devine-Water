@@ -54,12 +54,22 @@ function OrdersBilling() {
     // Get selected product for price calculation
     const selectedProduct = products.find(p => p.id === newOrder.productId)
 
-    // Filter by tab
+    // Today's date for filtering
+    const todayDate = new Date().toISOString().split('T')[0]
+
+    // Filter by tab with date filtering for pending/delivered
     const filteredOrders = orders
         .filter(o => {
-            if (activeTab === 'delivered') return o.status === 'delivered'
-            if (activeTab === 'pending') return o.status === 'pending'
-            return true // 'all' shows everything
+            if (activeTab === 'delivered') {
+                // Delivered tab: show only today's delivered orders
+                return o.status === 'delivered' && o.orderDate === todayDate
+            }
+            if (activeTab === 'pending') {
+                // Pending tab: show only today's pending orders
+                return o.status === 'pending' && o.orderDate === todayDate
+            }
+            // Customer Orders tab: show all orders (no date filter)
+            return true
         })
         .filter(o => filterStatus === 'all' || o.status === filterStatus)
         .filter(o =>

@@ -64,6 +64,10 @@ function Delivery() {
     const updateDelivery = useDataStore(state => state.updateDelivery)
     const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
     const addOrder = useDataStore(state => state.addOrder)
+    const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
+    const updateOrder = useDataStore(state => state.updateOrder)
+    const updateCustomer = useDataStore(state => state.updateCustomer)
+    const deleteOrder = useDataStore(state => state.deleteOrder)
 
     // Get employees (staff)
     const employees = users.filter(u => u.role === 'staff' || u.role === 'admin')
@@ -161,6 +165,40 @@ function Delivery() {
 
         // Update or Create delivery
         if (editingDelivery) {
+            // Calculate new total based on edited bottles
+            const newTotal = bottlesDelivered * unitPrice
+
+            // Find the original order for this delivery (by date and customer)
+            const orders = useDataStore.getState().orders
+            const originalOrder = orders.find(o =>
+                o.customerId === selectedCustomer.id &&
+                o.orderDate === todayDate
+            )
+
+            if (originalOrder) {
+                const oldTotal = originalOrder.total || 0
+                const balanceDifference = newTotal - oldTotal
+
+                // Update customer balance with the difference
+                const customer = useDataStore.getState().customers.find(c => c.id === selectedCustomer.id)
+                if (customer) {
+                    const newBalance = (customer.currentBalance || 0) + balanceDifference
+                    await useDataStore.getState().updateCustomer(selectedCustomer.id, {
+                        currentBalance: newBalance,
+                        totalSpent: (customer.totalSpent || 0) + balanceDifference
+                    })
+                }
+
+                // Update the order total
+                await updateOrder(originalOrder.id, {
+                    total: newTotal,
+                    bottlesDelivered: bottlesDelivered,
+                    receiveBottles: receiveBottles,
+                    notes: deliveryForm.notes || null
+                })
+            }
+
+            // Update delivery record
             await updateDelivery(editingDelivery.id, {
                 bottlesDelivered: bottlesDelivered,
                 receiveBottles: receiveBottles,
@@ -168,8 +206,8 @@ function Delivery() {
                 status: 'delivered'
             })
         } else {
-            // Only create order if it's a new delivery
-            await addOrder({
+            // Create order as DELIVERED (since we're marking it delivered in delivery section)
+            const newOrder = await addOrder({
                 customerId: selectedCustomer.id,
                 customerUuid: selectedCustomer.uuid,
                 customerName: selectedCustomer.name,
@@ -187,6 +225,11 @@ function Delivery() {
                 deliveryDate: todayDate,
                 notes: deliveryForm.notes || null
             })
+
+            // Mark order as delivered immediately
+            if (newOrder) {
+                await updateOrderStatus(newOrder.id, 'delivered')
+            }
 
             await addDelivery({
                 customerId: selectedCustomer.id,
@@ -410,7 +453,6 @@ function Delivery() {
                                                     className={`${styles.actionBtn} ${styles.skipped}`}
                                                     title="Skip"
                                                     onClick={() => handleSkipDelivery(customer)}
-                                                    disabled={isDelivered || status === 'skipped'}
                                                 >
                                                     <XCircle size={16} />
                                                 </button>

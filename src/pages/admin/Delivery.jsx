@@ -222,6 +222,7 @@ function Delivery() {
                 total: total,
                 bottlesDelivered: bottlesDelivered,
                 receiveBottles: receiveBottles,
+                orderDate: todayDate,  // FIXED: Use orderDate instead of deliveryDate
                 deliveryDate: todayDate,
                 notes: deliveryForm.notes || null
             })

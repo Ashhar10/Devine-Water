@@ -163,6 +163,7 @@ export const deleteCustomerFromDb = async (customerId) => {
 export const fetchOrders = async () => {
     if (!isSupabaseConfigured()) return []
 
+    // Fetch orders with customer names and order items with product details
     const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -175,7 +176,15 @@ export const fetchOrders = async () => {
             payment_status,
             created_at,
             customers (name),
-            order_items (*)
+            order_items (
+                id,
+                product_id,
+                quantity,
+                return_quantity,
+                unit_price,
+                total_price,
+                products (id, name)
+            )
         `)
         .order('created_at', { ascending: false })
 
@@ -190,6 +199,9 @@ export const fetchOrders = async () => {
             return sum + (parseFloat(item.unit_price || 0) * parseInt(item.quantity || 0))
         }, 0) || 0
 
+        // Use order_date if available, fallback to created_at date
+        const orderDate = o.order_date || (o.created_at ? o.created_at.split('T')[0] : null)
+
         return {
             id: o.order_id,
             uuid: o.id,
@@ -197,14 +209,15 @@ export const fetchOrders = async () => {
             customerName: o.customers?.name || 'Unknown',
             items: o.order_items?.map(item => ({
                 productId: item.product_id,
-                name: item.product_id || 'Product',  // We'll need to join products to get name
+                name: item.products?.name || 'Product',  // Get name from joined products table
                 qty: item.quantity,
+                returnQty: item.return_quantity || 0,
                 price: parseFloat(item.unit_price)
             })) || [],
             total: total,  // Calculated from items
             status: o.status,
             paymentStatus: o.payment_status,
-            orderDate: o.order_date,
+            orderDate: orderDate,  // Ensure we always have a date
             createdAt: o.created_at
         }
     }) || []

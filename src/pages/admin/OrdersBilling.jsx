@@ -54,19 +54,41 @@ function OrdersBilling() {
     // Get selected product for price calculation
     const selectedProduct = products.find(p => p.id === newOrder.productId)
 
+
     // Today's date for filtering
     const todayDate = new Date().toISOString().split('T')[0]
 
     // Filter by tab with date filtering for pending/delivered
     const filteredOrders = orders
         .filter(o => {
+            // Defensive check: Log orders with missing orderDate
+            if (!o.orderDate) {
+                console.warn('Order missing orderDate:', o.id, 'Status:', o.status)
+            }
+
             if (activeTab === 'delivered') {
                 // Delivered tab: show only today's delivered orders
-                return o.status === 'delivered' && o.orderDate === todayDate
+                const isDelivered = o.status === 'delivered'
+                const isToday = o.orderDate === todayDate
+
+                // Debug logging for delivered tab
+                if (isDelivered && !isToday) {
+                    console.log('Delivered order not shown (wrong date):', o.id, 'Order date:', o.orderDate, 'Today:', todayDate)
+                }
+
+                return isDelivered && isToday
             }
             if (activeTab === 'pending') {
                 // Pending tab: show only today's pending orders
-                return o.status === 'pending' && o.orderDate === todayDate
+                const isPending = o.status === 'pending'
+                const isToday = o.orderDate === todayDate
+
+                // Debug logging for pending tab
+                if (isPending && !isToday) {
+                    console.log('Pending order not shown (wrong date):', o.id, 'Order date:', o.orderDate, 'Today:', todayDate)
+                }
+
+                return isPending && isToday
             }
             // Customer Orders tab: show all orders (no date filter)
             return true
@@ -76,6 +98,7 @@ function OrdersBilling() {
             o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             o.id.toLowerCase().includes(searchTerm.toLowerCase())
         )
+
 
     const toggleOrder = (orderId) => {
         setExpandedOrder(expandedOrder === orderId ? null : orderId)

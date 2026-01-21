@@ -349,7 +349,14 @@ export const useDataStore = create(
                 if (newStatus === 'delivered' && order.customerId) {
                     const customer = get().customers.find(c => c.id === order.customerId)
                     if (customer) {
-                        get().updateCustomer(order.customerId, {
+                        console.log('Updating customer balance:', {
+                            customerId: order.customerId,
+                            currentBalance: customer.currentBalance,
+                            orderTotal: order.total,
+                            newBalance: (customer.currentBalance || 0) + order.total
+                        })
+                        // FIXED: Added await to ensure database update completes
+                        await get().updateCustomer(order.customerId, {
                             currentBalance: (customer.currentBalance || 0) + order.total
                         })
                     }

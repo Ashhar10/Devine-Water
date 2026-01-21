@@ -637,6 +637,34 @@
     font-family: inherit;
 }
 
+/* Total Display Section */
+.totalSection {
+    padding: var(--space-lg);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(20, 184, 166, 0.1));
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    border-radius: var(--radius-lg);
+    margin: var(--space-md) 0;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.totalLabel {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.totalAmount {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--primary-cyan);
+}
+
 .modalActions {
     display: flex;
     gap: var(--space-md);

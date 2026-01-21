@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -68,6 +68,13 @@ function Delivery() {
     const updateOrder = useDataStore(state => state.updateOrder)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteOrder = useDataStore(state => state.deleteOrder)
+
+    // Calculate delivery total in real-time
+    const deliveryTotal = useMemo(() => {
+        const selectedProduct = products.find(p => p.id === deliveryForm.productId)
+        if (!selectedProduct || !deliveryForm.bottlesDelivered) return 0
+        return parseInt(deliveryForm.bottlesDelivered) * selectedProduct.price
+    }, [deliveryForm.productId, deliveryForm.bottlesDelivered, products])
 
     // Get employees (staff)
     const employees = users.filter(u => u.role === 'staff' || u.role === 'admin')
@@ -561,6 +568,16 @@ function Delivery() {
                                     placeholder="Any additional notes..."
                                 />
                             </div>
+
+                            {/* Total Display */}
+                            {deliveryForm.productId && deliveryForm.bottlesDelivered && (
+                                <div className={styles.totalSection}>
+                                    <div className={styles.totalRow}>
+                                        <span className={styles.totalLabel}>Total Amount:</span>
+                                        <span className={styles.totalAmount}>Rs {deliveryTotal.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className={styles.modalActions}>
                                 <button type="button" onClick={handleCloseModal} className={styles.cancelBtn}>

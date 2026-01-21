@@ -108,10 +108,16 @@ function Delivery() {
         return getPriority(aStatus) - getPriority(bStatus)
     })
 
-    // Calculate totals
+    // Calculate totals for the selected date only
     const totals = {
         customers: deliveryList.length,
-        requiredBottles: deliveryList.reduce((sum, c) => sum + (c.requiredBottles || 1), 0),
+        // Count actual bottles delivered on this date (from deliveries)
+        requiredBottles: deliveryList.reduce((sum, c) => {
+            const delivery = getDeliveryForCustomer(c.id, todayDate)
+            // If delivered today, count bottlesDelivered; otherwise count required bottles
+            return sum + (delivery?.bottlesDelivered || c.requiredBottles || 1)
+        }, 0),
+        // Sum outstanding balance only for customers scheduled for today
         outstanding: deliveryList.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
     }
 

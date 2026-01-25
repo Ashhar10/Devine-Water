@@ -40,6 +40,8 @@ import {
     addDeliveryToDb,
     updateDeliveryInDb,
     addAreaToDb,
+    updateAreaInDb,
+    deleteAreaFromDb,
     updateInvestmentInDb,
     updateExpenditureInDb,
     addIncomeCategoryToDb,
@@ -192,14 +194,24 @@ export const useDataStore = create(
                 set(state => ({
                     areas: state.areas.map(a => a.id === id ? { ...a, ...updates } : a)
                 }))
-                // DB update skipped for prototype
+
+                try {
+                    await updateAreaInDb(id, updates)
+                } catch (error) {
+                    console.error('Failed to update area in DB:', error)
+                }
             },
 
             deleteArea: async (id) => {
                 set(state => ({
                     areas: state.areas.filter(a => a.id !== id)
                 }))
-                // DB delete skipped for prototype
+
+                try {
+                    await deleteAreaFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete area from DB:', error)
+                }
             },
 
 

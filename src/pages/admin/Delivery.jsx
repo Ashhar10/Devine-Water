@@ -211,11 +211,21 @@ function Delivery() {
             if (originalOrder) {
                 // Update the order total
                 // Note: Balance update is now handled automatically in dataStore's updateOrder
+                // Prepare items for update (crucial for DB persistence of total)
+                const updatedItems = [{
+                    productId: selectedProduct.uuid || selectedProduct.id,
+                    productName: selectedProduct.name,
+                    qty: bottlesDelivered,
+                    price: unitPrice
+                }]
+
                 await updateOrder(originalOrder.id, {
                     total: newTotal,
+                    items: updatedItems,
                     bottlesDelivered: bottlesDelivered,
                     receiveBottles: receiveBottles,
-                    notes: deliveryForm.notes || null
+                    notes: deliveryForm.notes || null,
+                    customerId: selectedCustomer.id // Ensure balance update logic has customerId
                 })
                 console.log('Order updated from delivery page')
             }

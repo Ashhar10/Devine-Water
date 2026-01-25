@@ -336,7 +336,7 @@ function Products() {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>Purchase Price (Rs)</label>
+                                    <label>{formData.bottleType === '19L' ? 'Consume Cost' : 'Purchase Price'} (Rs)</label>
                                     <input
                                         type="number"
                                         value={formData.purchasePrice}

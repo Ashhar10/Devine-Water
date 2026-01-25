@@ -17,7 +17,8 @@ function KPICard({
     trendValue,
     color = 'cyan',
     delay = 0,
-    className = ''
+    className = '',
+    ...props
 }) {
     const [displayValue, setDisplayValue] = useState(0)
 
@@ -76,10 +77,10 @@ function KPICard({
                 </motion.span>
             </div>
 
-            {trend && trendValue && (
+            {trend && (
                 <div className={`${styles.trend} ${trendClass}`}>
                     <span className={styles.trendIcon}>{trend === 'up' ? '↑' : '↓'}</span>
-                    <span>{trendValue}% from last month</span>
+                    <span>{trendValue}{props.trendLabel || '% from last month'}</span>
                 </div>
             )}
         </GlassCard>

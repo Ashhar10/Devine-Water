@@ -27,6 +27,7 @@ function AdminDashboard() {
     const investments = useDataStore(state => state.investments)
     const expenditures = useDataStore(state => state.expenditures)
     const payments = useDataStore(state => state.payments)
+    const areas = useDataStore(state => state.areas)
 
     // Compute stats with useMemo to avoid recalculation
     const stats = useMemo(() => {
@@ -42,6 +43,7 @@ function AdminDashboard() {
         // We look at today's orders to see which customers are involved
         const areasSet = new Set()
         const areaNamesSet = new Set()
+        // areas is now available from component scope
 
         todayOrdersList.forEach(order => {
             const customer = customers.find(c => c.id === order.customerId)

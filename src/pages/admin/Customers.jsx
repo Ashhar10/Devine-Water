@@ -27,6 +27,7 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
+import StatSlider from '../../components/dashboard/StatSlider'
 import styles from './Customers.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -51,6 +52,7 @@ const getEmptyFormData = () => ({
 
 function Customers() {
     const [searchTerm, setSearchTerm] = useState('')
+    const [activeTab, setActiveTab] = useState('customers') // 'customers' or 'areas'
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingCustomer, setEditingCustomer] = useState(null)
     const [gettingLocation, setGettingLocation] = useState(false)
@@ -72,6 +74,8 @@ function Customers() {
     const areas = useDataStore(state => state.areas)
     const addCustomer = useDataStore(state => state.addCustomer)
     const addArea = useDataStore(state => state.addArea)
+    const updateArea = useDataStore(state => state.updateArea)
+    const deleteArea = useDataStore(state => state.deleteArea)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
     const addUser = useDataStore(state => state.addUser)
@@ -123,9 +127,31 @@ function Customers() {
 
     const handleAreaSubmit = async (e) => {
         e.preventDefault()
-        await addArea(areaForm)
+        if (editingCustomer) { // Reusing editingCustomer for editing Area to save state vars
+            await updateArea(editingCustomer.id, areaForm)
+            setEditingCustomer(null)
+        } else {
+            await addArea(areaForm)
+        }
         setShowAreaModal(false)
         setAreaForm({ name: '', description: '', priority: 0, deliveryDays: [] })
+    }
+
+    const editArea = (area) => {
+        setAreaForm({
+            name: area.name,
+            description: area.description || '',
+            priority: area.priority || 0,
+            deliveryDays: area.deliveryDays || []
+        })
+        setEditingCustomer({ id: area.id }) // Hack: using editingCustomer to track editing area ID
+        setShowAreaModal(true)
+    }
+
+    const removeArea = (id) => {
+        if (window.confirm('Are you sure you want to delete this area?')) {
+            deleteArea(id)
+        }
     }
 
     // Clear cache
@@ -151,13 +177,52 @@ function Customers() {
         c.email?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const stats = {
-        total: customers.length,
-        active: customers.filter(c => c.status === 'active').length,
-        inactive: customers.filter(c => c.status === 'inactive').length,
-        totalDeposits: customers.reduce((sum, c) => sum + (c.securityDeposit || 0), 0),
-        totalOutstanding: customers.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
-    }
+    const filteredAreas = areas.filter(a =>
+        a.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Slides Configuration
+    const customerSlides = [
+        {
+            title: 'Active Customers',
+            value: customers.filter(c => c.status === 'active').length,
+            icon: User,
+            color: 'success'
+        },
+        {
+            title: 'Inactive Customers',
+            value: customers.filter(c => c.status === 'inactive').length,
+            icon: User,
+            color: 'warning'
+        },
+        {
+            title: 'Total Customers',
+            value: customers.length,
+            icon: User,
+            color: 'teal'
+        }
+    ]
+
+    const areaSlides = [
+        {
+            title: 'Total Areas',
+            value: areas.length,
+            icon: MapPin,
+            color: 'cyan'
+        },
+        {
+            title: 'Active Areas',
+            value: areas.filter(a => customers.some(c => c.areaId === a.uuid)).length,
+            icon: MapPin,
+            color: 'success'
+        },
+        {
+            title: 'Inactive Areas',
+            value: areas.filter(a => !customers.some(c => c.areaId === a.uuid)).length,
+            icon: MapPin,
+            color: 'warning'
+        }
+    ]
 
     // Get current location
     const getCurrentLocation = () => {
@@ -289,14 +354,18 @@ function Customers() {
                     <Search size={18} className={styles.searchIcon} />
                     <input
                         type="text"
-                        placeholder="Search customers..."
+                        placeholder={`Search ${activeTab}...`}
                         className={styles.searchInput}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <Button variant="secondary" icon={Map} onClick={() => setShowAreaModal(true)}>
+                    <Button variant="secondary" icon={Map} onClick={() => {
+                        setEditingCustomer(null) // Reset edit state
+                        setAreaForm({ name: '', description: '', priority: 0, deliveryDays: [] })
+                        setShowAreaModal(true)
+                    }}>
                         Add Area
                     </Button>
                     <Button variant="primary" icon={Plus} onClick={openAddModal}>
@@ -306,112 +375,172 @@ function Customers() {
             </div>
 
 
-            {/* Stats */}
+            {/* Stats Sliders */}
             <div className={styles.statsRow}>
-                <GlassCard className={styles.statCard}>
-                    <span className={styles.statValue}>{stats.total}</span>
-                    <span className={styles.statLabel}>Total Customers</span>
-                </GlassCard>
-                <GlassCard className={styles.statCard}>
-                    <span className={`${styles.statValue} ${styles.active}`}>{stats.active}</span>
-                    <span className={styles.statLabel}>Active</span>
-                </GlassCard>
-                <GlassCard className={styles.statCard}>
-                    <span className={`${styles.statValue} ${styles.inactive}`}>{stats.inactive}</span>
-                    <span className={styles.statLabel}>Inactive</span>
-                </GlassCard>
-                <GlassCard className={styles.statCard}>
-                    <span className={styles.statValue}>{filteredCustomers.length}</span>
-                    <span className={styles.statLabel}>Showing</span>
-                </GlassCard>
+                <StatSlider
+                    slides={customerSlides}
+                    interval={4000}
+                />
+                <StatSlider
+                    slides={areaSlides}
+                    interval={5000}
+                />
             </div>
 
-            {/* Customers Grid */}
-            <div className={styles.customersGrid}>
-                {filteredCustomers.map((customer, index) => (
-                    <motion.div
-                        key={customer.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        onClick={() => setSelectedCustomerDetails(customer)}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        <GlassCard className={styles.customerCard}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.avatar}>
-                                    {customer.name.charAt(0)}
-                                </div>
-                                <div className={styles.headerInfo}>
-                                    <span className={styles.customerName}>{customer.name}</span>
-                                    <span className={styles.customerId}>{customer.id}</span>
-                                </div>
-                                <StatusBadge status={customer.status} size="sm" />
-                            </div>
-
-                            <div className={styles.cardBody}>
-                                <div className={styles.infoRow}>
-                                    <Phone size={14} />
-                                    <span>{customer.phone}</span>
-                                </div>
-                                <div className={styles.infoRow}>
-                                    <MapPin size={14} />
-                                    <span>{customer.address}</span>
-                                </div>
-                                <div className={styles.infoRow}>
-                                    <Calendar size={14} />
-                                    <span>Joined {customer.createdAt}</span>
-                                </div>
-                            </div>
-
-                            <div className={styles.cardStats}>
-                                <div className={styles.stat}>
-                                    <Droplets size={16} className={styles.statIcon} />
-                                    <div>
-                                        <span className={styles.statNumber}>{customer.totalOrders}</span>
-                                        <span className={styles.statText}>Orders</span>
-                                    </div>
-                                </div>
-                                <div className={styles.stat}>
-                                    <span className={styles.statCurrency}>Rs</span>
-                                    <div>
-                                        <span className={styles.statNumber}>{customer.totalSpent?.toLocaleString() || 0}</span>
-                                        <span className={styles.statText}>Total Spent</span>
-                                    </div>
-                                </div>
-                                <div className={styles.stat}>
-                                    <Wallet size={16} className={styles.statIcon} />
-                                    <div>
-                                        <span className={`${styles.statNumber} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
-                                            {customer.currentBalance?.toLocaleString() || 0}
-                                        </span>
-                                        <span className={styles.statText}>Balance</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.cardFooter}>
-                                <button
-                                    className={styles.directionsBtn}
-                                    onClick={(e) => { e.stopPropagation(); openDirections(customer); }}
-                                    title="Get Directions"
-                                >
-                                    <Navigation size={16} />
-                                    <span>Directions</span>
-                                </button>
-                                <div className={styles.actionBtns}>
-                                    <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
-                                        <Edit size={16} />
-                                    </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
-                                        <Trash size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        </GlassCard>
-                    </motion.div>
-                ))}
+            {/* Tabs */}
+            <div className={styles.tabsContainer}>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'customers' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('customers')}
+                >
+                    Customers
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'areas' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('areas')}
+                >
+                    Areas
+                </button>
             </div>
+
+            {/* Content Based on Tab */}
+            {activeTab === 'customers' ? (
+                <div className={styles.customersGrid}>
+                    {filteredCustomers.map((customer, index) => (
+                        <motion.div
+                            key={customer.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => setSelectedCustomerDetails(customer)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <GlassCard className={styles.customerCard}>
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.avatar}>
+                                        {customer.name.charAt(0)}
+                                    </div>
+                                    <div className={styles.headerInfo}>
+                                        <span className={styles.customerName}>{customer.name}</span>
+                                        <span className={styles.customerId}>{customer.id}</span>
+                                    </div>
+                                    <StatusBadge status={customer.status} size="sm" />
+                                </div>
+
+                                <div className={styles.cardBody}>
+                                    <div className={styles.infoRow}>
+                                        <Phone size={14} />
+                                        <span>{customer.phone}</span>
+                                    </div>
+                                    <div className={styles.infoRow}>
+                                        <MapPin size={14} />
+                                        <span>{customer.address}</span>
+                                    </div>
+                                    <div className={styles.infoRow}>
+                                        <Calendar size={14} />
+                                        <span>Joined {customer.createdAt}</span>
+                                    </div>
+                                </div>
+
+                                <div className={styles.cardStats}>
+                                    <div className={styles.stat}>
+                                        <Droplets size={16} className={styles.statIcon} />
+                                        <div>
+                                            <span className={styles.statNumber}>{customer.totalOrders}</span>
+                                            <span className={styles.statText}>Orders</span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.stat}>
+                                        <span className={styles.statCurrency}>Rs</span>
+                                        <div>
+                                            <span className={styles.statNumber}>{customer.totalSpent?.toLocaleString() || 0}</span>
+                                            <span className={styles.statText}>Total Spent</span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.stat}>
+                                        <Wallet size={16} className={styles.statIcon} />
+                                        <div>
+                                            <span className={`${styles.statNumber} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
+                                                {customer.currentBalance?.toLocaleString() || 0}
+                                            </span>
+                                            <span className={styles.statText}>Balance</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className={styles.cardFooter}>
+                                    <button
+                                        className={styles.directionsBtn}
+                                        onClick={(e) => { e.stopPropagation(); openDirections(customer); }}
+                                        title="Get Directions"
+                                    >
+                                        <Navigation size={16} />
+                                        <span>Directions</span>
+                                    </button>
+                                    <div className={styles.actionBtns}>
+                                        <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
+                                            <Edit size={16} />
+                                        </button>
+                                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                    ))}
+                </div>
+            ) : (
+                <div className={styles.areasGrid}>
+                    {filteredAreas.map((area, index) => (
+                        <motion.div
+                            key={area.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <GlassCard className={styles.areaCard}>
+                                <div>
+                                    <div className={styles.areaHeader}>
+                                        <span className={styles.areaName}>{area.name}</span>
+                                        <span className={styles.customerId}>Priority: {area.priority}</span>
+                                    </div>
+                                    <p className={styles.areaDesc}>{area.description || 'No description provided'}</p>
+
+                                    <div className={styles.areaStats}>
+                                        <div className={styles.areaStat}>
+                                            <User size={16} />
+                                            <span>{customers.filter(c => c.areaId === area.uuid).length} Customers</span>
+                                        </div>
+                                    </div>
+
+                                    {area.deliveryDays && area.deliveryDays.length > 0 && (
+                                        <div className={styles.daysTags}>
+                                            {area.deliveryDays.map(day => (
+                                                <span key={day} className={styles.dayTag}>
+                                                    {day.slice(0, 3)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className={styles.cardFooter}>
+                                    <div className={styles.actionBtns}>
+                                        <button className={styles.actionBtn} onClick={() => editArea(area)}>
+                                            <Edit size={16} />
+                                        </button>
+                                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => removeArea(area.id)}>
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
 
             {/* Add/Edit Modal */}
             {showAddModal && (
@@ -622,7 +751,7 @@ function Customers() {
                 <div className={styles.modalOverlay} onClick={() => setShowAreaModal(false)}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>Add New Area</h3>
+                            <h3>{editingCustomer && activeTab === 'areas' ? 'Edit Area' : 'Add New Area'}</h3>
                             <button className={styles.closeBtn} onClick={() => setShowAreaModal(false)}>
                                 <X size={20} />
                             </button>
@@ -682,7 +811,7 @@ function Customers() {
                             </div>
 
                             <Button type="submit" variant="primary" fullWidth>
-                                Create Area
+                                {editingCustomer && activeTab === 'areas' ? 'Update Area' : 'Create Area'}
                             </Button>
                         </form>
                     </GlassCard>

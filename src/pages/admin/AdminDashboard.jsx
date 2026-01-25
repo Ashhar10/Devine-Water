@@ -7,14 +7,17 @@ import {
     DollarSign,
     ArrowUpRight,
     ArrowDownRight,
-    ShoppingCart
+    ShoppingCart,
+    MapPin,
+    CheckCircle,
+    Clock
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import KPICard from '../../components/ui/KPICard'
 import StatusBadge from '../../components/ui/StatusBadge'
 import DataChart from '../../components/charts/DataChart'
-import RevenueSlider from '../../components/dashboard/RevenueSlider'
+import StatSlider from '../../components/dashboard/StatSlider'
 import styles from './AdminDashboard.module.css'
 
 function AdminDashboard() {
@@ -31,8 +34,20 @@ function AdminDashboard() {
         const totalOutstanding = customers.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
 
         const todayStr = new Date().toISOString().split('T')[0]
-        const todayOrders = orders.filter(o => o.createdAt?.startsWith(todayStr)).length
+        const todayOrdersList = orders.filter(o => o.createdAt?.startsWith(todayStr))
+        const todayOrders = todayOrdersList.length
         const pendingOrders = orders.filter(o => o.status === 'pending').length
+
+        // Calculate Areas to Deliver (Unique areas from today's orders)
+        // We look at today's orders to see which customers are involved
+        const areasSet = new Set()
+        todayOrdersList.forEach(order => {
+            const customer = customers.find(c => c.id === order.customerId)
+            if (customer && customer.areaId) {
+                areasSet.add(customer.areaId)
+            }
+        })
+        const areasToDeliver = areasSet.size
 
         // Calculate total bottles from orders
         const totalBottles = orders.reduce((sum, o) =>
@@ -40,6 +55,8 @@ function AdminDashboard() {
         const deliveredBottles = orders
             .filter(o => o.status === 'delivered')
             .reduce((sum, o) => sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
+
+        const totalDeliveredOrders = orders.filter(o => o.status === 'delivered').length
 
         const income = investments.reduce((sum, inv) => sum + inv.amount, 0)
         const expenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
@@ -69,6 +86,8 @@ function AdminDashboard() {
             totalOrders: orders.length,
             pendingOrders,
             todayOrders,
+            totalDeliveredOrders,
+            areasToDeliver,
             totalBottles,
             deliveredBottles,
             revenue: monthlyRevenue, // Updated to use Monthly Cash Flow
@@ -121,19 +140,61 @@ function AdminDashboard() {
         })
     })), [orders])
 
+    // Slider Data Configuration
+    const revenueSlides = [
+        {
+            title: 'Monthly Revenue',
+            value: stats.revenue,
+            icon: DollarSign,
+            color: 'income',
+            prefix: 'Rs '
+        },
+        {
+            title: 'Outstanding Balance',
+            value: stats.outstanding,
+            icon: Clock,
+            color: 'warning',
+            prefix: 'Rs '
+        }
+    ]
+
+    const orderSlides = [
+        {
+            title: 'Total Orders',
+            value: stats.totalOrders,
+            icon: ShoppingCart,
+            color: 'cyan'
+        },
+        {
+            title: 'Delivered Orders',
+            value: stats.totalDeliveredOrders,
+            icon: CheckCircle,
+            color: 'teal'
+        },
+        {
+            title: 'Pending Orders',
+            value: stats.pendingOrders,
+            icon: Clock,
+            color: 'orange'
+        },
+        {
+            title: 'Areas to Deliver',
+            value: stats.areasToDeliver,
+            icon: MapPin,
+            color: 'success'
+        }
+    ]
+
     return (
         <div className={styles.dashboard}>
             {/* KPI Cards */}
             <section className={styles.kpiGrid}>
-                <KPICard
-                    title="Total Orders"
-                    value={stats.totalOrders}
-                    icon={ShoppingCart}
-                    trend="up"
-                    trendValue={12.5}
-                    color="cyan"
-                    delay={0}
+                {/* Orders Slider */}
+                <StatSlider
+                    slides={orderSlides}
+                    interval={5000}
                 />
+
                 <KPICard
                     title="Bottles Delivered"
                     value={stats.deliveredBottles}
@@ -152,10 +213,11 @@ function AdminDashboard() {
                     color="success"
                     delay={0.2}
                 />
-                {/* Replaced static revenue card with Slider */}
-                <RevenueSlider
-                    revenue={stats.revenue}
-                    outstanding={stats.outstanding}
+
+                {/* Revenue Slider */}
+                <StatSlider
+                    slides={revenueSlides}
+                    interval={7000} // Offset interval to avoid simultaneous transitions
                 />
             </section>
 

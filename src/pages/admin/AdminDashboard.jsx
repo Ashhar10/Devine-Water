@@ -14,6 +14,7 @@ import GlassCard from '../../components/ui/GlassCard'
 import KPICard from '../../components/ui/KPICard'
 import StatusBadge from '../../components/ui/StatusBadge'
 import DataChart from '../../components/charts/DataChart'
+import RevenueSlider from '../../components/dashboard/RevenueSlider'
 import styles from './AdminDashboard.module.css'
 
 function AdminDashboard() {
@@ -26,6 +27,8 @@ function AdminDashboard() {
     // Compute stats with useMemo to avoid recalculation
     const stats = useMemo(() => {
         const activeCustomers = customers.filter(c => c.status === 'active').length
+        const totalOutstanding = customers.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
+
         const todayStr = new Date().toISOString().split('T')[0]
         const todayOrders = orders.filter(o => o.createdAt?.startsWith(todayStr)).length
         const pendingOrders = orders.filter(o => o.status === 'pending').length
@@ -50,6 +53,7 @@ function AdminDashboard() {
             revenue: income,
             expenses: expenses,
             profit: income - expenses,
+            outstanding: totalOutstanding
         }
     }, [customers, orders, investments, expenditures])
 
@@ -127,15 +131,10 @@ function AdminDashboard() {
                     color="success"
                     delay={0.2}
                 />
-                <KPICard
-                    title="Monthly Revenue"
-                    value={stats.revenue}
-                    prefix="Rs "
-                    icon={DollarSign}
-                    trend="up"
-                    trendValue={15.7}
-                    color="income"
-                    delay={0.3}
+                {/* Replaced static revenue card with Slider */}
+                <RevenueSlider
+                    revenue={stats.revenue}
+                    outstanding={stats.outstanding}
                 />
             </section>
 

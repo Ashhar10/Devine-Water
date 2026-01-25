@@ -10,7 +10,8 @@ import {
     ShoppingCart,
     MapPin,
     CheckCircle,
-    Clock
+    Clock,
+    User
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'

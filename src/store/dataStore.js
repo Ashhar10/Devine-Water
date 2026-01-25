@@ -188,6 +188,20 @@ export const useDataStore = create(
                 return newArea
             },
 
+            updateArea: async (id, updates) => {
+                set(state => ({
+                    areas: state.areas.map(a => a.id === id ? { ...a, ...updates } : a)
+                }))
+                // DB update skipped for prototype
+            },
+
+            deleteArea: async (id) => {
+                set(state => ({
+                    areas: state.areas.filter(a => a.id !== id)
+                }))
+                // DB delete skipped for prototype
+            },
+
 
             // ===== AUTH ACTIONS =====
             setCurrentUser: (user) => set({ currentUser: user }),

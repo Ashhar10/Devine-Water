@@ -191,12 +191,14 @@ export const useDataStore = create(
             },
 
             updateArea: async (id, updates) => {
+                console.log('Attemping to update Area (Store):', id, updates)
                 set(state => ({
                     areas: state.areas.map(a => a.id === id ? { ...a, ...updates } : a)
                 }))
 
                 try {
                     await updateAreaInDb(id, updates)
+                    console.log('Area updated in DB successfully')
                 } catch (error) {
                     console.error('Failed to update area in DB:', error)
                 }

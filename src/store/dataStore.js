@@ -346,18 +346,32 @@ export const useDataStore = create(
                 }))
 
                 // If delivered, add order total to customer's current balance
-                if (newStatus === 'delivered' && order.customerId) {
+                if (newStatus === 'delivered' && order.customerId && order.status !== 'delivered') {
                     const customer = get().customers.find(c => c.id === order.customerId)
                     if (customer) {
-                        console.log('Updating customer balance:', {
+                        console.log('Adding to customer balance:', {
                             customerId: order.customerId,
                             currentBalance: customer.currentBalance,
                             orderTotal: order.total,
                             newBalance: (customer.currentBalance || 0) + order.total
                         })
-                        // FIXED: Added await to ensure database update completes
                         await get().updateCustomer(order.customerId, {
                             currentBalance: (customer.currentBalance || 0) + order.total
+                        })
+                    }
+                }
+                // If moving FROM delivered TO something else (e.g. pending/skipped), REVERT balance
+                else if (order.status === 'delivered' && newStatus !== 'delivered' && order.customerId) {
+                    const customer = get().customers.find(c => c.id === order.customerId)
+                    if (customer) {
+                        console.log('Reverting customer balance:', {
+                            customerId: order.customerId,
+                            currentBalance: customer.currentBalance,
+                            orderTotal: order.total,
+                            newBalance: (customer.currentBalance || 0) - order.total
+                        })
+                        await get().updateCustomer(order.customerId, {
+                            currentBalance: (customer.currentBalance || 0) - order.total
                         })
                     }
                 }

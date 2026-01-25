@@ -290,16 +290,43 @@ function Delivery() {
             type: 'warning',
             confirmText: 'Skip',
             onConfirm: async () => {
-                await addDelivery({
-                    customerId: customer.id,
-                    customerName: customer.name,
-                    deliveryDate: todayDate,
-                    bottlesDelivered: 0,
-                    receiveBottles: 0,
-                    notes: 'Skipped',
-                    deliveryDay: selectedDay,
-                    status: 'skipped'
-                })
+                const existingDelivery = getDeliveryForCustomer(customer.id, todayDate)
+
+                if (existingDelivery) {
+                    // Update existing delivery to skipped
+                    await updateDelivery(existingDelivery.id, {
+                        status: 'skipped',
+                        bottlesDelivered: 0,
+                        receiveBottles: 0,
+                        notes: 'Skipped'
+                    })
+
+                    // Find and revert order status if it was delivered
+                    const orders = useDataStore.getState().orders
+                    const originalOrder = orders.find(o =>
+                        o.customerId === customer.id &&
+                        o.orderDate === todayDate &&
+                        o.status === 'delivered'
+                    )
+
+                    if (originalOrder) {
+                        // This will trigger the balance revert logic we added in dataStore
+                        await updateOrderStatus(originalOrder.id, 'pending')
+                        console.log('Order status reverted to pending for skipped delivery')
+                    }
+                } else {
+                    // New skipped delivery
+                    await addDelivery({
+                        customerId: customer.id,
+                        customerName: customer.name,
+                        deliveryDate: todayDate,
+                        bottlesDelivered: 0,
+                        receiveBottles: 0,
+                        notes: 'Skipped',
+                        deliveryDay: selectedDay,
+                        status: 'skipped'
+                    })
+                }
             }
         })
     }

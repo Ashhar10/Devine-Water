@@ -74,7 +74,9 @@ function StatSlider({ slides = [], interval = 5000 }) {
 
                         <div className={styles.body}>
                             {currentSlide.prefix && <span className={styles.currency}>{currentSlide.prefix}</span>}
-                            <span className={styles.value}>{currentSlide.value.toLocaleString()}</span>
+                            <span className={typeof currentSlide.value === 'number' ? styles.value : styles.textValue}>
+                                {typeof currentSlide.value === 'number' ? currentSlide.value.toLocaleString() : currentSlide.value}
+                            </span>
                             {currentSlide.suffix && <span className={styles.currency}>{currentSlide.suffix}</span>}
                         </div>
                     </motion.div>

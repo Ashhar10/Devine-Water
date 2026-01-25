@@ -98,6 +98,17 @@
     letter-spacing: -0.5px;
 }
 
+.textValue {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
 .indicators {
     display: flex;
     justify-content: center;

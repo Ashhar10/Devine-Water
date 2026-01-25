@@ -41,13 +41,22 @@ function AdminDashboard() {
         // Calculate Areas to Deliver (Unique areas from today's orders)
         // We look at today's orders to see which customers are involved
         const areasSet = new Set()
+        const areaNamesSet = new Set()
+
         todayOrdersList.forEach(order => {
             const customer = customers.find(c => c.id === order.customerId)
             if (customer && customer.areaId) {
                 areasSet.add(customer.areaId)
+                const area = areas.find(a => a.id === customer.areaId)
+                if (area) areaNamesSet.add(area.name)
             }
         })
-        const areasToDeliver = areasSet.size
+
+        // Format area names as "Area 1, Area 2 +N more" if needed
+        const areasList = Array.from(areaNamesSet)
+        const areasToDeliver = areasList.length > 0
+            ? areasList.slice(0, 2).join(', ') + (areasList.length > 2 ? ` +${areasList.length - 2}` : '')
+            : 'No Routes'
 
         // Calculate total bottles from orders
         const totalBottles = orders.reduce((sum, o) =>
@@ -87,7 +96,7 @@ function AdminDashboard() {
             pendingOrders,
             todayOrders,
             totalDeliveredOrders,
-            areasToDeliver,
+            areasToDeliver, // This is now a string
             totalBottles,
             deliveredBottles,
             revenue: monthlyRevenue, // Updated to use Monthly Cash Flow
@@ -95,7 +104,7 @@ function AdminDashboard() {
             profit: income - expenses, // Keeping profit as Total for now, or should it be monthly? Leaving as Total based on context
             outstanding: totalOutstanding
         }
-    }, [customers, orders, investments, expenditures, payments])
+    }, [customers, orders, investments, expenditures, payments, areas]) // Added areas to dependencies
 
     // Transform orders data for bottles chart
     const bottlesData = useMemo(() => {
@@ -179,7 +188,7 @@ function AdminDashboard() {
         },
         {
             title: 'Areas to Deliver',
-            value: stats.areasToDeliver,
+            value: stats.areasToDeliver, // This will now be a string
             icon: MapPin,
             color: 'success'
         }
@@ -192,7 +201,7 @@ function AdminDashboard() {
                 {/* Orders Slider */}
                 <StatSlider
                     slides={orderSlides}
-                    interval={5000}
+                    interval={3000}
                 />
 
                 <KPICard
@@ -217,7 +226,7 @@ function AdminDashboard() {
                 {/* Revenue Slider */}
                 <StatSlider
                     slides={revenueSlides}
-                    interval={7000} // Offset interval to avoid simultaneous transitions
+                    interval={3500} // Slightly offset
                 />
             </section>
 

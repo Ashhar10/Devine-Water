@@ -23,6 +23,7 @@ function AdminDashboard() {
     const orders = useDataStore(state => state.orders)
     const investments = useDataStore(state => state.investments)
     const expenditures = useDataStore(state => state.expenditures)
+    const payments = useDataStore(state => state.payments)
 
     // Compute stats with useMemo to avoid recalculation
     const stats = useMemo(() => {
@@ -43,6 +44,26 @@ function AdminDashboard() {
         const income = investments.reduce((sum, inv) => sum + inv.amount, 0)
         const expenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
 
+        // Calculate Monthly Revenue (Cash Flow Basis)
+        // Sum of all 'customer' payments received this month + Investments this month
+        const currentMonth = new Date().getMonth()
+        const currentYear = new Date().getFullYear()
+
+        const monthlyPayments = payments.filter(p => {
+            const pDate = new Date(p.paymentDate)
+            return p.paymentType === 'customer' &&
+                pDate.getMonth() === currentMonth &&
+                pDate.getFullYear() === currentYear
+        }).reduce((sum, p) => sum + parseFloat(p.amount), 0)
+
+        const monthlyInvestments = investments.filter(i => {
+            const iDate = new Date(i.investmentDate || i.createdAt)
+            return iDate.getMonth() === currentMonth &&
+                iDate.getFullYear() === currentYear
+        }).reduce((sum, i) => sum + i.amount, 0)
+
+        const monthlyRevenue = monthlyPayments + monthlyInvestments
+
         return {
             totalCustomers: activeCustomers,
             totalOrders: orders.length,
@@ -50,12 +71,12 @@ function AdminDashboard() {
             todayOrders,
             totalBottles,
             deliveredBottles,
-            revenue: income,
+            revenue: monthlyRevenue, // Updated to use Monthly Cash Flow
             expenses: expenses,
-            profit: income - expenses,
+            profit: income - expenses, // Keeping profit as Total for now, or should it be monthly? Leaving as Total based on context
             outstanding: totalOutstanding
         }
-    }, [customers, orders, investments, expenditures])
+    }, [customers, orders, investments, expenditures, payments])
 
     // Transform orders data for bottles chart
     const bottlesData = useMemo(() => {

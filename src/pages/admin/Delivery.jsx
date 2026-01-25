@@ -137,6 +137,16 @@ function Delivery() {
                 return sum + (c.currentBalance || 0)
             }
             return sum
+        }, 0),
+        // Calculate Total Revenue for the day (sum of all delivered orders)
+        totalRevenue: deliveryList.reduce((sum, c) => {
+            const delivery = getDeliveryForCustomer(c.id, todayDate)
+            if (delivery?.status === 'delivered') {
+                const orders = useDataStore.getState().orders
+                const order = orders.find(o => o.customerId === c.id && o.orderDate === todayDate && o.status === 'delivered')
+                return sum + (order?.total || 0)
+            }
+            return sum
         }, 0)
     }
 
@@ -208,26 +218,15 @@ function Delivery() {
             )
 
             if (originalOrder) {
-                const oldTotal = originalOrder.total || 0
-                const balanceDifference = newTotal - oldTotal
-
-                // Update customer balance with the difference
-                const customer = useDataStore.getState().customers.find(c => c.id === selectedCustomer.id)
-                if (customer) {
-                    const newBalance = (customer.currentBalance || 0) + balanceDifference
-                    await useDataStore.getState().updateCustomer(selectedCustomer.id, {
-                        currentBalance: newBalance,
-                        totalSpent: (customer.totalSpent || 0) + balanceDifference
-                    })
-                }
-
                 // Update the order total
+                // Note: Balance update is now handled automatically in dataStore's updateOrder
                 await updateOrder(originalOrder.id, {
                     total: newTotal,
                     bottlesDelivered: bottlesDelivered,
                     receiveBottles: receiveBottles,
                     notes: deliveryForm.notes || null
                 })
+                console.log('Order updated from delivery page')
             }
 
             // Update delivery record
@@ -428,6 +427,14 @@ function Delivery() {
                     <div className={styles.statContent}>
                         <span className={`${styles.statValue} ${styles.warning}`}>Rs {totals.outstanding.toLocaleString()}</span>
                         <span className={styles.statLabel}>Outstanding</span>
+                    </div>
+                </GlassCard>
+                {/* NEW: Daily Revenue Card */}
+                <GlassCard className={styles.statCard}>
+                    <div className={`${styles.statIcon} ${styles.success}`}>Rs</div>
+                    <div className={styles.statContent}>
+                        <span className={`${styles.statValue} ${styles.success}`}>Rs {totals.totalRevenue.toLocaleString()}</span>
+                        <span className={styles.statLabel}>Total Revenue</span>
                     </div>
                 </GlassCard>
             </div>

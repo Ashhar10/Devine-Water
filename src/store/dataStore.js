@@ -441,6 +441,33 @@ export const useDataStore = create(
                 try {
                     await updateOrderInDb(order.uuid, dbUpdates)
                     console.log('Order update completed successfully')
+
+                    // NEW: Centralized Balance Logic
+                    // If order WAS delivered and still IS delivered (or we just updated it), sync balance differences
+                    // Note: If status just changed to 'delivered', that's handled in addOrder or updateOrderStatus.
+                    // This block specifically handles "Editing an existing Delivered Order"
+                    if (order.status === 'delivered' && (!updates.status || updates.status === 'delivered')) {
+                        // Check if total changed
+                        const newTotal = updates.total !== undefined ? parseFloat(updates.total) : order.total
+                        const oldTotal = order.total || 0
+
+                        if (newTotal !== oldTotal && order.customerId) {
+                            const difference = newTotal - oldTotal
+                            const customer = get().customers.find(c => c.id === order.customerId)
+                            if (customer) {
+                                console.log('Syncing customer balance (Order Edit):', {
+                                    customerId: order.customerId,
+                                    oldTotal,
+                                    newTotal,
+                                    difference,
+                                    oldBalance: customer.currentBalance
+                                })
+                                await get().updateCustomer(order.customerId, {
+                                    currentBalance: (customer.currentBalance || 0) + difference
+                                })
+                            }
+                        }
+                    }
                 } catch (error) {
                     console.error('Failed to update order in DB:', error)
                     // Rollback optimistic update on error

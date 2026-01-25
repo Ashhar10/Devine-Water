@@ -51,7 +51,9 @@ function Reports() {
     const totals = useMemo(() => {
         const totalBottles = orders.reduce((sum, o) =>
             sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
-        const totalRevenue = investments.reduce((sum, inv) => sum + inv.amount, 0)
+        // Fixed: Revenue should be from delivered orders, not investments
+        const totalRevenue = orders.reduce((sum, o) =>
+            o.status === 'delivered' ? sum + (o.total || 0) : sum, 0)
         const totalExpenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
         const activeCustomers = customers.filter(c => c.status === 'active').length
 

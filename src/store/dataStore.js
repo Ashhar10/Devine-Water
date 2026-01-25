@@ -360,6 +360,9 @@ export const useDataStore = create(
                 }))
 
                 // If delivered, add order total to customer's current balance
+                // If delivered, add order total to customer's current balance
+                // MOVED TO addDelivery TO AVOID DOUBLE COUNTING
+                /* 
                 if (newStatus === 'delivered' && order.customerId && order.status !== 'delivered') {
                     const customer = get().customers.find(c => c.id === order.customerId)
                     if (customer) {
@@ -389,6 +392,7 @@ export const useDataStore = create(
                         })
                     }
                 }
+                */
 
                 // Update in database
                 try {
@@ -1411,6 +1415,30 @@ export const useDataStore = create(
                     }
                 } else {
                     console.error('No customer UUID available for delivery')
+                }
+
+                // UPDATE CUSTOMER BALANCE
+                if (customer) {
+                    // Calculate amount based on delivered bottles and rate
+                    // If no specific rate is on the delivery, use customer default rate
+                    // Assuming data.deliveredBottles is the quantity
+                    const quantity = parseInt(data.deliveredBottles || data.quantity || 0)
+                    const rate = parseFloat(customer.rate || 0)
+                    const amount = quantity * rate
+
+                    if (amount > 0) {
+                        console.log('Updating customer balance for delivery:', {
+                            customerId: customer.id,
+                            oldBalance: customer.currentBalance,
+                            amount,
+                            newBalance: (customer.currentBalance || 0) + amount
+                        })
+
+                        // We use the separate updateCustomer action to ensure consistency
+                        get().updateCustomer(customer.id, {
+                            currentBalance: (customer.currentBalance || 0) + amount
+                        })
+                    }
                 }
 
                 return newDelivery

@@ -145,13 +145,7 @@ function AdminDashboard() {
 
     // Slider Data Configuration
     const revenueSlides = [
-        {
-            title: 'Monthly Revenue',
-            value: stats.revenue,
-            icon: DollarSign,
-            color: 'income',
-            prefix: 'Rs '
-        },
+
         {
             title: 'Outstanding Balance',
             value: stats.outstanding,

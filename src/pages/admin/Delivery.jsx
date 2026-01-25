@@ -138,16 +138,7 @@ function Delivery() {
             }
             return sum
         }, 0),
-        // Calculate Total Revenue for the day (sum of all delivered orders)
-        totalRevenue: deliveryList.reduce((sum, c) => {
-            const delivery = getDeliveryForCustomer(c.id, todayDate)
-            if (delivery?.status === 'delivered') {
-                const orders = useDataStore.getState().orders
-                const order = orders.find(o => o.customerId === c.id && o.orderDate === todayDate && o.status === 'delivered')
-                return sum + (order?.total || 0)
-            }
-            return sum
-        }, 0)
+
     }
 
     const today = new Date().toLocaleDateString('en-PK', {
@@ -429,14 +420,7 @@ function Delivery() {
                         <span className={styles.statLabel}>Outstanding</span>
                     </div>
                 </GlassCard>
-                {/* NEW: Daily Revenue Card */}
-                <GlassCard className={styles.statCard}>
-                    <div className={`${styles.statIcon} ${styles.success}`}>Rs</div>
-                    <div className={styles.statContent}>
-                        <span className={`${styles.statValue} ${styles.success}`}>Rs {totals.totalRevenue.toLocaleString()}</span>
-                        <span className={styles.statLabel}>Total Revenue</span>
-                    </div>
-                </GlassCard>
+
             </div>
 
             {/* Delivery List */}

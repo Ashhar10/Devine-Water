@@ -517,7 +517,16 @@ function Customers() {
                                 <label>Delivery Area</label>
                                 <select
                                     value={formData.areaId}
-                                    onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
+                                    onChange={(e) => {
+                                        const selectedAreaId = e.target.value
+                                        const selectedArea = areas.find(a => a.uuid === selectedAreaId)
+                                        setFormData({
+                                            ...formData,
+                                            areaId: selectedAreaId,
+                                            // Auto-select delivery days from area if available
+                                            deliveryDays: selectedArea?.deliveryDays || formData.deliveryDays
+                                        })
+                                    }}
                                 >
                                     <option value="">Select Area</option>
                                     {areas.map(area => (

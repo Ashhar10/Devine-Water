@@ -39,25 +39,16 @@ function AdminDashboard() {
         const todayOrders = todayOrdersList.length
         const pendingOrders = orders.filter(o => o.status === 'pending').length
 
-        // Calculate Areas to Deliver (Unique areas from today's orders)
-        // We look at today's orders to see which customers are involved
-        const areasSet = new Set()
-        const areaNamesSet = new Set()
-        // areas is now available from component scope
+        // Calculate Areas to Deliver (Scheduled for Today)
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        const todayName = days[new Date().getDay()]
 
-        todayOrdersList.forEach(order => {
-            const customer = customers.find(c => c.id === order.customerId)
-            if (customer && customer.areaId) {
-                areasSet.add(customer.areaId)
-                const area = areas.find(a => a.id === customer.areaId)
-                if (area) areaNamesSet.add(area.name)
-            }
-        })
+        const scheduledAreas = areas.filter(a => a.deliveryDays?.includes(todayName))
+        const areaNames = scheduledAreas.map(a => a.name)
 
         // Format area names as "Area 1, Area 2 +N more" if needed
-        const areasList = Array.from(areaNamesSet)
-        const areasToDeliver = areasList.length > 0
-            ? areasList.slice(0, 2).join(', ') + (areasList.length > 2 ? ` +${areasList.length - 2}` : '')
+        const areasToDeliver = areaNames.length > 0
+            ? areaNames.slice(0, 2).join(', ') + (areaNames.length > 2 ? ` +${areaNames.length - 2}` : '')
             : 'No Routes'
 
         // Calculate total bottles from orders

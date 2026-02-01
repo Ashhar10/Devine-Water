@@ -1451,6 +1451,18 @@ export const useDataStore = create(
                 }
             },
 
+            deleteDelivery: async (id) => {
+                set(state => ({
+                    deliveries: state.deliveries.filter(d => d.id !== id)
+                }))
+
+                try {
+                    await deleteDeliveryFromDb(id)
+                } catch (error) {
+                    console.error('Failed to delete delivery:', error)
+                }
+            },
+
             syncPendingDeliveries: async () => {
                 const pendingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
                 if (pendingDeliveries.length === 0) return

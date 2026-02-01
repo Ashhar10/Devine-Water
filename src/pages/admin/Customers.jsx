@@ -28,6 +28,7 @@ import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import StatSlider from '../../components/dashboard/StatSlider'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Customers.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

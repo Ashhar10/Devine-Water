@@ -18,6 +18,7 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './OrdersBilling.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -342,6 +343,33 @@ function OrdersBilling() {
         updateOrderPayment(orderId, 'paid')
     }
 
+    // STATE FOR CONFIRM DIALOG
+    const [deliveryConfirmDialog, setDeliveryConfirmDialog] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        showCancel: true,
+        confirmText: 'Confirm',
+        variant: 'primary'
+    })
+
+    const handleMarkDeliveredClick = (order) => {
+        if (order.status === 'delivered') {
+            setDeliveryConfirmDialog({
+                isOpen: true,
+                title: 'Already Delivered',
+                message: `Order #${order.id} has already been delivered to ${order.customerName}.`,
+                onConfirm: () => setDeliveryConfirmDialog({ ...deliveryConfirmDialog, isOpen: false }),
+                showCancel: false,
+                confirmText: 'OK',
+                variant: 'info'
+            })
+        } else {
+            handleStatusChange(order.id, 'delivered')
+        }
+    }
+
     // Helper: Group orders by date (Today, Yesterday, etc.)
     const getGroupedOrders = () => {
         const groups = {}
@@ -407,7 +435,12 @@ function OrdersBilling() {
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
-                    <Button variant="primary" icon={Plus} onClick={() => setShowNewOrderModal(true)}>
+                    <Button variant="primary" icon={Plus} onClick={() => {
+                        setIsEditing(false)
+                        setEditingOrderId(null)
+                        setNewOrder({ customerId: '', items: [{ productId: '', quantity: 1, returnQuantity: 0 }], salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
+                        setShowNewOrderModal(true)
+                    }}>
                         New Order
                     </Button>
                 </div>
@@ -540,15 +573,15 @@ function OrdersBilling() {
                                                         >
                                                             Edit
                                                         </Button>
-                                                        {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                                                        {order.status !== 'cancelled' && (
                                                             <>
                                                                 <Button
-                                                                    variant="success"
+                                                                    variant={order.status === 'delivered' ? 'secondary' : 'success'}
                                                                     size="sm"
                                                                     icon={Check}
-                                                                    onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                                    onClick={() => handleMarkDeliveredClick(order)}
                                                                 >
-                                                                    Mark Delivered
+                                                                    {order.status === 'delivered' ? 'Delivered' : 'Mark Delivered'}
                                                                 </Button>
                                                                 {order.paymentStatus === 'pending' && (
                                                                     <Button
@@ -1009,11 +1042,21 @@ function OrdersBilling() {
 
             {/* New Order Modal */}
             {showNewOrderModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowNewOrderModal(false)}>
+                <div className={styles.modalOverlay} onClick={() => {
+                    setShowNewOrderModal(false)
+                    setIsEditing(false)
+                    setEditingOrderId(null)
+                    setNewOrder({ customerId: '', items: [{ productId: '', quantity: 1, returnQuantity: 0 }], salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
+                }}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{isEditing ? 'Edit Order' : 'Create New Order'}</h3>
-                            <button className={styles.closeBtn} onClick={() => setShowNewOrderModal(false)}>
+                            <button className={styles.closeBtn} onClick={() => {
+                                setShowNewOrderModal(false)
+                                setIsEditing(false)
+                                setEditingOrderId(null)
+                                setNewOrder({ customerId: '', items: [{ productId: '', quantity: 1, returnQuantity: 0 }], salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
+                            }}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -1201,6 +1244,19 @@ function OrdersBilling() {
                     </GlassCard>
                 </div>
             )}
+
+            {/* Confirmation Dialog for Delivery */}
+            <ConfirmDialog
+                isOpen={deliveryConfirmDialog.isOpen}
+                onClose={() => setDeliveryConfirmDialog({ ...deliveryConfirmDialog, isOpen: false })}
+                onConfirm={deliveryConfirmDialog.onConfirm}
+                title={deliveryConfirmDialog.title}
+                message={deliveryConfirmDialog.message}
+                variant={deliveryConfirmDialog.variant}
+                showCancel={deliveryConfirmDialog.showCancel}
+                confirmText={deliveryConfirmDialog.confirmText}
+            />
+
             {/* Delete Confirmation Modal */}
             {orderToDelete && (
                 <div className={styles.modalOverlay} onClick={() => setOrderToDelete(null)}>

@@ -20,6 +20,7 @@ import Delivery from './pages/admin/Delivery'
 import Payments from './pages/admin/Payments'
 
 // Customer Pages
+import Overview from './pages/customer/Overview'
 import CustomerDashboard from './pages/customer/CustomerDashboard'
 import Finance from './pages/customer/Finance'
 import CalendarReport from './pages/customer/CalendarReport'
@@ -85,12 +86,16 @@ function App() {
         <Routes>
             {/* Login Route - Default */}
             <Route path="/login" element={
-                currentUser ? <Navigate to="/admin" replace /> : <Login />
+                currentUser ? (
+                    currentUser.role === 'customer' ? <Navigate to="/customer" replace /> : <Navigate to="/admin" replace />
+                ) : <Login />
             } />
 
             {/* Redirect root to login or admin based on auth */}
             <Route path="/" element={
-                currentUser ? <Navigate to="/admin" replace /> : <Navigate to="/login" replace />
+                currentUser ? (
+                    currentUser.role === 'customer' ? <Navigate to="/customer" replace /> : <Navigate to="/admin" replace />
+                ) : <Navigate to="/login" replace />
             } />
 
             {/* Admin Routes - Protected */}
@@ -117,7 +122,8 @@ function App() {
                     <CustomerLayout />
                 </ProtectedRoute>
             }>
-                <Route index element={<CustomerDashboard />} />
+                <Route index element={<Overview />} />
+                <Route path="dashboard" element={<CustomerDashboard />} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="calendar" element={<CalendarReport />} />
                 <Route path="support" element={<ContactUs />} />

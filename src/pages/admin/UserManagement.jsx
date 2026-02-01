@@ -10,6 +10,20 @@ import styles from './UserManagement.module.css'
 const ROLES = ['admin', 'staff', 'customer']
 const DESIGNATIONS = ['Administrator', 'Manager', 'Supervisor', 'Accountant', 'Delivery Boy', 'Receptionist', 'Customer']
 
+// Map labels to paths as defined in AdminSidebar.jsx
+const AVAILABLE_SECTIONS = [
+    { label: 'Dashboard', path: '/admin' },
+    { label: 'Products', path: '/admin/products' },
+    { label: 'Customers', path: '/admin/customers' },
+    { label: 'Orders & Billing', path: '/admin/orders' },
+    { label: 'Vendors', path: '/admin/vendors' },
+    { label: 'Delivery', path: '/admin/delivery' },
+    { label: 'Payments', path: '/admin/payments' },
+    { label: 'Finance', path: '/admin/finance' },
+    { label: 'Reports', path: '/admin/reports' },
+    { label: 'Staff & Users', path: '/admin/users' },
+]
+
 function UserManagement() {
     const users = useDataStore(state => state.users)
     const customers = useDataStore(state => state.customers)
@@ -18,6 +32,7 @@ function UserManagement() {
     const deleteUser = useDataStore(state => state.deleteUser)
 
     const [searchTerm, setSearchTerm] = useState('')
+    const [activeTab, setActiveTab] = useState('All')
     const [showModal, setShowModal] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
     const [formData, setFormData] = useState({
@@ -27,14 +42,20 @@ function UserManagement() {
         role: 'staff',
         designation: '',
         phone: '',
-        customerId: ''
+        customerId: '',
+        permittedSections: []
     })
 
-    const filteredUsers = users.filter(user =>
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredUsers = users.filter(user => {
+        const matchesSearch =
+            user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        const matchesTab = activeTab === 'All' || user.designation === activeTab
+
+        return matchesSearch && matchesTab
+    })
 
     const handleOpenModal = (user = null) => {
         if (user) {
@@ -46,7 +67,8 @@ function UserManagement() {
                 role: user.role,
                 designation: user.designation || '',
                 phone: user.phone || '',
-                customerId: user.customerId || ''
+                customerId: user.customerId || '',
+                permittedSections: user.permittedSections || []
             })
         } else {
             setEditingUser(null)
@@ -57,7 +79,8 @@ function UserManagement() {
                 role: 'staff',
                 designation: '',
                 phone: '',
-                customerId: ''
+                customerId: '',
+                permittedSections: []
             })
         }
         setShowModal(true)
@@ -124,16 +147,29 @@ function UserManagement() {
                 </GlassCard>
             </div>
 
-            {/* Search */}
-            <div className={styles.searchBar}>
-                <Search size={18} className={styles.searchIcon} />
-                <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={styles.searchInput}
-                />
+            {/* TABS */}
+            <div className={styles.tabContainer}>
+                <div className={styles.tabs}>
+                    {['All', ...DESIGNATIONS].map(tab => (
+                        <button
+                            key={tab}
+                            className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+                <div className={styles.searchBar}>
+                    <Search size={18} className={styles.searchIcon} />
+                    <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInput}
+                    />
+                </div>
             </div>
 
             {/* Users List */}
@@ -282,6 +318,32 @@ function UserManagement() {
                                             ))}
                                         </select>
                                     </div>
+                                    {formData.role !== 'customer' && (
+                                        <div className={styles.permissionsGroup}>
+                                            <label className={styles.permTitle}>Section Access Permitted *</label>
+                                            <div className={styles.permGrid}>
+                                                {AVAILABLE_SECTIONS.map(section => (
+                                                    <label key={section.path} className={styles.permItem}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.permittedSections.includes(section.path)}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    permittedSections: checked
+                                                                        ? [...prev.permittedSections, section.path]
+                                                                        : prev.permittedSections.filter(s => s !== section.path)
+                                                                }))
+                                                            }}
+                                                        />
+                                                        <span>{section.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {formData.role === 'customer' && (
                                         <div className={styles.formGroup}>
                                             <label>Link to Customer</label>

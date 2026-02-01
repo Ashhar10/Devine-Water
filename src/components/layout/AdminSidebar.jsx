@@ -36,6 +36,7 @@ const navItems = [
 function AdminSidebar({ collapsed, onToggle }) {
     const closeTimeoutRef = useRef(null)
     const navigate = useNavigate()
+    const currentUser = useDataStore(state => state.currentUser)
     const logout = useDataStore(state => state.logout)
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
@@ -88,7 +89,15 @@ function AdminSidebar({ collapsed, onToggle }) {
 
             {/* Navigation */}
             <nav className={styles.nav}>
-                {navItems.map((item) => (
+                {navItems.filter(item => {
+                    // Admins see everything
+                    if (currentUser?.role === 'admin') return true
+                    // Other roles see only permitted sections
+                    // Note: Dashboard is usually allowed for all staff
+                    if (item.path === '/admin') return true
+
+                    return currentUser?.permittedSections?.includes(item.path)
+                }).map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}

@@ -475,6 +475,75 @@ function Delivery() {
             }
         })
     }
+
+    const handleDeleteDelivery = (delivery, customer) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Delivery',
+            message: `Are you sure you want to delete this delivery? Any associated order will be removed and balance changes reverted.`,
+            type: 'danger',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                const orders = useDataStore.getState().orders
+
+                // Enhanced Order Finding Logic for Duplicates
+                let orderToDelete = null;
+
+                // 1. Filter candidates by customer and date
+                const candidates = orders.filter(o =>
+                    o.customerId === customer.id &&
+                    (o.orderDate === delivery.deliveryDate || o.createdAt?.startsWith(delivery.deliveryDate))
+                )
+
+                if (candidates.length === 1) {
+                    orderToDelete = candidates[0]
+                } else if (candidates.length > 1) {
+                    // Ambiguous! Try to match by properties
+                    // Priority 1: Match exact CreatedAt (if within small window)
+                    if (delivery.createdAt) {
+                        const dTime = new Date(delivery.createdAt).getTime()
+                        const closest = candidates.reduce((prev, curr) => {
+                            const cTime = new Date(curr.createdAt).getTime()
+                            const diff = Math.abs(cTime - dTime)
+                            return diff < prev.diff ? { diff, order: curr } : prev
+                        }, { diff: Infinity, order: null })
+
+                        // If closest is within 5 minutes, assume match
+                        if (closest.diff < 5 * 60 * 1000) {
+                            orderToDelete = closest.order
+                        }
+                    }
+
+                    // Priority 2: Match bottles count
+                    if (!orderToDelete) {
+                        const exactBottleMatch = candidates.find(o => o.bottlesDelivered === delivery.bottlesDelivered)
+                        if (exactBottleMatch) orderToDelete = exactBottleMatch
+                    }
+
+                    // Priority 3: Just take the last one (assuming user is interacting with recent)
+                    if (!orderToDelete) {
+                        orderToDelete = candidates[candidates.length - 1]
+                    }
+                }
+
+                if (orderToDelete) {
+                    console.log('Deleting Delivery. Found Order match:', orderToDelete)
+                    // 1. Revert Balance (if delivered)
+                    if (orderToDelete.status === 'delivered') {
+                        await updateOrderStatus(orderToDelete.id, 'pending')
+                    }
+                    // 2. Delete Order
+                    await deleteOrder(orderToDelete.id)
+                } else {
+                    console.warn('Deleting Delivery but NO matching order found.')
+                }
+
+                // 3. Delete Delivery Record
+                await deleteDelivery(delivery.id)
+                setConfirmModal(prev => ({ ...prev, isOpen: false }))
+            }
+        })
+    }
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
@@ -983,6 +1052,20 @@ function Delivery() {
                                             <CheckCircle size={18} />
                                             Confirm Delivery
                                         </button>
+                                        {editingDelivery && (
+                                            <button
+                                                type="button"
+                                                className={styles.cancelBtn}
+                                                style={{ marginLeft: 'auto', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}
+                                                onClick={() => {
+                                                    handleCloseModal()
+                                                    handleDeleteDelivery(editingDelivery, selectedCustomer)
+                                                }}
+                                            >
+                                                <XCircle size={18} />
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </form>
                             )}
@@ -1049,31 +1132,9 @@ function Delivery() {
                                         variant="danger"
                                         icon={XCircle}
                                         style={{ backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}
-                                        onClick={async () => {
+                                        onClick={() => {
                                             setRowActionModal({ ...rowActionModal, isOpen: false })
-                                            const delivery = rowActionModal.deliveries[0]
-                                            const customer = rowActionModal.customer
-
-                                            if (confirm('Are you sure you want to delete this delivery? This will revert any balance changes.')) {
-                                                const orders = useDataStore.getState().orders
-                                                const order = orders.find(o =>
-                                                    o.customerId === customer.id &&
-                                                    (o.orderDate === delivery.deliveryDate || o.createdAt?.startsWith(delivery.deliveryDate))
-                                                )
-
-                                                if (order) {
-                                                    // 1. Revert Balance (if delivered)
-                                                    if (order.status === 'delivered') {
-                                                        await updateOrderStatus(order.id, 'pending')
-                                                    }
-                                                    // 2. Delete Order
-                                                    await deleteOrder(order.id)
-                                                }
-
-                                                // 3. Delete Delivery Record
-                                                // Need to import deleteDelivery or use getState()
-                                                await deleteDelivery(delivery.id)
-                                            }
+                                            handleDeleteDelivery(rowActionModal.deliveries[0], rowActionModal.customer)
                                         }}
                                     >
                                         Delete Delivery

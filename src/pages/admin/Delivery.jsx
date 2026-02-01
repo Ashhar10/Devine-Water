@@ -309,7 +309,7 @@ function Delivery() {
         setConfirmModal({
             isOpen: true,
             title: 'Skip Customer Delivery',
-            message: `Are you sure you want to skip delivery for ${customer.name}? This will mark it as skipped, not delete it.`,
+            message: `Are you sure you want to skip delivery for ${customer.name}? This will remove any existing order for today and revert balance.`,
             type: 'warning',
             confirmText: 'Skip',
             onConfirm: async () => {
@@ -323,27 +323,6 @@ function Delivery() {
                         receiveBottles: 0,
                         notes: 'Skipped'
                     })
-
-                    // Find and revert order status if it was delivered
-                    const orders = useDataStore.getState().orders
-                    const originalOrder = orders.find(o =>
-                        o.customerId === customer.id &&
-                        o.orderDate === todayDate &&
-                        // We technically only want to revert 'delivered' orders, but if the user is skipping, 
-                        // we should probably revert any active order for today to pending/cancelled?
-                        // For now, sticking to 'delivered' as that's what affects balance.
-                        o.status === 'delivered'
-                    )
-
-                    console.log('Skipping delivery. Found order to revert:', originalOrder)
-
-                    if (originalOrder) {
-                        // This will trigger the balance revert logic we added in dataStore
-                        await updateOrderStatus(originalOrder.id, 'pending')
-                        console.log('Order status reverted to pending for skipped delivery')
-                    } else {
-                        console.warn('No delivered order found to revert for this skip action.')
-                    }
                 } else {
                     // New skipped delivery
                     await addDelivery({
@@ -356,6 +335,28 @@ function Delivery() {
                         deliveryDay: selectedDay,
                         status: 'skipped'
                     })
+                }
+
+                // Handle Linked Order Cleanup
+                const orders = useDataStore.getState().orders
+                // Find ANY order for this customer today
+                const originalOrder = orders.find(o =>
+                    o.customerId === customer.id &&
+                    o.orderDate === todayDate
+                )
+
+                if (originalOrder) {
+                    console.log('Skipping delivery. Cleaning up order:', originalOrder)
+
+                    // 1. If delivered, we MUST revert balance first
+                    if (originalOrder.status === 'delivered') {
+                        await updateOrderStatus(originalOrder.id, 'pending')
+                        console.log('Order status reverted to pending (Balance Restored)')
+                    }
+
+                    // 2. Delete the order to remove bottle counts from Dashboard stats
+                    await deleteOrder(originalOrder.id)
+                    console.log('Order deleted to clear stats')
                 }
             }
         })

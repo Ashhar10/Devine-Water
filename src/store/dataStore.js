@@ -543,8 +543,8 @@ export const useDataStore = create(
                         }
                     }
                     // SYNC WITH LINKED DELIVERY
-                    // If order items or date change, update the linked delivery
-                    if (updates.items || updates.orderDate) {
+                    // If order items, date, or status change, update the linked delivery
+                    if (updates.items || updates.orderDate || updates.status) {
                         try {
                             const linkedDelivery = get().deliveries.find(d => d.orderId === id)
                             if (linkedDelivery) {
@@ -553,6 +553,11 @@ export const useDataStore = create(
                                 // Sync Date
                                 if (updates.orderDate) {
                                     deliveryUpdates.deliveryDate = updates.orderDate
+                                }
+
+                                // Sync Status
+                                if (updates.status) {
+                                    deliveryUpdates.status = updates.status
                                 }
 
                                 // Sync Bottles
@@ -589,16 +594,29 @@ export const useDataStore = create(
 
             deleteOrder: async (id) => {
                 const order = get().orders.find(o => o.id === id)
+
+                if (!order) {
+                    console.error('Order not found:', id)
+                    return
+                }
+
                 // Find linked delivery
                 const linkedDelivery = get().deliveries.find(d => d.orderId === id)
 
+                // Optimistic delete
                 set(state => ({
                     orders: state.orders.filter(o => o.id !== id)
                 }))
 
                 try {
+                    // Validate UUID exists
+                    if (!order.uuid) {
+                        throw new Error('Order UUID missing - cannot delete from database')
+                    }
+
                     // Delete order from DB
                     await deleteOrderFromDb(order.uuid)
+                    console.log('Order deleted from database:', id)
 
                     // Auto-delete linked delivery
                     if (linkedDelivery) {
@@ -608,6 +626,15 @@ export const useDataStore = create(
 
                 } catch (error) {
                     console.error('Failed to delete order from DB:', error)
+
+                    // ROLLBACK: Restore the order on error
+                    set(state => ({
+                        orders: [...state.orders, order].sort((a, b) =>
+                            new Date(b.orderDate) - new Date(a.orderDate)
+                        )
+                    }))
+
+                    alert('Failed to delete order. Please try again.')
                 }
             },
 

@@ -43,8 +43,11 @@ export const fetchCustomers = async () => {
         totalSpent: parseFloat(c.total_spent) || 0,
         currentBalance: parseFloat(c.current_balance) || 0,
         deliveryDays: c.delivery_days || [],
-        assignedProducts: c.assigned_products || [], // Fallback to empty array
-        requiredBottles: parseInt(c.required_bottles) || 1,
+        assignedProducts: (Array.isArray(c.assigned_products)
+            ? c.assigned_products
+            : (typeof c.assigned_products === 'string'
+                ? JSON.parse(c.assigned_products || '[]')
+                : [])), requiredBottles: parseInt(c.required_bottles) || 1,
         securityDeposit: parseFloat(c.security_deposit) || 0,
         securityRemarks: c.security_remarks || '',
         openingBottles: parseInt(c.opening_bottles) || 0,

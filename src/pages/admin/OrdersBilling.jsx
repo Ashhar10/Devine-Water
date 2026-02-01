@@ -60,7 +60,9 @@ function OrdersBilling() {
         orderDate: new Date().toISOString().split('T')[0]
     })
 
+    const currentUser = useDataStore(state => state.currentUser) // Add this line
     const orders = useDataStore(state => state.orders)
+
     const customers = useDataStore(state => state.customers)
     const products = useDataStore(state => state.products)
     const users = useDataStore(state => state.users)
@@ -1059,7 +1061,9 @@ function OrdersBilling() {
                                                                 return true
                                                             })
                                                             .map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
+                                                                <option key={p.id} value={p.id}>
+                                                                    {p.name} {currentUser?.designation === 'Administrator' ? `- Rs ${p.price}` : ''}
+                                                                </option>
                                                             ))}
                                                     </select>
                                                 </div>
@@ -1105,7 +1109,7 @@ function OrdersBilling() {
                                                     </button>
                                                 )}
                                             </div>
-                                            {product && (
+                                            {product && currentUser?.designation === 'Administrator' && (
                                                 <div className={styles.itemPriceOffset}>
                                                     <small>Price: Rs {product.price} x {item.quantity || 0} = Rs {(product.price * (item.quantity || 0)).toLocaleString()}</small>
                                                 </div>
@@ -1171,22 +1175,24 @@ function OrdersBilling() {
                                 </div>
                             </div>
 
-                            <div className={styles.orderSummary}>
-                                <div className={styles.summaryRow}>
-                                    <span>Subtotal:</span>
-                                    <span>Rs {calculateSubtotal().toLocaleString()}</span>
-                                </div>
-                                {parseFloat(newOrder.discount) > 0 && (
+                            {currentUser?.designation === 'Administrator' && (
+                                <div className={styles.orderSummary}>
                                     <div className={styles.summaryRow}>
-                                        <span>Discount:</span>
-                                        <span className={styles.discount}>- Rs {parseFloat(newOrder.discount).toLocaleString()}</span>
+                                        <span>Subtotal:</span>
+                                        <span>Rs {calculateSubtotal().toLocaleString()}</span>
                                     </div>
-                                )}
-                                <div className={`${styles.summaryRow} ${styles.total}`}>
-                                    <span>Total:</span>
-                                    <span>Rs {(calculateSubtotal() - (parseFloat(newOrder.discount) || 0)).toLocaleString()}</span>
+                                    {parseFloat(newOrder.discount) > 0 && (
+                                        <div className={styles.summaryRow}>
+                                            <span>Discount:</span>
+                                            <span className={styles.discount}>- Rs {parseFloat(newOrder.discount).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <div className={`${styles.summaryRow} ${styles.total}`}>
+                                        <span>Total:</span>
+                                        <span>Rs {(calculateSubtotal() - (parseFloat(newOrder.discount) || 0)).toLocaleString()}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <Button type="submit" variant="primary" fullWidth>
                                 {isEditing ? 'Update Order' : 'Create Order'}

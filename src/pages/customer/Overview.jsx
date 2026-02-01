@@ -70,26 +70,28 @@ function Overview() {
                     </p>
                 </GlassCard>
 
-                {/* Rate List Card */}
-                <GlassCard className={styles.rateCard} delay={0.3}>
-                    <h3 className={styles.sectionTitle}>Product Rates</h3>
-                    <table className={styles.productTable}>
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.filter(p => p.status === 'active').map(product => (
-                                <tr key={product.id}>
-                                    <td className={styles.productName}>{product.name}</td>
-                                    <td className={styles.productPrice}>Rs {product.price}</td>
+                {/* Rate List Card - Only for Administrators */}
+                {currentUser?.designation === 'Administrator' && (
+                    <GlassCard className={styles.rateCard} delay={0.3}>
+                        <h3 className={styles.sectionTitle}>Product Rates</h3>
+                        <table className={styles.productTable}>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </GlassCard>
+                            </thead>
+                            <tbody>
+                                {products.filter(p => p.status === 'active').map(product => (
+                                    <tr key={product.id}>
+                                        <td className={styles.productName}>{product.name}</td>
+                                        <td className={styles.productPrice}>Rs {product.price}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </GlassCard>
+                )}
             </div>
         </div>
     )

@@ -878,7 +878,7 @@ export const addAreaToDb = async (areaData) => {
 export const updateAreaInDb = async (areaId, updates) => {
     if (!isSupabaseConfigured()) return
 
-    const dbUpdates = { updated_at: new Date().toISOString() }
+    const dbUpdates = {}
     if (updates.name) dbUpdates.name = updates.name
     if (updates.description !== undefined) dbUpdates.description = updates.description
     if (updates.status) dbUpdates.status = updates.status

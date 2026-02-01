@@ -228,8 +228,11 @@ function Delivery() {
             const orders = useDataStore.getState().orders
             const originalOrder = orders.find(o =>
                 o.customerId === selectedCustomer.id &&
-                o.orderDate === todayDate
+                (o.orderDate === todayDate || o.createdAt?.startsWith(todayDate))
             )
+
+            // Debug log to check why it might be failing
+            console.log('Editing Delivery - Found Order:', originalOrder, { customerId: selectedCustomer.id, date: todayDate })
 
             if (originalOrder) {
                 // Update the order total

@@ -158,7 +158,9 @@ function AdminDashboard() {
             value: stats.outstanding,
             icon: Clock,
             color: 'warning',
-            prefix: 'Rs '
+            prefix: 'Rs ',
+            link: '/admin/customers',
+            linkText: 'Manage Balances'
         }
     ]
 
@@ -186,6 +188,14 @@ function AdminDashboard() {
             value: stats.areasToDeliver, // This will now be a string
             icon: MapPin,
             color: 'success'
+        },
+        {
+            title: 'Customer Panel',
+            value: 'Customer Portal',
+            icon: User,
+            color: 'cyan',
+            link: '/customer',
+            linkText: 'Switch View'
         }
     ]
 
@@ -216,6 +226,7 @@ function AdminDashboard() {
                     trendValue={5.3}
                     color="success"
                     delay={0.2}
+                    onClick={() => window.location.href = '/admin/customers'}
                 />
 
                 {/* Revenue Slider */}

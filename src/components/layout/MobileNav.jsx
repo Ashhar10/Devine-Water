@@ -11,8 +11,10 @@ import {
     BarChart3,
     UserCog,
     Menu,
-    X
+    X,
+    User
 } from 'lucide-react'
+import { useDataStore } from '../../store/dataStore'
 import styles from './MobileNav.module.css'
 
 const navItems = [
@@ -26,9 +28,11 @@ const navItems = [
     { path: '/admin/finance', icon: Wallet, label: 'Finance' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/users', icon: UserCog, label: 'Users' },
+    { path: '/customer', icon: User, label: 'Customer Panel' },
 ]
 
 function MobileNav({ isOpen, onClose, onOpen }) {
+    const currentUser = useDataStore(state => state.currentUser)
     return (
         <>
             {/* Floating Menu Button - center bottom */}
@@ -43,7 +47,12 @@ function MobileNav({ isOpen, onClose, onOpen }) {
             {/* Horizontal Scroll Menu Bar */}
             <div className={`${styles.menuBar} ${isOpen ? styles.visible : ''}`}>
                 <nav className={styles.navScroll}>
-                    {navItems.map((item) => (
+                    {navItems.filter(item => {
+                        // Super Admins see everything
+                        if (currentUser?.email === 'admin@devinewater.pk') return true
+                        // Only show if section is in permitted list
+                        return currentUser?.permittedSections?.includes(item.path)
+                    }).map((item) => (
                         <NavLink
                             key={item.path}
                             to={item.path}

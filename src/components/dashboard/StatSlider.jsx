@@ -73,11 +73,25 @@ function StatSlider({ slides = [], interval = 5000 }) {
                         </div>
 
                         <div className={styles.body}>
-                            {currentSlide.prefix && <span className={styles.currency}>{currentSlide.prefix}</span>}
-                            <span className={typeof currentSlide.value === 'number' ? styles.value : styles.textValue}>
-                                {typeof currentSlide.value === 'number' ? currentSlide.value.toLocaleString() : currentSlide.value}
-                            </span>
-                            {currentSlide.suffix && <span className={styles.currency}>{currentSlide.suffix}</span>}
+                            <div className={styles.valueWrapper}>
+                                {currentSlide.prefix && <span className={styles.currency}>{currentSlide.prefix}</span>}
+                                <span className={typeof currentSlide.value === 'number' ? styles.value : styles.textValue}>
+                                    {typeof currentSlide.value === 'number' ? currentSlide.value.toLocaleString() : currentSlide.value}
+                                </span>
+                                {currentSlide.suffix && <span className={styles.currency}>{currentSlide.suffix}</span>}
+                            </div>
+
+                            {currentSlide.link && (
+                                <button
+                                    className={styles.actionBtn}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        window.location.href = currentSlide.link
+                                    }}
+                                >
+                                    {currentSlide.linkText || 'Open Panel'}
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 </AnimatePresence>

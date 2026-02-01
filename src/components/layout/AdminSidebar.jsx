@@ -16,6 +16,7 @@ import {
     Truck,
     Store,
     Banknote,
+    User,
     LogOut
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
@@ -31,6 +32,7 @@ export const navItems = [
     { path: '/admin/finance', icon: Wallet, label: 'Finance' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/users', icon: UserCog, label: 'Staff & Users' },
+    { path: '/customer', icon: User, label: 'Customer Panel' },
 ]
 
 function AdminSidebar({ collapsed, onToggle }) {

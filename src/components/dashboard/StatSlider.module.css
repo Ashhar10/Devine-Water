@@ -81,8 +81,34 @@
 
 .body {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.valueWrapper {
+    display: flex;
     align-items: baseline;
     gap: 4px;
+}
+
+.actionBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md, 8px);
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+    backdrop-filter: blur(4px);
+}
+
+.actionBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
 }
 
 .currency {

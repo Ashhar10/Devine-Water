@@ -24,7 +24,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './Delivery.module.css'
 
-// ... (imports)
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const DeliveryGroupRow = ({ customer, deliveries, index, onMarkDelivered, onEdit, onSkip }) => {
     const [isOpen, setIsOpen] = useState(false)

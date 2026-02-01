@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { Search, Bell, User, Menu } from 'lucide-react'
+import { useDataStore } from '../../store/dataStore'
 import styles from './TopHeader.module.css'
 
 function TopHeader({ title, subtitle, onMenuClick }) {
+    const currentUser = useDataStore(state => state.currentUser)
     return (
         <header className={styles.header}>
             <div className={styles.left}>
@@ -43,9 +45,12 @@ function TopHeader({ title, subtitle, onMenuClick }) {
                     whileTap={{ scale: 0.98 }}
                 >
                     <div className={styles.avatar}>
-                        <User size={18} />
+                        {currentUser?.name?.charAt(0).toUpperCase() || <User size={18} />}
                     </div>
-                    <span className={styles.profileName}>Admin</span>
+                    <div className={styles.profileInfo}>
+                        <span className={styles.profileName}>{currentUser?.name || 'Admin'}</span>
+                        <span className={styles.profileDesignation}>{currentUser?.designation || currentUser?.role}</span>
+                    </div>
                 </motion.button>
             </div>
         </header>

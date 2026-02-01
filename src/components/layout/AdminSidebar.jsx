@@ -92,10 +92,7 @@ function AdminSidebar({ collapsed, onToggle }) {
                 {navItems.filter(item => {
                     // Admins see everything
                     if (currentUser?.role === 'admin') return true
-                    // Other roles see only permitted sections
-                    // Note: Dashboard is usually allowed for all staff
-                    if (item.path === '/admin') return true
-
+                    // Only show if section is in permitted list
                     return currentUser?.permittedSections?.includes(item.path)
                 }).map((item) => (
                     <NavLink

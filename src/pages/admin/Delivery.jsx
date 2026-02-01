@@ -254,6 +254,34 @@ function Delivery() {
                     customerId: selectedCustomer.id // Ensure balance update logic has customerId
                 })
                 console.log('Order updated from delivery page')
+            } else {
+                // Was likely SKIPPED (so order deleted), now marked delivered again.
+                // We must create a NEW order to register the sale and update balance.
+                console.log('Editing Delivery - No Order Found (Likely Skipped). Creating new order.')
+                const newOrder = await addOrder({
+                    customerId: selectedCustomer.id,
+                    customerUuid: selectedCustomer.uuid,
+                    customerName: selectedCustomer.name,
+                    customerPhone: selectedCustomer.phone,
+                    customerAddress: selectedCustomer.address,
+                    items: [{
+                        productId: selectedProduct.uuid,
+                        productName: selectedProduct.name,
+                        quantity: bottlesDelivered,
+                        price: unitPrice
+                    }],
+                    total: newTotal,
+                    bottlesDelivered: bottlesDelivered,
+                    receiveBottles: receiveBottles,
+                    orderDate: todayDate,
+                    deliveryDate: todayDate,
+                    notes: deliveryForm.notes || null
+                })
+
+                // Immediately mark as delivered to trigger balance update
+                if (newOrder) {
+                    await updateOrderStatus(newOrder.id, 'delivered')
+                }
             }
 
             // Update delivery record

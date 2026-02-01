@@ -497,9 +497,12 @@ function OrdersBilling() {
                     ))
                 ) : activeTab === 'skipped' ? (
                     /* SKIPPED VIEW */
-                    deliveries
-                        .filter(d => d.status === 'skipped')
-                        .map((delivery, index) => (
+                    (() => {
+                        const skipped = deliveries.filter(d => d.status === 'skipped');
+                        console.log('DEBUG: Skipped Deliveries:', skipped, 'All Deliveries:', deliveries);
+                        if (skipped.length === 0) return <div style={{ padding: '20px', color: '#888' }}>No skipped deliveries found.</div>;
+                        return skipped.map((delivery, index) => (
+
                             <motion.div
                                 key={delivery.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -538,8 +541,176 @@ function OrdersBilling() {
                                 </GlassCard>
                             </motion.div>
                         ))
+                    })()
+                ) : activeTab === 'pending' ? (
+                    /* PENDING VIEW (Mixed: Orders + Deliveries) */
+                    <div className={styles.pendingContainer}>
+                        {/* Pending Deliveries Section */}
+                        <div className={styles.sectionHeader} style={{ marginTop: 0 }}>
+                            <h4>Scheduled Deliveries ({new Date(selectedDate).toLocaleDateString()})</h4>
+                        </div>
+                        {(() => {
+                            const pendingDeliveries = deliveries.filter(d =>
+                                d.status === 'pending' &&
+                                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+                            );
+
+                            if (pendingDeliveries.length === 0) {
+                                return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No pending deliveries for this date.</div>
+                            }
+
+                            return pendingDeliveries.map((delivery, index) => (
+                                <motion.div
+                                    key={delivery.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    style={{ marginBottom: '10px' }}
+                                >
+                                    <GlassCard className={styles.orderCard} hover={false} animate={false}>
+                                        <div className={styles.orderMain}>
+                                            <div className={styles.orderInfo}>
+                                                <span className={styles.orderId} style={{ backgroundColor: '#e3f2fd', color: '#1565c0' }}>Delivery</span>
+                                                <span className={styles.orderCustomer}>{delivery.customerName}</span>
+                                            </div>
+                                            <div className={styles.orderMeta}>
+                                                <span className={styles.orderTotal} style={{ color: '#aaa' }}>
+                                                    {delivery.notes || 'No notes'}
+                                                </span>
+                                                <StatusBadge status="pending" />
+                                                {/* No action button here yet - user should go to Delivery page to fulfill */}
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
+                            ))
+                        })()}
+
+                        {/* Pending Manual Orders Section */}
+                        <div className={styles.sectionHeader}>
+                            <h4>Manual Orders</h4>
+                        </div>
+                        {filteredOrders.length === 0 ? (
+                            <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic' }}>No pending manual orders for this date.</div>
+                        ) : (
+                            filteredOrders.map((order, index) => (
+                                <motion.div
+                                    key={order.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <GlassCard
+                                        className={styles.orderCard}
+                                        hover={false}
+                                        animate={false}
+                                        onClick={() => toggleOrder(order.id)}
+                                    >
+                                        <div className={styles.orderMain}>
+                                            <div className={styles.orderInfo}>
+                                                <span className={styles.orderId}>{order.id}</span>
+                                                <span className={styles.orderCustomer}>{order.customerName}</span>
+                                                <span className={styles.orderDate}>
+                                                    {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <div className={styles.orderMeta}>
+                                                <span className={styles.orderTotal}>Rs {order.total.toLocaleString()}</span>
+                                                <StatusBadge status={order.status} />
+                                                <motion.div
+                                                    animate={{ rotate: expandedOrder === order.id ? 180 : 0 }}
+                                                    className={styles.expandIcon}
+                                                >
+                                                    <ChevronDown size={20} />
+                                                </motion.div>
+                                            </div>
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {expandedOrder === order.id && (
+                                                <motion.div
+                                                    className={styles.orderDetails}
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <div className={styles.detailsGrid}>
+                                                        <div className={styles.detailSection}>
+                                                            <h4>Order Details</h4>
+                                                            <p><strong>Payment:</strong> <StatusBadge status={order.paymentStatus} size="sm" /></p>
+                                                            <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                                                        </div>
+                                                        <div className={styles.detailSection}>
+                                                            <h4>Order Items</h4>
+                                                            <table className={styles.itemsTable}>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Item</th>
+                                                                        <th>Qty</th>
+                                                                        <th>Price</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {order.items.map((item, i) => (
+                                                                        <tr key={i}>
+                                                                            <td>{item.name}</td>
+                                                                            <td>{item.qty}</td>
+                                                                            <td>Rs {item.price}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.detailActions}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            icon={FileText}
+                                                            onClick={(e) => handleViewInvoice(e, order)}
+                                                        >
+                                                            View Invoice
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            icon={Edit}
+                                                            onClick={(e) => handleEditOrder(e, order)}
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            variant="success"
+                                                            size="sm"
+                                                            icon={Check}
+                                                            onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                        >
+                                                            Mark Delivered
+                                                        </Button>
+                                                        {order.paymentStatus === 'pending' && (
+                                                            <Button variant="primary" size="sm" onClick={() => handlePaymentChange(order.id)}>Mark Paid</Button>
+                                                        )}
+                                                        <Button
+                                                            variant="danger"
+                                                            size="sm"
+                                                            icon={Trash2}
+                                                            onClick={(e) => handleDeleteClick(e, order.id)}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </GlassCard>
+                                </motion.div>
+                            ))
+                        )}
+                    </div>
                 ) : (
-                    /* FLAT VIEW for Pending/Delivered */
+                    /* DELIVERED FLAT VIEW */
                     filteredOrders.map((order, index) => (
                         <motion.div
                             key={order.id}

@@ -47,7 +47,8 @@ export const fetchCustomers = async () => {
             ? c.assigned_products
             : (typeof c.assigned_products === 'string'
                 ? JSON.parse(c.assigned_products || '[]')
-                : [])), requiredBottles: parseInt(c.required_bottles) || 1,
+                : [])),
+        requiredBottles: parseInt(c.required_bottles) || 1,
         securityDeposit: parseFloat(c.security_deposit) || 0,
         securityRemarks: c.security_remarks || '',
         openingBottles: parseInt(c.opening_bottles) || 0,
@@ -140,8 +141,6 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         updated_at: new Date().toISOString()
     }
 
-    // console.log('Sending updates to Supabase:', dbUpdates, 'for ID:', customerUuid)
-
     const { data, error } = await supabase
         .from('customers')
         .update(dbUpdates)
@@ -149,10 +148,8 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         .select()
         .single()
 
-    if (error) {
-        console.error('Supabase update customer error:', error)
-        handleError(error, 'update customer')
-    }
+    if (error) handleError(error, 'update customer')
+
     return data
 }
 

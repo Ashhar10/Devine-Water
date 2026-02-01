@@ -330,7 +330,8 @@ function Customers() {
             deliveryDays: customer.deliveryDays || [],
             assignedProducts: Array.isArray(customer.assignedProducts)
                 ? customer.assignedProducts
-                : (typeof customer.assignedProducts === 'string' ? JSON.parse(customer.assignedProducts || '[]') : []), requiredBottles: customer.requiredBottles || 1,
+                : (typeof customer.assignedProducts === 'string' ? JSON.parse(customer.assignedProducts || '[]') : []),
+            requiredBottles: customer.requiredBottles || 1,
             securityDeposit: customer.securityDeposit || 0,
             securityRemarks: customer.securityRemarks || '',
             openingBalance: customer.openingBalance || 0,

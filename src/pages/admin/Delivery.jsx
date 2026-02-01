@@ -540,6 +540,10 @@ function Delivery() {
         setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '', deliveryDate: '' })
     }
 
+    const handlePrint = () => {
+        window.print()
+    }
+
     // Handle customer selection in modal
     const handleCustomerSelect = (e) => {
         const customerId = e.target.value
@@ -570,7 +574,7 @@ function Delivery() {
                     <Button variant="primary" icon={Plus} onClick={handleAddNewDelivery}>
                         Add Delivery
                     </Button>
-                    <Button variant="secondary" icon={Printer}>
+                    <Button variant="secondary" icon={Printer} onClick={handlePrint}>
                         Print Route Sheet
                     </Button>
                 </div>
@@ -1170,6 +1174,58 @@ function Delivery() {
                 type={confirmModal.type}
                 confirmText={confirmModal.confirmText}
             />
+
+            {/* Print Only Route Sheet */}
+            <div className={styles.printOnly}>
+                <div className={styles.printHeader}>
+                    <h1>Devine Water - Route Sheet</h1>
+                    <div className={styles.printMeta}>
+                        <span>Date: {new Date(selectedDate).toLocaleDateString()}</span>
+                        <span>Day: {selectedDay}</span>
+                        <span>Area: {selectedArea ? areas.find(a => a.id === selectedArea)?.name : 'All Areas'}</span>
+                    </div>
+                </div>
+
+                <table className={styles.printTable}>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Address</th>
+                            <th>Phone</th>
+                            <th>Balance</th>
+                            <th>Req.</th>
+                            <th>Delivered</th>
+                            <th>Empty</th>
+                            <th>Sign</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedDeliveryList.map((customer, index) => (
+                            <tr key={customer.id}>
+                                <td>{index + 1}</td>
+                                <td>{customer.name}</td>
+                                <td>{customer.address}</td>
+                                <td>{customer.phone}</td>
+                                <td>Rs {customer.currentBalance?.toLocaleString()}</td>
+                                <td>{customer.requiredBottles || 1}</td>
+                                <td className={styles.emptyCol}></td>
+                                <td className={styles.emptyCol}></td>
+                                <td className={styles.emptyCol}></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                <div className={styles.printFooter}>
+                    <div className={styles.footerSign}>
+                        <span>Staff Signature: _______________________</span>
+                    </div>
+                    <div className={styles.footerSign}>
+                        <span>Manager Signature: _______________________</span>
+                    </div>
+                </div>
+            </div>
         </div >
     )
 }

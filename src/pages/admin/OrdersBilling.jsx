@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useTransition } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Search,
@@ -23,8 +24,26 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 function OrdersBilling() {
 
+    const location = useLocation()
+    const initialTab = location.state?.tab || 'all'
+
     const [expandedOrder, setExpandedOrder] = useState(null)
-    const [activeTab, setActiveTab] = useState('all')  // 'delivered', 'pending', 'all'
+    const [isPendingTabSwitch, startTransition] = useTransition()
+    const [activeTab, _setActiveTab] = useState(initialTab)  // 'delivered', 'pending', 'all'
+
+    // Update activeTab if location.state changes
+    useEffect(() => {
+        if (location.state?.tab) {
+            _setActiveTab(location.state.tab)
+        }
+    }, [location.state?.tab])
+
+    const setActiveTab = (tab) => {
+        startTransition(() => {
+            _setActiveTab(tab)
+        })
+    }
+
     const [filterStatus, setFilterStatus] = useState('all')
     const [showNewOrderModal, setShowNewOrderModal] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -54,17 +73,25 @@ function OrdersBilling() {
     const updateOrderPayment = useDataStore(state => state.updateOrderPayment)
     const deliveries = useDataStore(state => state.deliveries) // Added deliveries for skipped tab
 
-    // Derive selectedDay from selectedDate
-    const dateObj = new Date(selectedDate)
-    const dayIndex = dateObj.getDay()
-    const selectedDay = DAYS_OF_WEEK[dayIndex === 0 ? 6 : dayIndex - 1]
+    // Derive selectedDay from selectedDate correctly
+    const selectedDay = useMemo(() => {
+        const dateObj = new Date(selectedDate)
+        const dayIndex = dateObj.getDay()
+        // JS getDay(): 0 (Sun), 1 (Mon), 2 (Tue), 3 (Wed), 4 (Thu), 5 (Fri), 6 (Sat)
+        // DAYS_OF_WEEK: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        const mapping = [6, 0, 1, 2, 3, 4, 5] // Map Sun->6, Mon->0, etc.
+        return DAYS_OF_WEEK[mapping[dayIndex]]
+    }, [selectedDate])
 
 
-    // Get salesmen (staff/admin)
-    const salesmen = users.filter(u => u.role === 'admin' || u.role === 'staff')
 
-    // Get selected product for price calculation
-    const selectedProduct = products.find(p => p.id === newOrder.productId)
+    // Get salesmen (staff/admin) - Memoized
+    const salesmen = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users])
+
+
+    // Get selected product for price calculation - Memoized
+    const selectedProduct = useMemo(() => products.find(p => p.id === newOrder.productId), [products, newOrder.productId])
+
 
     // Auto-update price when product changes
     useEffect(() => {
@@ -76,36 +103,79 @@ function OrdersBilling() {
         }
     }, [selectedProduct, newOrder.quantity])
 
-    // Filter by tab with date filtering for pending/delivered (using selected date)
-    const filteredOrders = orders
-        .filter(o => {
-            // Defensive check: Log orders with missing orderDate
-            if (!o.orderDate) {
-                console.warn('Order missing orderDate:', o.id, 'Status:', o.status)
-            }
+    // Filter by tab with date filtering for pending/delivered (using selected date) - Memoized
+    const filteredOrders = useMemo(() => {
+        return orders
+            .filter(o => {
+                if (!o.orderDate) return false
 
-            if (activeTab === 'delivered') {
-                // Delivered tab: show selected date's delivered orders
-                const isDelivered = o.status === 'delivered'
-                const isSelectedDate = o.orderDate === selectedDate
+                if (activeTab === 'delivered') {
+                    const isDelivered = o.status === 'delivered'
+                    const isSelectedDate = o.orderDate === selectedDate
+                    return isDelivered && isSelectedDate
+                }
+                if (activeTab === 'pending') {
+                    const isPending = o.status === 'pending'
+                    const isSelectedDate = o.orderDate === selectedDate
+                    return isPending && isSelectedDate
+                }
+                return true
+            })
+            .filter(o => filterStatus === 'all' || o.status === filterStatus)
+            .filter(o =>
+                o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                o.id.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+    }, [orders, activeTab, selectedDate, filterStatus, searchTerm])
 
-                return isDelivered && isSelectedDate
-            }
-            if (activeTab === 'pending') {
-                // Pending tab: show selected date's pending orders
-                const isPending = o.status === 'pending'
-                const isSelectedDate = o.orderDate === selectedDate
+    // Memoize Pending Items for the selected date - Optimized
+    const { pendingItems, skippedItems } = useMemo(() => {
+        if (activeTab !== 'pending') return { pendingItems: [], skippedItems: [] }
 
-                return isPending && isSelectedDate
+        const scheduledCustomers = customers.filter(c => {
+            const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate)));
+            const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 ||
+                c.deliveryDays.some(day => day.toLowerCase() === selectedDay.toLowerCase());
+            return (matchesDay || hasDeliveryToday) && c.status === 'active';
+        });
+
+        const pItems = [];
+        scheduledCustomers.forEach(customer => {
+            const customerDeliveries = deliveries.filter(d =>
+                d.customerId === customer.id &&
+                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+            );
+
+            if (customerDeliveries.length === 0) {
+                pItems.push({
+                    id: `scheduled-${customer.id}`,
+                    customerName: customer.name,
+                    notes: `Scheduled for ${new Date(selectedDate).toLocaleDateString()}`,
+                    status: 'pending'
+                });
+            } else {
+                customerDeliveries.forEach(d => {
+                    if (d.status === 'pending') {
+                        pItems.push({
+                            id: d.id,
+                            customerName: d.customerName || customer.name,
+                            notes: d.notes || 'Manual delivery',
+                            status: 'pending'
+                        });
+                    }
+                });
             }
-            // Customer Orders tab: show all orders (no date filter)
-            return true
-        })
-        .filter(o => filterStatus === 'all' || o.status === filterStatus)
-        .filter(o =>
-            o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            o.id.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        });
+
+        const sItems = deliveries.filter(d =>
+            d.status === 'skipped' &&
+            (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+        );
+
+        return { pendingItems: pItems, skippedItems: sItems };
+    }, [activeTab, customers, deliveries, selectedDate, selectedDay])
+
+
 
 
     const toggleOrder = (orderId) => {
@@ -501,53 +571,10 @@ function OrdersBilling() {
                         <div className={styles.sectionHeader} style={{ marginTop: 0 }}>
                             <h4>Scheduled Deliveries ({new Date(selectedDate).toLocaleDateString()})</h4>
                         </div>
-                        {(() => {
-                            // Logic synced with Delivery.jsx: Find customers scheduled for today OR with a manual delivery today
-                            const scheduledCustomers = customers.filter(c => {
-                                const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate)));
-                                // Standardize matching (lowercase)
-                                const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 ||
-                                    c.deliveryDays.some(day => day.toLowerCase() === selectedDay.toLowerCase());
-                                return (matchesDay || hasDeliveryToday) && c.status === 'active';
-                            });
-
-                            // Now find "Pending" work from these customers
-                            const pendingItems = [];
-
-                            scheduledCustomers.forEach(customer => {
-                                const customerDeliveries = deliveries.filter(d =>
-                                    d.customerId === customer.id &&
-                                    (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
-                                );
-
-                                if (customerDeliveries.length === 0) {
-                                    // Scheduled but no delivery record yet = PENDING
-                                    pendingItems.push({
-                                        id: `scheduled-${customer.id}`,
-                                        customerName: customer.name,
-                                        notes: 'Scheduled for today',
-                                        status: 'pending'
-                                    });
-                                } else {
-                                    // Has delivery records, check if any are 'pending'
-                                    customerDeliveries.forEach(d => {
-                                        if (d.status === 'pending') {
-                                            pendingItems.push({
-                                                id: d.id,
-                                                customerName: d.customerName || customer.name,
-                                                notes: d.notes || 'Manual delivery',
-                                                status: 'pending'
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-
-                            if (pendingItems.length === 0) {
-                                return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No pending deliveries for this date.</div>
-                            }
-
-                            return pendingItems.map((item, index) => (
+                        {pendingItems.length === 0 ? (
+                            <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No pending deliveries for this date.</div>
+                        ) : (
+                            pendingItems.map((item, index) => (
                                 <motion.div
                                     key={item.id}
                                     initial={{ opacity: 0, y: 10 }}
@@ -570,24 +597,17 @@ function OrdersBilling() {
                                         </div>
                                     </GlassCard>
                                 </motion.div>
-                            ));
-                        })()}
+                            ))
+                        )}
 
                         {/* Section 2: Skipped Attempts */}
                         <div className={styles.sectionHeader}>
                             <h4>Skipped Attempts</h4>
                         </div>
-                        {(() => {
-                            const skipped = deliveries.filter(d =>
-                                d.status === 'skipped' &&
-                                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
-                            );
-
-                            if (skipped.length === 0) {
-                                return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No skipped attempts for this date.</div>
-                            }
-
-                            return skipped.map((delivery, index) => (
+                        {skippedItems.length === 0 ? (
+                            <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No skipped attempts for this date.</div>
+                        ) : (
+                            skippedItems.map((delivery, index) => (
                                 <motion.div
                                     key={delivery.id}
                                     initial={{ opacity: 0, y: 10 }}
@@ -602,33 +622,33 @@ function OrdersBilling() {
                                                 <span className={styles.orderCustomer}>{delivery.customerName}</span>
                                             </div>
                                             <div className={styles.orderMeta}>
-                                                <span className={styles.orderTotal} style={{ color: '#aaa', fontStyle: 'italic' }}>
-                                                    {delivery.notes || 'No notes'}
-                                                </span>
+                                                <div className={styles.actionButtons}>
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        icon={Plus}
+                                                        onClick={() => {
+                                                            const customer = customers.find(c => c.id === delivery.customerId)
+                                                            if (customer) {
+                                                                setNewOrder({
+                                                                    ...newOrder,
+                                                                    customerId: customer.id,
+                                                                    orderDate: selectedDate
+                                                                })
+                                                                setShowNewOrderModal(true)
+                                                            }
+                                                        }}
+                                                    >
+                                                        Create Order
+                                                    </Button>
+                                                </div>
                                                 <StatusBadge status="skipped" />
-                                                <Button
-                                                    variant="primary"
-                                                    size="sm"
-                                                    icon={Plus}
-                                                    onClick={() => {
-                                                        setNewOrder({
-                                                            ...newOrder,
-                                                            customerId: delivery.customerId,
-                                                            notes: delivery.notes || ''
-                                                        })
-                                                        setShowNewOrderModal(true)
-                                                    }}
-                                                >
-                                                    Create Order
-                                                </Button>
                                             </div>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
-                            ));
-                        })()}
-
-                        {/* Section 3: Manual Orders */}
+                            ))
+                        )}
                         <div className={styles.sectionHeader}>
                             <h4>Manual Orders</h4>
                         </div>

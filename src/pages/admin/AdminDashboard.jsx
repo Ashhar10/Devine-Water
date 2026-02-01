@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
     Droplets,
     Users,
@@ -290,13 +291,14 @@ function AdminDashboard() {
                 <GlassCard className={styles.recentOrders}>
                     <div className={styles.ordersHeader}>
                         <h3 className={styles.sectionTitle}>Recent Orders</h3>
-                        <motion.a
-                            href="/admin/orders"
+                        <motion.button
                             className={styles.viewAllBtn}
                             whileHover={{ x: 4 }}
                         >
-                            View All →
-                        </motion.a>
+                            <Link to="/admin/orders" state={{ tab: 'all' }} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                View All →
+                            </Link>
+                        </motion.button>
                     </div>
                     <div className={styles.ordersList}>
                         {recentOrders.map((order, index) => (

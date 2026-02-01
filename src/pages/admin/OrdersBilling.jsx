@@ -49,6 +49,7 @@ function OrdersBilling() {
     const deleteOrder = useDataStore(state => state.deleteOrder)
     const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
     const updateOrderPayment = useDataStore(state => state.updateOrderPayment)
+    const deliveries = useDataStore(state => state.deliveries) // Added deliveries for skipped tab
 
     // Get salesmen (staff/admin)
     const salesmen = users.filter(u => u.role === 'admin' || u.role === 'staff')
@@ -349,6 +350,13 @@ function OrdersBilling() {
                     Delivered
                     <span className={styles.tabCount}>{orders.filter(o => o.status === 'delivered').length}</span>
                 </button>
+                <button
+                    className={`${styles.tab} ${activeTab === 'skipped' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('skipped')}
+                >
+                    Skipped
+                    <span className={styles.tabCount}>{useDataStore.getState().deliveries.filter(d => d.status === 'skipped').length}</span>
+                </button>
             </div>
 
             {/* Orders List */}
@@ -487,6 +495,49 @@ function OrdersBilling() {
                             ))}
                         </div>
                     ))
+                ) : activeTab === 'skipped' ? (
+                    /* SKIPPED VIEW */
+                    deliveries
+                        .filter(d => d.status === 'skipped')
+                        .map((delivery, index) => (
+                            <motion.div
+                                key={delivery.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <GlassCard className={styles.orderCard} hover={false} animate={false}>
+                                    <div className={styles.orderMain}>
+                                        <div className={styles.orderInfo}>
+                                            <span className={styles.orderId}>Skipped</span>
+                                            <span className={styles.orderCustomer}>{delivery.customerName}</span>
+                                            <span className={styles.orderDate}>{new Date(delivery.deliveryDate).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className={styles.orderMeta}>
+                                            <span className={styles.orderTotal} style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                                {delivery.notes || 'No notes'}
+                                            </span>
+                                            <StatusBadge status="skipped" />
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                icon={Plus}
+                                                onClick={() => {
+                                                    setNewOrder({
+                                                        ...newOrder,
+                                                        customerId: delivery.customerId,
+                                                        notes: delivery.notes || ''
+                                                    })
+                                                    setShowNewOrderModal(true)
+                                                }}
+                                            >
+                                                Create Order
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        ))
                 ) : (
                     /* FLAT VIEW for Pending/Delivered */
                     filteredOrders.map((order, index) => (

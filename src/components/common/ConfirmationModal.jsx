@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, X } from 'lucide-react'
 import GlassCard from '../ui/GlassCard'
@@ -16,7 +17,7 @@ const ConfirmationModal = ({
 }) => {
     if (!isOpen) return null
 
-    return (
+    return createPortal(
         <AnimatePresence>
             <div
                 style={{
@@ -25,12 +26,12 @@ const ConfirmationModal = ({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.7)',
+                    background: 'rgba(0, 0, 0, 0.8)',
                     backdropFilter: 'blur(8px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1000,
+                    zIndex: 9999,
                     padding: '1rem'
                 }}
                 onClick={onClose}
@@ -92,7 +93,8 @@ const ConfirmationModal = ({
                     </GlassCard>
                 </motion.div>
             </div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     )
 }
 

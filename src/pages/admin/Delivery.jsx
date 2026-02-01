@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import {
     Search,
     Truck,
@@ -14,8 +14,7 @@ import {
     Clock,
     XCircle,
     Edit,
-    Plus,
-    ChevronDown
+    Plus
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -25,160 +24,6 @@ import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './Delivery.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-const DeliveryGroupRow = ({ customer, deliveries, index, onMarkDelivered, onEdit, onSkip }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const timeoutRef = useRef(null)
-
-    const isPending = deliveries.length === 0
-
-    // Main Status
-    const mainStatus = isPending ? 'pending' : (deliveries.some(d => d.status === 'delivered') ? 'delivered' : 'skipped')
-
-    const totalBottles = isPending
-        ? (customer.requiredBottles || 1)
-        : deliveries.reduce((sum, d) => sum + (d.bottlesDelivered || 0), 0)
-
-    const handleMouseEnter = () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-
-    const handleMouseLeave = () => {
-        if (isOpen) {
-            timeoutRef.current = setTimeout(() => {
-                setIsOpen(false)
-            }, 5000)
-        }
-    }
-
-    const toggleOpen = () => {
-        if (deliveries.length > 0) setIsOpen(!isOpen)
-    }
-
-    return (
-        <motion.tbody
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: index * 0.02 }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
-        >
-            {/* MAIN ROW */}
-            <tr
-                onClick={toggleOpen}
-                style={{ cursor: deliveries.length > 0 ? 'pointer' : 'default', background: isOpen ? 'rgba(var(--primary-rgb), 0.02)' : 'transparent' }}
-            >
-                <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {index + 1}
-                        {deliveries.length > 0 && (
-                            <div style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>
-                                <ChevronDown size={14} opacity={0.6} />
-                            </div>
-                        )}
-                    </div>
-                </td>
-                <td>
-                    <div className={styles.customerCell}>
-                        <span className={styles.customerName}>{customer.name}</span>
-                        {deliveries.length > 1 && <span style={{ fontSize: '0.75rem', background: '#e0e7ff', color: '#4338ca', padding: '2px 6px', borderRadius: '4px' }}>{deliveries.length} orders</span>}
-                    </div>
-                </td>
-                <td>
-                    <div className={styles.addressCell}>
-                        <MapPin size={12} />
-                        <span>{customer.address}</span>
-                    </div>
-                </td>
-                <td>
-                    <div className={styles.phoneCell}>
-                        <Phone size={12} />
-                        <span>{customer.phone}</span>
-                    </div>
-                </td>
-                <td>
-                    <span className={styles.bottleCount}>
-                        {totalBottles}
-                    </span>
-                </td>
-                <td>
-                    <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
-                        Rs {customer.currentBalance?.toLocaleString() || 0}
-                    </span>
-                </td>
-                <td>
-                    {/* Render status of standard row or summary */}
-                    <StatusBadge status={mainStatus} size="sm" />
-                </td>
-                <td>
-                    {/* If pending, allows Mark Delivered. If has deliveries, actions are inside dropdown (or strictly viewing) */}
-                    {isPending && (
-                        <div className={styles.actionBtns}>
-                            <button
-                                className={`${styles.actionBtn} ${styles.delivered}`}
-                                title="Mark Delivered"
-                                onClick={(e) => { e.stopPropagation(); onMarkDelivered(customer) }}
-                            >
-                                <CheckCircle size={16} />
-                            </button>
-                            <button
-                                className={`${styles.actionBtn} ${styles.skipped}`}
-                                title="Skip"
-                                onClick={(e) => { e.stopPropagation(); onSkip(customer) }}
-                            >
-                                <XCircle size={16} />
-                            </button>
-                        </div>
-                    )}
-                    {/* If has deliveries, maybe show a quick "Plus" to add another? -> The user can use the generic Add button or Duplicate warning flow.
-                         For now, leaving actions empty on main row if delivered, forcing expand to see details.
-                      */}
-                </td>
-            </tr>
-
-            {/* EXPANDED ROWS */}
-            <AnimatePresence>
-                {isOpen && deliveries.map((delivery, dIndex) => (
-                    <motion.tr
-                        key={delivery.id || dIndex}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        style={{ background: 'rgba(0,0,0,0.02)' }}
-                    >
-                        <td></td>
-                        <td colSpan={3} style={{ paddingLeft: '3rem', fontSize: '0.85rem', color: '#666' }}>
-                            #{dIndex + 1} • {new Date(delivery.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {delivery.notes || 'No notes'}
-                        </td>
-                        <td><span className={styles.bottleCount}>{delivery.bottlesDelivered}</span></td>
-                        <td></td>
-                        <td><StatusBadge status={delivery.status} size="sm" /></td>
-                        <td>
-                            <div className={styles.actionBtns}>
-                                <button
-                                    className={`${styles.actionBtn} ${styles.delivered}`}
-                                    title="Edit This Delivery"
-                                    onClick={(e) => { e.stopPropagation(); onEdit(customer, delivery) }}
-                                >
-                                    <Edit size={14} />
-                                </button>
-                                <button
-                                    className={`${styles.actionBtn} ${styles.skipped}`}
-                                    title="Delete/Skip"
-                                    onClick={(e) => { e.stopPropagation(); onSkip(customer) }}
-                                >
-                                    <XCircle size={14} />
-                                </button>
-                            </div>
-                        </td>
-                    </motion.tr>
-                ))}
-            </AnimatePresence>
-        </motion.tbody>
-    )
-}
-
 
 function Delivery() {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -709,18 +554,147 @@ function Delivery() {
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        {sortedDeliveryList.map((customer, index) => (
-                            <DeliveryGroupRow
-                                key={customer.id}
-                                customer={customer}
-                                index={index}
-                                deliveries={getDeliveriesForCustomer(customer.id, todayDate)}
-                                onMarkDelivered={handleMarkDelivered}
-                                onEdit={handleEditDelivery}
-                                onSkip={handleSkipDelivery}
-                            />
-                        ))}
+                        <tbody>
+                            {sortedDeliveryList.map((customer, index) => {
+                                // fetch ALL deliveries for this customer on this date
+                                const customerDeliveries = getDeliveriesForCustomer(customer.id, todayDate)
 
+                                // If NO deliveries (Pending state for this customer)
+                                if (customerDeliveries.length === 0) {
+                                    return (
+                                        <motion.tr
+                                            key={customer.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: index * 0.02 }}
+                                        >
+                                            <td>{index + 1}</td>
+                                            <td>
+                                                <div className={styles.customerCell}>
+                                                    <span className={styles.customerName}>{customer.name}</span>
+                                                    <span className={styles.customerId}>{customer.id}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.addressCell}>
+                                                    <MapPin size={12} />
+                                                    <span>{customer.address}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.phoneCell}>
+                                                    <Phone size={12} />
+                                                    <span>{customer.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={styles.bottleCount}>
+                                                    {customer.requiredBottles || 1}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
+                                                    Rs {customer.currentBalance?.toLocaleString() || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <StatusBadge status="pending" size="sm" />
+                                            </td>
+                                            <td>
+                                                <div className={styles.actionBtns}>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.delivered}`}
+                                                        title="Mark Delivered"
+                                                        onClick={() => handleMarkDelivered(customer)}
+                                                    >
+                                                        <CheckCircle size={16} />
+                                                    </button>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.skipped}`}
+                                                        title="Skip"
+                                                        onClick={() => handleSkipDelivery(customer)}
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    )
+                                }
+
+                                // If HAS deliveries, map EACH delivery to a row
+                                return customerDeliveries.map((delivery, dIndex) => {
+                                    const status = delivery.status || 'delivered'
+                                    const isDelivered = true // Since it exists in deliveries list
+
+                                    return (
+                                        <motion.tr
+                                            key={`${customer.id}-${delivery.id || dIndex}`}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: index * 0.02 }}
+                                            className={`${status === 'delivered' ? styles.deliveredRow : ''} ${status === 'skipped' ? styles.skippedRow : ''}`}
+                                        >
+                                            <td>{index + 1} {customerDeliveries.length > 1 ? `(${dIndex + 1})` : ''}</td>
+                                            <td>
+                                                <div className={styles.customerCell}>
+                                                    <span className={styles.customerName}>{customer.name}</span>
+                                                    <span className={styles.customerId}>{customer.id}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.addressCell}>
+                                                    <MapPin size={12} />
+                                                    <span>{customer.address}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.phoneCell}>
+                                                    <Phone size={12} />
+                                                    <span>{customer.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={styles.bottleCount}>
+                                                    {delivery.bottlesDelivered}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
+                                                    Rs {customer.currentBalance?.toLocaleString() || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <StatusBadge status={status} size="sm" />
+                                            </td>
+                                            <td>
+                                                <div className={styles.actionBtns}>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.delivered}`}
+                                                        title="Edit Delivery"
+                                                        onClick={() => handleEditDelivery(customer, delivery)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    {/* Removing Skip button for already delivered/skipped rows to avoid confusion, or handle delete? 
+                                                        User asked to "Subtract everywhere" on skip. 
+                                                        If multiple rows, "Skip" essentially means "Delete this delivery entry".
+                                                        Keeping it as "Skip" which triggers handleSkipDelivery which deletes order. 
+                                                     */}
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.skipped}`}
+                                                        title="Skip / Delete"
+                                                        onClick={() => handleSkipDelivery(customer)}
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    )
+                                })
+                            })}
+                        </tbody>
                     </table >
 
                     {

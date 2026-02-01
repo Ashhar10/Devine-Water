@@ -65,6 +65,7 @@ function Delivery() {
     const addDelivery = useDataStore(state => state.addDelivery)
     const updateDelivery = useDataStore(state => state.updateDelivery)
     const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
+    const getDeliveriesForCustomer = useDataStore(state => state.getDeliveriesForCustomer) // Fix ReferenceError
     const addOrder = useDataStore(state => state.addOrder)
     const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
     const updateOrder = useDataStore(state => state.updateOrder)

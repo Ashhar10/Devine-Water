@@ -350,19 +350,12 @@ function OrdersBilling() {
                     Delivered
                     <span className={styles.tabCount}>{orders.filter(o => o.status === 'delivered').length}</span>
                 </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'skipped' ? styles.activeTab : ''}`}
-                    onClick={() => setActiveTab('skipped')}
-                >
-                    Skipped
-                    <span className={styles.tabCount}>{useDataStore.getState().deliveries.filter(d => d.status === 'skipped').length}</span>
-                </button>
             </div>
 
             {/* Orders List */}
             <div className={styles.ordersList}>
                 {activeTab === 'all' ? (
-                    /* GROUPED VIEW for 'All' */
+                    /* ALL ORDERS - Grouped by Date */
                     sortedKeys.map(groupKey => (
                         <div key={groupKey} className={styles.groupSection}>
                             <h3 className={styles.groupTitle}>{groupKey}</h3>
@@ -446,7 +439,6 @@ function OrdersBilling() {
                                                         >
                                                             View Invoice
                                                         </Button>
-
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -455,7 +447,6 @@ function OrdersBilling() {
                                                         >
                                                             Edit
                                                         </Button>
-
                                                         {order.status !== 'delivered' && order.status !== 'cancelled' && (
                                                             <>
                                                                 <Button
@@ -477,7 +468,6 @@ function OrdersBilling() {
                                                                 )}
                                                             </>
                                                         )}
-
                                                         <Button
                                                             variant="danger"
                                                             size="sm"
@@ -495,56 +485,10 @@ function OrdersBilling() {
                             ))}
                         </div>
                     ))
-                ) : activeTab === 'skipped' ? (
-                    /* SKIPPED VIEW */
-                    (() => {
-                        const skipped = deliveries.filter(d => d.status === 'skipped');
-                        if (skipped.length === 0) return <div style={{ padding: '20px', color: '#888' }}>No skipped deliveries found.</div>;
-                        return skipped.map((delivery, index) => (
-
-                            <motion.div
-                                key={delivery.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                            >
-                                <GlassCard className={styles.orderCard} hover={false} animate={false}>
-                                    <div className={styles.orderMain}>
-                                        <div className={styles.orderInfo}>
-                                            <span className={styles.orderId}>Skipped</span>
-                                            <span className={styles.orderCustomer}>{delivery.customerName}</span>
-                                            <span className={styles.orderDate}>{new Date(delivery.deliveryDate).toLocaleDateString()}</span>
-                                        </div>
-                                        <div className={styles.orderMeta}>
-                                            <span className={styles.orderTotal} style={{ color: '#aaa', fontStyle: 'italic' }}>
-                                                {delivery.notes || 'No notes'}
-                                            </span>
-                                            <StatusBadge status="skipped" />
-                                            <Button
-                                                variant="primary"
-                                                size="sm"
-                                                icon={Plus}
-                                                onClick={() => {
-                                                    setNewOrder({
-                                                        ...newOrder,
-                                                        customerId: delivery.customerId,
-                                                        notes: delivery.notes || ''
-                                                    })
-                                                    setShowNewOrderModal(true)
-                                                }}
-                                            >
-                                                Create Order
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </GlassCard>
-                            </motion.div>
-                        ))
-                    })()
                 ) : activeTab === 'pending' ? (
-                    /* PENDING VIEW (Mixed: Orders + Deliveries) */
+                    /* PENDING VIEW (Unified: Scheduled + Skipped + Manual) */
                     <div className={styles.pendingContainer}>
-                        {/* Pending Deliveries Section */}
+                        {/* Section 1: Scheduled Deliveries */}
                         <div className={styles.sectionHeader} style={{ marginTop: 0 }}>
                             <h4>Scheduled Deliveries ({new Date(selectedDate).toLocaleDateString()})</h4>
                         </div>
@@ -569,7 +513,7 @@ function OrdersBilling() {
                                     <GlassCard className={styles.orderCard} hover={false} animate={false}>
                                         <div className={styles.orderMain}>
                                             <div className={styles.orderInfo}>
-                                                <span className={styles.orderId} style={{ backgroundColor: '#e3f2fd', color: '#1565c0' }}>Delivery</span>
+                                                <span className={styles.orderId} style={{ backgroundColor: '#e3f2fd', color: '#1565c0' }}>Scheduled</span>
                                                 <span className={styles.orderCustomer}>{delivery.customerName}</span>
                                             </div>
                                             <div className={styles.orderMeta}>
@@ -577,22 +521,78 @@ function OrdersBilling() {
                                                     {delivery.notes || 'No notes'}
                                                 </span>
                                                 <StatusBadge status="pending" />
-                                                {/* No action button here yet - user should go to Delivery page to fulfill */}
                                             </div>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
-                            ))
+                            ));
                         })()}
 
-                        {/* Pending Manual Orders Section */}
+                        {/* Section 2: Skipped Attempts */}
+                        <div className={styles.sectionHeader}>
+                            <h4>Skipped Attempts</h4>
+                        </div>
+                        {(() => {
+                            const skipped = deliveries.filter(d =>
+                                d.status === 'skipped' &&
+                                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+                            );
+
+                            if (skipped.length === 0) {
+                                return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No skipped attempts for this date.</div>
+                            }
+
+                            return skipped.map((delivery, index) => (
+                                <motion.div
+                                    key={delivery.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    style={{ marginBottom: '10px' }}
+                                >
+                                    <GlassCard className={styles.orderCard} hover={false} animate={false}>
+                                        <div className={styles.orderMain}>
+                                            <div className={styles.orderInfo}>
+                                                <span className={styles.orderId} style={{ backgroundColor: '#ffebee', color: '#c62828' }}>Skipped</span>
+                                                <span className={styles.orderCustomer}>{delivery.customerName}</span>
+                                            </div>
+                                            <div className={styles.orderMeta}>
+                                                <span className={styles.orderTotal} style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                                    {delivery.notes || 'No notes'}
+                                                </span>
+                                                <StatusBadge status="skipped" />
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    icon={Plus}
+                                                    onClick={() => {
+                                                        setNewOrder({
+                                                            ...newOrder,
+                                                            customerId: delivery.customerId,
+                                                            notes: delivery.notes || ''
+                                                        })
+                                                        setShowNewOrderModal(true)
+                                                    }}
+                                                >
+                                                    Create Order
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
+                            ));
+                        })()}
+
+                        {/* Section 3: Manual Orders */}
                         <div className={styles.sectionHeader}>
                             <h4>Manual Orders</h4>
                         </div>
-                        {filteredOrders.length === 0 ? (
-                            <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic' }}>No pending manual orders for this date.</div>
-                        ) : (
-                            filteredOrders.map((order, index) => (
+                        {(() => {
+                            if (filteredOrders.length === 0) {
+                                return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic' }}>No pending manual orders for this date.</div>
+                            }
+
+                            return filteredOrders.map((order, index) => (
                                 <motion.div
                                     key={order.id}
                                     initial={{ opacity: 0, y: 20 }}
@@ -705,11 +705,11 @@ function OrdersBilling() {
                                         </AnimatePresence>
                                     </GlassCard>
                                 </motion.div>
-                            ))
-                        )}
+                            ));
+                        })()}
                     </div>
                 ) : (
-                    /* DELIVERED FLAT VIEW */
+                    /* DELIVERED VIEW */
                     filteredOrders.map((order, index) => (
                         <motion.div
                             key={order.id}
@@ -790,7 +790,6 @@ function OrdersBilling() {
                                                 >
                                                     View Invoice
                                                 </Button>
-
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -799,7 +798,6 @@ function OrdersBilling() {
                                                 >
                                                     Edit
                                                 </Button>
-
                                                 {order.status !== 'delivered' && order.status !== 'cancelled' && (
                                                     <>
                                                         <Button
@@ -821,7 +819,6 @@ function OrdersBilling() {
                                                         )}
                                                     </>
                                                 )}
-
                                                 <Button
                                                     variant="danger"
                                                     size="sm"

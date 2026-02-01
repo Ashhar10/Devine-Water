@@ -536,6 +536,40 @@ export const useDataStore = create(
                             }
                         }
                     }
+                    // SYNC WITH LINKED DELIVERY
+                    // If order items or date change, update the linked delivery
+                    if (updates.items || updates.orderDate) {
+                        try {
+                            const linkedDelivery = get().deliveries.find(d => d.orderId === id)
+                            if (linkedDelivery) {
+                                const deliveryUpdates = {}
+
+                                // Sync Date
+                                if (updates.orderDate) {
+                                    deliveryUpdates.deliveryDate = updates.orderDate
+                                }
+
+                                // Sync Bottles
+                                if (updates.items) {
+                                    const totalBottles = updates.items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)
+                                    deliveryUpdates.bottlesDelivered = totalBottles
+
+                                    // Also sync product ID if items changed
+                                    if (updates.items.length > 0) {
+                                        deliveryUpdates.productId = updates.items[0].productId
+                                    }
+                                }
+
+                                if (Object.keys(deliveryUpdates).length > 0) {
+                                    console.log('Syncing linked delivery:', { deliveryId: linkedDelivery.id, updates: deliveryUpdates })
+                                    await get().updateDelivery(linkedDelivery.id, deliveryUpdates)
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Failed to sync linked delivery:', err)
+                        }
+                    }
+
                 } catch (error) {
                     console.error('Failed to update order in DB:', error)
                     // Rollback optimistic update on error

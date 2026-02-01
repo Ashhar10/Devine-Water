@@ -61,6 +61,7 @@ function Delivery() {
     const users = useDataStore(state => state.users)
     const areas = useDataStore(state => state.areas)
     const products = useDataStore(state => state.products)
+    const deliveries = useDataStore(state => state.deliveries) // Subscribe to deliveries for reactivity
     const addDelivery = useDataStore(state => state.addDelivery)
     const updateDelivery = useDataStore(state => state.updateDelivery)
     const getDeliveryForCustomer = useDataStore(state => state.getDeliveryForCustomer)
@@ -82,12 +83,25 @@ function Delivery() {
 
     // Filter customers based on delivery day
     const deliveryList = customers.filter(c => {
+        // Check if this customer actually HAS a delivery today (regardless of schedule)
+        const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && d.deliveryDate === todayDate)
+
         const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 || c.deliveryDays.includes(selectedDay)
         const matchesArea = !selectedArea || c.areaId === selectedArea
         const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.phone.includes(searchTerm) ||
             c.address.toLowerCase().includes(searchTerm.toLowerCase())
-        return matchesDay && matchesArea && matchesSearch && c.status === 'active'
+
+        // Show if: (Matches Scheduled Day OR Has Manual Delivery) AND Matches Search AND Active
+        // Note: We keep Area filter strict for now to avoid clutter, but usually manual delivery implies we want to see it.
+        // Let's make "Has Delivery Today" override Area filter too? 
+        // No, let's keep area filter strict so they can still filter down. 
+        // BUT, if I just added a delivery for someone in another area, I might want to see it?
+        // User request: "add delivery so it add that delivery to the particular date on the delivery section"
+        // Safest bet: If has delivery today, show it even if Area doesn't match? 
+        // No, that breaks filtering. Let's stick to Area being a hard filter if set.
+
+        return (matchesDay || hasDeliveryToday) && matchesArea && matchesSearch && c.status === 'active'
     })
 
     // Sort: undelivered first, then delivered, then skipped

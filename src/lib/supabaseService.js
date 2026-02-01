@@ -599,7 +599,7 @@ export const loginUser = async (identifier, password) => {
             designation: data.designation,
             phone: data.phone,
             customerId: data.customer_id,
-            permittedSections: data.permitted_sections || []
+            permittedSections: data.permissions?.sections || []
         }
     } catch (err) {
         console.error('Login error:', err)
@@ -627,7 +627,7 @@ export const fetchUsers = async () => {
         phone: u.phone,
         status: u.status,
         customerId: u.customer_id,
-        permittedSections: u.permitted_sections || [],
+        permittedSections: u.permissions?.sections || [],
         createdAt: u.created_at?.split('T')[0]
     })) || []
 }
@@ -649,7 +649,7 @@ export const addUserToDb = async (userData) => {
             phone: userData.phone || null,
             status: 'active',
             customer_id: userData.customerId || null,
-            permitted_sections: userData.permittedSections || []
+            permissions: { sections: userData.permittedSections || [] }
         })
         .select()
         .single()
@@ -666,7 +666,7 @@ export const addUserToDb = async (userData) => {
         phone: data.phone,
         status: data.status,
         customerId: data.customer_id,
-        permittedSections: data.permitted_sections || [],
+        permittedSections: data.permissions?.sections || [],
         createdAt: data.created_at?.split('T')[0]
     }
 }
@@ -682,7 +682,9 @@ export const updateUserInDb = async (userId, updates) => {
     if (updates.designation !== undefined) dbUpdates.designation = updates.designation
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone
     if (updates.status) dbUpdates.status = updates.status
-    if (updates.permittedSections !== undefined) dbUpdates.permitted_sections = updates.permittedSections
+    if (updates.permittedSections !== undefined) {
+        dbUpdates.permissions = { sections: updates.permittedSections }
+    }
     dbUpdates.updated_at = new Date().toISOString()
 
     const { error } = await supabase

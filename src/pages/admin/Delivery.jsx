@@ -693,7 +693,7 @@ function Delivery() {
                                     )
                                 })
                             })}
-                        </tbody> >
+                        </tbody>
                     </table >
 
                     {

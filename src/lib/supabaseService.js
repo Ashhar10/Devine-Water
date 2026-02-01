@@ -1476,6 +1476,16 @@ export const updateDeliveryInDb = async (id, updates) => {
     }
 }
 
+export const deleteDeliveryFromDb = async (id) => {
+    if (!isSupabaseConfigured()) return null
+    const { error } = await supabase.from('deliveries').delete().eq('delivery_id', id)
+    if (error) {
+        console.error('Delete delivery error:', error)
+        throw error
+    }
+    return true
+}
+
 // =====================================================
 // INITIALIZE ALL DATA
 // =====================================================

@@ -47,7 +47,8 @@ import {
     addIncomeCategoryToDb,
     addExpenseCategoryToDb,
     deleteIncomeCategoryFromDb,
-    deleteExpenseCategoryFromDb
+    deleteExpenseCategoryFromDb,
+    deleteDeliveryFromDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs

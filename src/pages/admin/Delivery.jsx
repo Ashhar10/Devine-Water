@@ -58,6 +58,11 @@ function Delivery() {
         onConfirm: () => { },
         type: 'danger'
     })
+    const [rowActionModal, setRowActionModal] = useState({
+        isOpen: false,
+        customer: null,
+        deliveries: []
+    })
 
     const customers = useDataStore(state => state.customers)
     const users = useDataStore(state => state.users)
@@ -862,6 +867,21 @@ function Delivery() {
                                     </div>
 
                                     <div className={styles.formGroup}>
+                                        <label>Delivery Date</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Calendar size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                                            <input
+                                                type="date"
+                                                className={styles.formInput}
+                                                style={{ paddingLeft: '35px' }}
+                                                value={deliveryForm.deliveryDate}
+                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryDate: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
                                         <label>Select Product</label>
                                         <select
                                             value={deliveryForm.productId}
@@ -933,6 +953,75 @@ function Delivery() {
                                     </div>
                                 </form>
                             )}
+                        </div>
+                    </div>
+                )
+            }
+            {/* Row Action Modal (Pop-up) */}
+            {
+                rowActionModal.isOpen && (
+                    <div className={styles.modalOverlay} onClick={() => setRowActionModal({ ...rowActionModal, isOpen: false })}>
+                        <div className={styles.modalContent} style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>Actions for {rowActionModal.customer?.name}</h2>
+                                <button className={styles.closeBtn} onClick={() => setRowActionModal({ ...rowActionModal, isOpen: false })}>
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+                            <div className={styles.modalBody} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <Button
+                                    variant="primary"
+                                    icon={Plus}
+                                    onClick={() => {
+                                        setRowActionModal({ ...rowActionModal, isOpen: false })
+                                        handleAddNewDelivery()
+                                        setSelectedCustomer(rowActionModal.customer)
+                                        setDeliveryForm(prev => ({ ...prev, bottlesDelivered: 1 }))
+                                        setShowDeliveryModal(true)
+                                    }}
+                                >
+                                    Add New Delivery
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    icon={XCircle}
+                                    onClick={() => {
+                                        setRowActionModal({ ...rowActionModal, isOpen: false })
+                                        handleSkipDelivery(rowActionModal.customer)
+                                    }}
+                                >
+                                    Skip Customer
+                                </Button>
+
+                                {/* Show Edit button if Single Delivered Delivery */}
+                                {rowActionModal.deliveries?.length === 1 && rowActionModal.deliveries[0].status === 'delivered' && (
+                                    <Button
+                                        variant="secondary"
+                                        icon={Edit}
+                                        onClick={() => {
+                                            setRowActionModal({ ...rowActionModal, isOpen: false })
+                                            handleEditDelivery(rowActionModal.customer, rowActionModal.deliveries[0])
+                                        }}
+                                    >
+                                        Edit Delivery
+                                    </Button>
+                                )}
+
+                                {/* Show Mark Delivered button if no deliveries (pending) */}
+                                {rowActionModal.deliveries?.length === 0 && (
+                                    <Button
+                                        variant="primary"
+                                        icon={CheckCircle}
+                                        onClick={() => {
+                                            setRowActionModal({ ...rowActionModal, isOpen: false })
+                                            handleMarkDelivered(rowActionModal.customer)
+                                        }}
+                                    >
+                                        Mark Delivered
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )

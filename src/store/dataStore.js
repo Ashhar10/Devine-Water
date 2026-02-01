@@ -1589,6 +1589,16 @@ export const useDataStore = create(
                 }
             },
 
+            // Utility to clear stuck pending deliveries
+            clearPendingDeliveries: () => {
+                try {
+                    localStorage.removeItem('deliveries_temp')
+                    console.log('Cleared pending deliveries from localStorage')
+                } catch (error) {
+                    console.error('Failed to clear pending deliveries:', error)
+                }
+            },
+
             // ===== RESET =====
             resetStore: () => set({
                 customers: [],

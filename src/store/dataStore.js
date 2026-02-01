@@ -1526,6 +1526,10 @@ export const useDataStore = create(
             },
 
             updateDelivery: async (id, updates) => {
+                // Find the delivery to check for linked order
+                const delivery = get().deliveries.find(d => d.id === id)
+
+                // Optimistic update
                 set(state => ({
                     deliveries: state.deliveries.map(d =>
                         d.id === id ? { ...d, ...updates } : d
@@ -1534,6 +1538,16 @@ export const useDataStore = create(
 
                 try {
                     await updateDeliveryInDb(id, updates)
+
+                    // REVERSE SYNC: If delivery status changed to "delivered", update linked order
+                    if (updates.status === 'delivered' && delivery?.orderId) {
+                        console.log('Syncing delivery status to order:', delivery.orderId)
+                        const linkedOrder = get().orders.find(o => o.id === delivery.orderId)
+                        if (linkedOrder && linkedOrder.status !== 'delivered') {
+                            await get().updateOrderStatus(delivery.orderId, 'delivered')
+                        }
+                    }
+
                 } catch (error) {
                     console.error('Failed to update delivery:', error)
                     // Revert? (Optional complexity)

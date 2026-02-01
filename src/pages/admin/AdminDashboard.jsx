@@ -189,14 +189,6 @@ function AdminDashboard() {
             value: stats.areasToDeliver,
             icon: MapPin,
             color: 'success'
-        },
-        {
-            title: 'Customer Panel',
-            value: 'Customer Portal',
-            icon: User,
-            color: 'cyan',
-            link: '/customer',
-            linkText: 'Switch View'
         }
     ]
 

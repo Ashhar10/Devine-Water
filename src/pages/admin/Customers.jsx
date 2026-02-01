@@ -72,6 +72,13 @@ function Customers() {
         priority: 0,
         deliveryDays: []
     })
+    const [confirmDialog, setConfirmDialog] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        variant: 'danger'
+    })
 
     const areas = useDataStore(state => state.areas)
     const addCustomer = useDataStore(state => state.addCustomer)
@@ -151,9 +158,15 @@ function Customers() {
     }
 
     const removeArea = (id) => {
-        if (window.confirm('Are you sure you want to delete this area?')) {
-            deleteArea(id)
-        }
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Delete Area',
+            message: 'Are you sure you want to delete this area? This action cannot be undone.',
+            onConfirm: () => {
+                deleteArea(id)
+            },
+            variant: 'danger'
+        })
     }
 
     // Clear cache
@@ -1013,6 +1026,15 @@ function Customers() {
                 )
             })()}
 
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                variant={confirmDialog.variant}
+            />
         </div>
     )
 }

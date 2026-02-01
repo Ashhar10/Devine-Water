@@ -348,6 +348,31 @@ export const useDataStore = create(
                                 )
                             }))
 
+                            // AUTO-CREATE DELIVERY RECORD
+                            try {
+                                // Calculate total bottles from order items
+                                const totalBottles = (data.items || []).reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0)
+                                const mainProductId = (data.items || [])[0]?.productId || ''
+
+                                if (totalBottles > 0) {
+                                    console.log('Auto-creating delivery for order:', dbOrder.id)
+                                    // Use get().addDelivery to ensure we use the store action
+                                    await get().addDelivery({
+                                        customerId: data.customerId,
+                                        customerUuid: customerUuid,
+                                        deliveryDate: data.orderDate || new Date().toISOString().split('T')[0],
+                                        bottlesDelivered: totalBottles,
+                                        receiveBottles: 0,
+                                        productId: mainProductId,
+                                        status: 'pending',
+                                        notes: `Auto-generated from Order #${dbOrder.id}`,
+                                        orderId: dbOrder.id
+                                    })
+                                }
+                            } catch (err) {
+                                console.error('Failed to auto-create delivery:', err)
+                            }
+
                             // Update customer stats (but NOT balance - balance updates only when delivered)
                             get().updateCustomer(data.customerId, {
                                 totalOrders: (customer.totalOrders || 0) + 1,

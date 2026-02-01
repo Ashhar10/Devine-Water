@@ -92,8 +92,15 @@ function AdminSidebar({ collapsed, onToggle }) {
             {/* Navigation */}
             <nav className={styles.nav}>
                 {navItems.filter(item => {
-                    // Super Admins see everything
+                    // Special case: Customer Panel is hidden unless explicitly permitted
+                    // This allows the "uncheck" in User Management to work even for admins
+                    if (item.path === '/customer') {
+                        return currentUser?.permittedSections?.includes(item.path)
+                    }
+
+                    // Super Admins see everything else
                     if (currentUser?.email === 'admin@devinewater.pk') return true
+
                     // Only show if section is in permitted list
                     return currentUser?.permittedSections?.includes(item.path)
                 }).map((item) => (

@@ -1049,9 +1049,18 @@ function OrdersBilling() {
                                                         required
                                                     >
                                                         <option value="">Select product</option>
-                                                        {products.filter(p => p.status === 'active').map(p => (
-                                                            <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
-                                                        ))}
+                                                        {products
+                                                            .filter(p => {
+                                                                if (p.status !== 'active') return false
+                                                                const customer = customers.find(c => c.id === newOrder.customerId)
+                                                                if (customer?.assignedProducts?.length > 0) {
+                                                                    return customer.assignedProducts.includes(p.uuid)
+                                                                }
+                                                                return true
+                                                            })
+                                                            .map(p => (
+                                                                <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
+                                                            ))}
                                                     </select>
                                                 </div>
                                                 <div className={styles.formGroup}>

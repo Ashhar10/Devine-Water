@@ -43,6 +43,7 @@ export const fetchCustomers = async () => {
         totalSpent: parseFloat(c.total_spent) || 0,
         currentBalance: parseFloat(c.current_balance) || 0,
         deliveryDays: c.delivery_days || [],
+        assignedProducts: c.assigned_products || [], // Fallback to empty array
         requiredBottles: parseInt(c.required_bottles) || 1,
         securityDeposit: parseFloat(c.security_deposit) || 0,
         securityRemarks: c.security_remarks || '',
@@ -71,6 +72,7 @@ export const addCustomerToDb = async (customerData) => {
             longitude: customerData.longitude || null,
             status: 'active',
             delivery_days: customerData.deliveryDays || [],
+            assigned_products: customerData.assignedProducts || [],
             area_id: customerData.areaId || null,
             required_bottles: customerData.requiredBottles || 1,
             security_deposit: customerData.securityDeposit || 0,
@@ -99,6 +101,7 @@ export const addCustomerToDb = async (customerData) => {
         totalOrders: data.total_orders,
         totalSpent: parseFloat(data.total_spent),
         deliveryDays: data.delivery_days || [],
+        assignedProducts: data.assigned_products || [],
         areaId: data.area_id,
         requiredBottles: data.required_bottles,
         securityDeposit: parseFloat(data.security_deposit),
@@ -124,6 +127,7 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
         // FIXED: Always include these fields even if empty
         ...(updates.deliveryDays !== undefined && { delivery_days: updates.deliveryDays }),
+        ...(updates.assignedProducts !== undefined && { assigned_products: updates.assignedProducts }),
         ...(updates.areaId !== undefined && { area_id: updates.areaId }),
         ...(updates.requiredBottles !== undefined && { required_bottles: updates.requiredBottles }),
         ...(updates.securityDeposit !== undefined && { security_deposit: updates.securityDeposit }),

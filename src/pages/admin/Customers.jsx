@@ -43,6 +43,7 @@ const getEmptyFormData = () => ({
     longitude: null,
     areaId: '',
     deliveryDays: [],
+    assignedProducts: [],
     requiredBottles: 1,
     securityDeposit: 0,
     securityRemarks: '',
@@ -61,6 +62,7 @@ function Customers() {
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
 
     const customers = useDataStore(state => state.customers)
+    const products = useDataStore(state => state.products)
     const orders = useDataStore(state => state.orders)
     const deliveries = useDataStore(state => state.deliveries)
     const [showAreaModal, setShowAreaModal] = useState(false)
@@ -326,6 +328,7 @@ function Customers() {
             longitude: customer.longitude || null,
             areaId: customer.areaId || '',
             deliveryDays: customer.deliveryDays || [],
+            assignedProducts: customer.assignedProducts || [],
             requiredBottles: customer.requiredBottles || 1,
             securityDeposit: customer.securityDeposit || 0,
             securityRemarks: customer.securityRemarks || '',
@@ -679,6 +682,30 @@ function Customers() {
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Assigned Products Only */}
+                            <div className={styles.formGroup}>
+                                <label>Assigned Products (Optional)</label>
+                                <div className={styles.daysGrid}>
+                                    {products.filter(p => p.status === 'active').map(product => (
+                                        <button
+                                            key={product.id}
+                                            type="button"
+                                            className={`${styles.dayBtn} ${formData.assignedProducts.includes(product.uuid) ? styles.selected : ''}`}
+                                            onClick={() => setFormData(prev => ({
+                                                ...prev,
+                                                assignedProducts: prev.assignedProducts.includes(product.uuid)
+                                                    ? prev.assignedProducts.filter(id => id !== product.uuid)
+                                                    : [...prev.assignedProducts, product.uuid]
+                                            }))}
+                                            style={{ minWidth: 'auto', padding: '8px 12px' }}
+                                        >
+                                            {product.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <small className={styles.inputHint}>Select products visible to this customer. Leave empty to allow all.</small>
                             </div>
 
                             {/* Required Bottles */}

@@ -329,13 +329,20 @@ function Delivery() {
                     const originalOrder = orders.find(o =>
                         o.customerId === customer.id &&
                         o.orderDate === todayDate &&
+                        // We technically only want to revert 'delivered' orders, but if the user is skipping, 
+                        // we should probably revert any active order for today to pending/cancelled?
+                        // For now, sticking to 'delivered' as that's what affects balance.
                         o.status === 'delivered'
                     )
+
+                    console.log('Skipping delivery. Found order to revert:', originalOrder)
 
                     if (originalOrder) {
                         // This will trigger the balance revert logic we added in dataStore
                         await updateOrderStatus(originalOrder.id, 'pending')
                         console.log('Order status reverted to pending for skipped delivery')
+                    } else {
+                        console.warn('No delivered order found to revert for this skip action.')
                     }
                 } else {
                     // New skipped delivery
@@ -353,7 +360,6 @@ function Delivery() {
             }
         })
     }
-
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
@@ -534,7 +540,7 @@ function Delivery() {
                                         </td>
                                         <td>
                                             <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
-                                                Rs {status === 'skipped' ? 0 : (customer.currentBalance?.toLocaleString() || 0)}
+                                                Rs {customer.currentBalance?.toLocaleString() || 0}
                                             </span>
                                         </td>
                                         <td>
@@ -559,155 +565,159 @@ function Delivery() {
                                                 </button>
                                             </div>
                                         </td>
-                                    </motion.tr>
+                                    </motion.tr >
                                 )
                             })}
-                        </tbody>
-                    </table>
+                        </tbody >
+                    </table >
 
-                    {deliveryList.length === 0 && (
-                        <div className={styles.emptyState}>
-                            <Truck size={48} />
-                            <h3>No deliveries scheduled</h3>
-                            <p>No customers found for {selectedDay}</p>
-                        </div>
-                    )}
-                </div>
-            </GlassCard>
+                    {
+                        deliveryList.length === 0 && (
+                            <div className={styles.emptyState}>
+                                <Truck size={48} />
+                                <h3>No deliveries scheduled</h3>
+                                <p>No customers found for {selectedDay}</p>
+                            </div>
+                        )
+                    }
+                </div >
+            </GlassCard >
 
             {/* Delivery Modal */}
-            {showDeliveryModal && (
-                <div className={styles.modalOverlay} onClick={handleCloseModal}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>{editingDelivery ? 'Edit Delivery' : 'Mark Delivery'}</h2>
-                            <button className={styles.closeBtn} onClick={handleCloseModal}>
-                                <XCircle size={24} />
-                            </button>
-                        </div>
-
-                        {!selectedCustomer ? (
-                            // CUSTOMER SELECTION STEP
-                            <div className={styles.customerSelection}>
-                                <div className={styles.formGroup}>
-                                    <label>Select Customer</label>
-                                    <select
-                                        className={styles.formSelect}
-                                        onChange={handleCustomerSelect}
-                                        defaultValue=""
-                                    >
-                                        <option value="" disabled>Choose a customer...</option>
-                                        {customers.filter(c => c.status === 'active').sort((a, b) => a.name.localeCompare(b.name)).map(c => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name} ({c.address})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className={styles.helpText}>Search for a customer to add a delivery</p>
-                                </div>
+            {
+                showDeliveryModal && (
+                    <div className={styles.modalOverlay} onClick={handleCloseModal}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>{editingDelivery ? 'Edit Delivery' : 'Mark Delivery'}</h2>
+                                <button className={styles.closeBtn} onClick={handleCloseModal}>
+                                    <XCircle size={24} />
+                                </button>
                             </div>
-                        ) : (
-                            // DELIVERY DETAILS FORM
-                            <form onSubmit={handleDeliverySubmit} className={styles.deliveryForm}>
-                                <div className={styles.customerInfo}>
-                                    <div className={styles.infoRow}>
-                                        <User size={18} />
-                                        <div>
-                                            <span className={styles.infoLabel}>Customer</span>
-                                            <span className={styles.infoValue}>{selectedCustomer.name}</span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.infoRow}>
-                                        <MapPin size={18} />
-                                        <div>
-                                            <span className={styles.infoLabel}>Address</span>
-                                            <span className={styles.infoValue}>{selectedCustomer.address}</span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.infoRow}>
-                                        <Phone size={18} />
-                                        <div>
-                                            <span className={styles.infoLabel}>Contact</span>
-                                            <span className={styles.infoValue}>{selectedCustomer.phone}</span>
-                                        </div>
+
+                            {!selectedCustomer ? (
+                                // CUSTOMER SELECTION STEP
+                                <div className={styles.customerSelection}>
+                                    <div className={styles.formGroup}>
+                                        <label>Select Customer</label>
+                                        <select
+                                            className={styles.formSelect}
+                                            onChange={handleCustomerSelect}
+                                            defaultValue=""
+                                        >
+                                            <option value="" disabled>Choose a customer...</option>
+                                            {customers.filter(c => c.status === 'active').sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.name} ({c.address})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p className={styles.helpText}>Search for a customer to add a delivery</p>
                                     </div>
                                 </div>
-
-                                <div className={styles.formGroup}>
-                                    <label>Select Product</label>
-                                    <select
-                                        value={deliveryForm.productId}
-                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
-                                        className={styles.formSelect}
-                                        required
-                                    >
-                                        <option value="">Select Product...</option>
-                                        {products.map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name} (Rs {p.price})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label>Bottles Delivered</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={deliveryForm.bottlesDelivered}
-                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
-                                        required
-                                        className={styles.formInput}
-                                    />
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label>Receive Bottles (Empty Returns)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={deliveryForm.receiveBottles}
-                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
-                                        className={styles.formInput}
-                                    />
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label>Notes (Optional)</label>
-                                    <textarea
-                                        value={deliveryForm.notes}
-                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
-                                        className={styles.formTextarea}
-                                        rows="3"
-                                        placeholder="Any additional notes..."
-                                    />
-                                </div>
-
-                                {/* Total Display */}
-                                {deliveryForm.productId && deliveryForm.bottlesDelivered && (
-                                    <div className={styles.totalSection}>
-                                        <div className={styles.totalRow}>
-                                            <span className={styles.totalLabel}>Total Amount:</span>
-                                            <span className={styles.totalAmount}>Rs {deliveryTotal.toLocaleString()}</span>
+                            ) : (
+                                // DELIVERY DETAILS FORM
+                                <form onSubmit={handleDeliverySubmit} className={styles.deliveryForm}>
+                                    <div className={styles.customerInfo}>
+                                        <div className={styles.infoRow}>
+                                            <User size={18} />
+                                            <div>
+                                                <span className={styles.infoLabel}>Customer</span>
+                                                <span className={styles.infoValue}>{selectedCustomer.name}</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.infoRow}>
+                                            <MapPin size={18} />
+                                            <div>
+                                                <span className={styles.infoLabel}>Address</span>
+                                                <span className={styles.infoValue}>{selectedCustomer.address}</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.infoRow}>
+                                            <Phone size={18} />
+                                            <div>
+                                                <span className={styles.infoLabel}>Contact</span>
+                                                <span className={styles.infoValue}>{selectedCustomer.phone}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
 
-                                <div className={styles.modalActions}>
-                                    <button type="button" onClick={handleCloseModal} className={styles.cancelBtn}>
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className={styles.submitBtn}>
-                                        <CheckCircle size={18} />
-                                        Confirm Delivery
-                                    </button>
-                                </div>
-                            </form>
-                        )}
+                                    <div className={styles.formGroup}>
+                                        <label>Select Product</label>
+                                        <select
+                                            value={deliveryForm.productId}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
+                                            className={styles.formSelect}
+                                            required
+                                        >
+                                            <option value="">Select Product...</option>
+                                            {products.map(p => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.name} (Rs {p.price})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Bottles Delivered</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={deliveryForm.bottlesDelivered}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
+                                            required
+                                            className={styles.formInput}
+                                        />
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Receive Bottles (Empty Returns)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={deliveryForm.receiveBottles}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
+                                            className={styles.formInput}
+                                        />
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Notes (Optional)</label>
+                                        <textarea
+                                            value={deliveryForm.notes}
+                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                                            className={styles.formTextarea}
+                                            rows="3"
+                                            placeholder="Any additional notes..."
+                                        />
+                                    </div>
+
+                                    {/* Total Display */}
+                                    {deliveryForm.productId && deliveryForm.bottlesDelivered && (
+                                        <div className={styles.totalSection}>
+                                            <div className={styles.totalRow}>
+                                                <span className={styles.totalLabel}>Total Amount:</span>
+                                                <span className={styles.totalAmount}>Rs {deliveryTotal.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className={styles.modalActions}>
+                                        <button type="button" onClick={handleCloseModal} className={styles.cancelBtn}>
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className={styles.submitBtn}>
+                                            <CheckCircle size={18} />
+                                            Confirm Delivery
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
@@ -718,7 +728,7 @@ function Delivery() {
                 type={confirmModal.type}
                 confirmText={confirmModal.confirmText}
             />
-        </div>
+        </div >
     )
 }
 

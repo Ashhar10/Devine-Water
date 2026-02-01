@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
+import { useDataStore } from '../../store/dataStore'
 import {
     LayoutDashboard,
     Wallet,
@@ -13,7 +14,8 @@ import {
     Package,
     Truck,
     Store,
-    Banknote
+    Banknote,
+    LogOut
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
 
@@ -32,6 +34,15 @@ const navItems = [
 
 function AdminSidebar({ collapsed, onToggle }) {
     const closeTimeoutRef = useRef(null)
+    const navigate = useNavigate()
+    const logout = useDataStore(state => state.logout)
+
+    const handleLogout = () => {
+        if (confirm('Are you sure you want to logout?')) {
+            logout()
+            navigate('/login')
+        }
+    }
 
     // Open sidebar on hover
     const handleMouseEnter = () => {
@@ -88,6 +99,18 @@ function AdminSidebar({ collapsed, onToggle }) {
                     </NavLink>
                 ))}
             </nav>
+
+            {/* Logout Section */}
+            <div className={styles.logoutSection}>
+                <button
+                    className={styles.logoutBtn}
+                    onClick={handleLogout}
+                    title="Logout"
+                >
+                    <LogOut size={24} className={styles.navIcon} />
+                    <span className={styles.logoutLabel}>Logout</span>
+                </button>
+            </div>
 
             {/* Collapse toggle */}
             <button className={styles.toggleBtn} onClick={onToggle}>

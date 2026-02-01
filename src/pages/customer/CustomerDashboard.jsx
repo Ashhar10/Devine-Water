@@ -17,14 +17,13 @@ function CustomerDashboard() {
 
     // Find the current customer object from the store
     const currentCustomer = customers.find(c => c.uuid === currentUser?.customerId) ||
-        customers.find(c => c.email === currentUser?.email) ||
-        customers[0]
+        customers.find(c => c.email === currentUser?.email)
 
     const customerOrders = orders.filter(o => o.customerId === currentCustomer?.id)
     const customerBills = bills.filter(b => b.customerId === currentCustomer?.id)
 
     const pendingBill = customerBills.find(b => b.status === 'pending')
-    const currentUsage = pendingBill?.usageLiters || 285
+    const currentUsage = pendingBill?.usageLiters || 0
     const monthlyLimit = 500
     const usagePercentage = (currentUsage / monthlyLimit) * 100
 

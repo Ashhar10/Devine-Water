@@ -144,15 +144,8 @@ function Delivery() {
             // If skipped, don't count
             return sum
         }, 0),
-        // Sum outstanding balance only for customers who still need delivery (not skipped)
-        outstanding: deliveryList.reduce((sum, c) => {
-            const delivery = getDeliveryForCustomer(c.id, todayDate)
-            // Only count outstanding if not yet delivered or skipped
-            if (!delivery || delivery.status === 'pending') {
-                return sum + (c.currentBalance || 0)
-            }
-            return sum
-        }, 0),
+        // Sum outstanding balance for ALL customers in the list (requested by user)
+        outstanding: deliveryList.reduce((sum, c) => sum + (c.currentBalance || 0), 0),
 
     }
 

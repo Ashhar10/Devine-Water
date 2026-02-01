@@ -193,12 +193,18 @@ export const useDataStore = create(
 
             updateArea: async (id, updates) => {
                 console.log('Attemping to update Area (Store):', id, updates)
+                const area = get().areas.find(a => a.id === id)
+
+                // Optimistic update
                 set(state => ({
                     areas: state.areas.map(a => a.id === id ? { ...a, ...updates } : a)
                 }))
 
                 try {
-                    await updateAreaInDb(id, updates)
+                    // Use UUID for DB update if available, otherwise fallback to ID (area_id)
+                    const dbId = area?.uuid || id
+                    console.log('Updating Area in DB with ID:', dbId)
+                    await updateAreaInDb(dbId, updates)
                     console.log('Area updated in DB successfully')
                 } catch (error) {
                     console.error('Failed to update area in DB:', error)

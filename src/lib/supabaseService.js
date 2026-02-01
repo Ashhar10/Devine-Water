@@ -885,10 +885,23 @@ export const updateAreaInDb = async (areaId, updates) => {
     if (updates.deliveryDays) dbUpdates.delivery_days = updates.deliveryDays
     if (updates.priority !== undefined) dbUpdates.priority = updates.priority
 
-    const { error } = await supabase
-        .from('areas')
-        .update(dbUpdates)
-        .eq('area_id', areaId)
+    // We now prefer UUID updates
+    // Try to treat areaId as UUID first, if it fails format check, could fallback but
+    // since we control the input from store, we expect UUID or legacy ID.
+    // However, areaId param might be "AREA-123".
+    // If it's "AREA-123", we should query 'area_id'.
+    // If it's "uuid-uuid...", we should query 'id'.
+
+    let query = supabase.from('areas').update(dbUpdates)
+
+    // Simple heuristic: UUIDs are usually longer than AREA-XXX and don't start with AREA
+    if (areaId.toString().startsWith('AREA')) {
+        query = query.eq('area_id', areaId)
+    } else {
+        query = query.eq('id', areaId)
+    }
+
+    const { error } = await query
 
     if (error) handleError(error, 'update area')
 }

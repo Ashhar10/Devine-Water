@@ -328,7 +328,28 @@ function Delivery() {
                 deliveryDay: selectedDay,
                 status: 'delivered'
             })
+        } // End processSubmission
+
+        // Check for duplicates if NEW delivery
+        if (!editingDelivery) {
+            const existingDeliveries = getDeliveriesForCustomer(selectedCustomer.id, todayDate)
+            if (existingDeliveries.length > 0) {
+                setConfirmModal({
+                    isOpen: true,
+                    title: 'Duplicate Delivery',
+                    message: `This customer already has ${existingDeliveries.length} delivery(ies) today. Add another separate delivery?`,
+                    type: 'warning',
+                    confirmText: 'Yes, Add Another',
+                    onConfirm: async () => {
+                        await processSubmission()
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                    }
+                })
+                return
+            }
         }
+
+        await processSubmission()
 
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
@@ -534,73 +555,145 @@ function Delivery() {
                         </thead>
                         <tbody>
                             {sortedDeliveryList.map((customer, index) => {
-                                const delivery = getDeliveryForCustomer(customer.id, todayDate)
-                                const isDelivered = !!delivery
-                                const status = delivery?.status || (isDelivered ? 'delivered' : 'pending')
+                                // fetch ALL deliveries for this customer on this date
+                                const customerDeliveries = getDeliveriesForCustomer(customer.id, todayDate)
 
-                                return (
-                                    <motion.tr
-                                        key={customer.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: index * 0.02 }}
-                                        className={`${status === 'delivered' ? styles.deliveredRow : ''} ${status === 'skipped' ? styles.skippedRow : ''}`}
-                                    >
-                                        <td>{index + 1}</td>
-                                        <td>
-                                            <div className={styles.customerCell}>
-                                                <span className={styles.customerName}>{customer.name}</span>
-                                                <span className={styles.customerId}>{customer.id}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className={styles.addressCell}>
-                                                <MapPin size={12} />
-                                                <span>{customer.address}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className={styles.phoneCell}>
-                                                <Phone size={12} />
-                                                <span>{customer.phone}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={styles.bottleCount}>
-                                                {isDelivered ? delivery.bottlesDelivered : (customer.requiredBottles || 1)}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
-                                                Rs {customer.currentBalance?.toLocaleString() || 0}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <StatusBadge status={status} size="sm" />
-                                        </td>
-                                        <td>
-                                            <div className={styles.actionBtns}>
-                                                <button
-                                                    className={`${styles.actionBtn} ${styles.delivered}`}
-                                                    title={isDelivered ? "Edit Delivery" : "Mark Delivered"}
-                                                    onClick={() => isDelivered ? handleEditDelivery(customer, delivery) : handleMarkDelivered(customer)}
-                                                    disabled={!isDelivered && status === 'skipped'}
-                                                >
-                                                    {isDelivered && status === 'delivered' ? <Edit size={16} /> : <CheckCircle size={16} />}
-                                                </button>
-                                                <button
-                                                    className={`${styles.actionBtn} ${styles.skipped}`}
-                                                    title="Skip"
-                                                    onClick={() => handleSkipDelivery(customer)}
-                                                >
-                                                    <XCircle size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </motion.tr >
-                                )
+                                // If NO deliveries (Pending state for this customer)
+                                if (customerDeliveries.length === 0) {
+                                    return (
+                                        <motion.tr
+                                            key={customer.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: index * 0.02 }}
+                                        >
+                                            <td>{index + 1}</td>
+                                            <td>
+                                                <div className={styles.customerCell}>
+                                                    <span className={styles.customerName}>{customer.name}</span>
+                                                    <span className={styles.customerId}>{customer.id}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.addressCell}>
+                                                    <MapPin size={12} />
+                                                    <span>{customer.address}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.phoneCell}>
+                                                    <Phone size={12} />
+                                                    <span>{customer.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={styles.bottleCount}>
+                                                    {customer.requiredBottles || 1}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
+                                                    Rs {customer.currentBalance?.toLocaleString() || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <StatusBadge status="pending" size="sm" />
+                                            </td>
+                                            <td>
+                                                <div className={styles.actionBtns}>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.delivered}`}
+                                                        title="Mark Delivered"
+                                                        onClick={() => handleMarkDelivered(customer)}
+                                                    >
+                                                        <CheckCircle size={16} />
+                                                    </button>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.skipped}`}
+                                                        title="Skip"
+                                                        onClick={() => handleSkipDelivery(customer)}
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    )
+                                }
+
+                                // If HAS deliveries, map EACH delivery to a row
+                                return customerDeliveries.map((delivery, dIndex) => {
+                                    const status = delivery.status || 'delivered'
+                                    const isDelivered = true // Since it exists in deliveries list
+
+                                    return (
+                                        <motion.tr
+                                            key={`${customer.id}-${delivery.id || dIndex}`}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: index * 0.02 }}
+                                            className={`${status === 'delivered' ? styles.deliveredRow : ''} ${status === 'skipped' ? styles.skippedRow : ''}`}
+                                        >
+                                            <td>{index + 1} {customerDeliveries.length > 1 ? `(${dIndex + 1})` : ''}</td>
+                                            <td>
+                                                <div className={styles.customerCell}>
+                                                    <span className={styles.customerName}>{customer.name}</span>
+                                                    <span className={styles.customerId}>{customer.id}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.addressCell}>
+                                                    <MapPin size={12} />
+                                                    <span>{customer.address}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.phoneCell}>
+                                                    <Phone size={12} />
+                                                    <span>{customer.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={styles.bottleCount}>
+                                                    {delivery.bottlesDelivered}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.balance} ${customer.currentBalance > 0 ? styles.hasBalance : ''}`}>
+                                                    Rs {customer.currentBalance?.toLocaleString() || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <StatusBadge status={status} size="sm" />
+                                            </td>
+                                            <td>
+                                                <div className={styles.actionBtns}>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.delivered}`}
+                                                        title="Edit Delivery"
+                                                        onClick={() => handleEditDelivery(customer, delivery)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    {/* Removing Skip button for already delivered/skipped rows to avoid confusion, or handle delete? 
+                                                        User asked to "Subtract everywhere" on skip. 
+                                                        If multiple rows, "Skip" essentially means "Delete this delivery entry".
+                                                        Keeping it as "Skip" which triggers handleSkipDelivery which deletes order. 
+                                                     */}
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.skipped}`}
+                                                        title="Skip / Delete"
+                                                        onClick={() => handleSkipDelivery(customer)}
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    )
+                                })
                             })}
-                        </tbody >
+                        </tbody> >
                     </table >
 
                     {

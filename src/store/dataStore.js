@@ -406,10 +406,14 @@ export const useDataStore = create(
                 }
 
                 // Update in database
-                try {
-                    await updateOrderStatusInDb(order.uuid, newStatus)
-                } catch (error) {
-                    console.error('Failed to update order status:', error)
+                if (order.uuid) {
+                    try {
+                        await updateOrderStatusInDb(order.uuid, newStatus)
+                    } catch (error) {
+                        console.error('Failed to update order status:', error)
+                    }
+                } else {
+                    console.warn('Skipping DB update for order without UUID:', orderId)
                 }
             },
 
@@ -468,8 +472,12 @@ export const useDataStore = create(
                 // No conversion needed
 
                 try {
-                    await updateOrderInDb(order.uuid, dbUpdates)
-                    console.log('Order update completed successfully')
+                    if (order.uuid) {
+                        await updateOrderInDb(order.uuid, dbUpdates)
+                        console.log('Order update completed successfully')
+                    } else {
+                        console.warn('Skipping DB update (updateOrder) for order without UUID:', id)
+                    }
 
                     // NEW: Centralized Balance Logic
                     // If order WAS delivered and still IS delivered (or we just updated it), sync balance differences

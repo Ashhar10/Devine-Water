@@ -1453,6 +1453,7 @@ export const fetchDeliveries = async () => {
         notes: d.notes,
         deliveryDay: d.delivery_day,
         status: d.status || 'delivered',
+        orderId: d.order_id || null,
         createdAt: d.created_at
     })) || []
 }
@@ -1472,7 +1473,8 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
             receive_bottles: deliveryData.receiveBottles || 0,
             notes: deliveryData.notes || null,
             delivery_day: deliveryData.deliveryDay,
-            status: deliveryData.status || 'delivered'
+            status: deliveryData.status || 'delivered',
+            order_id: deliveryData.orderId || null
         })
         .select()
         .single()

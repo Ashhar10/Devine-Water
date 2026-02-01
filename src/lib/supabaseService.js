@@ -76,7 +76,8 @@ export const addCustomerToDb = async (customerData) => {
             longitude: customerData.longitude || null,
             status: 'active',
             delivery_days: customerData.deliveryDays || [],
-            assigned_products: customerData.assignedProducts || [],
+            // NOTE: assigned_products column doesn't exist in database yet
+            // assigned_products: customerData.assignedProducts || [],
             area_id: customerData.areaId || null,
             required_bottles: customerData.requiredBottles || 1,
             security_deposit: customerData.securityDeposit || 0,
@@ -141,7 +142,8 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         ...(updates.currentBalance !== undefined && { current_balance: updates.currentBalance }),
         // FIXED: Always include these fields even if empty
         ...(updates.deliveryDays !== undefined && { delivery_days: updates.deliveryDays }),
-        ...(updates.assignedProducts !== undefined && { assigned_products: updates.assignedProducts }),
+        // NOTE: assigned_products column doesn't exist in database yet
+        // ...(updates.assignedProducts !== undefined && { assigned_products: updates.assignedProducts }),
         ...(updates.areaId !== undefined && { area_id: updates.areaId }),
         ...(updates.requiredBottles !== undefined && { required_bottles: updates.requiredBottles }),
         ...(updates.securityDeposit !== undefined && { security_deposit: updates.securityDeposit }),

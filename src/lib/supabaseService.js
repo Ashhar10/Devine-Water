@@ -140,6 +140,8 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         updated_at: new Date().toISOString()
     }
 
+    // console.log('Sending updates to Supabase:', dbUpdates, 'for ID:', customerUuid)
+
     const { data, error } = await supabase
         .from('customers')
         .update(dbUpdates)
@@ -147,8 +149,10 @@ export const updateCustomerInDb = async (customerUuid, updates) => {
         .select()
         .single()
 
-    if (error) handleError(error, 'update customer')
-
+    if (error) {
+        console.error('Supabase update customer error:', error)
+        handleError(error, 'update customer')
+    }
     return data
 }
 

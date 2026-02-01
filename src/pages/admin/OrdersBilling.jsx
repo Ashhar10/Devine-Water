@@ -499,7 +499,6 @@ function OrdersBilling() {
                     /* SKIPPED VIEW */
                     (() => {
                         const skipped = deliveries.filter(d => d.status === 'skipped');
-                        console.log('DEBUG: Skipped Deliveries:', skipped, 'All Deliveries:', deliveries);
                         if (skipped.length === 0) return <div style={{ padding: '20px', color: '#888' }}>No skipped deliveries found.</div>;
                         return skipped.map((delivery, index) => (
 

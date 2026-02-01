@@ -78,6 +78,7 @@ function Delivery() {
     const updateOrder = useDataStore(state => state.updateOrder)
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteOrder = useDataStore(state => state.deleteOrder)
+    const deleteDelivery = useDataStore(state => state.deleteDelivery)
 
     // State for expanded rows
     const [expandedCustomers, setExpandedCustomers] = useState(new Set())
@@ -209,7 +210,8 @@ function Delivery() {
             bottlesDelivered: customer.requiredBottles || 1,
             receiveBottles: 0,
             notes: '',
-            productId: defaultProduct ? defaultProduct.id : ''
+            productId: defaultProduct ? defaultProduct.id : '',
+            deliveryDate: selectedDate || todayDate
         })
         setShowDeliveryModal(true)
     }
@@ -224,7 +226,8 @@ function Delivery() {
             bottlesDelivered: delivery.bottlesDelivered,
             receiveBottles: delivery.receiveBottles,
             notes: delivery.notes || '',
-            productId: defaultProduct ? defaultProduct.id : '' // Ideally we'd have the product ID from delivery, but current schema doesn't store it. Defaulting.
+            productId: defaultProduct ? defaultProduct.id : '', // Ideally we'd have the product ID from delivery, but current schema doesn't store it. Defaulting.
+            deliveryDate: delivery.deliveryDate || selectedDate || todayDate
         })
         setShowDeliveryModal(true)
     }
@@ -238,7 +241,8 @@ function Delivery() {
             bottlesDelivered: 1,
             receiveBottles: 0,
             notes: '',
-            productId: defaultProduct ? defaultProduct.id : ''
+            productId: defaultProduct ? defaultProduct.id : '',
+            deliveryDate: selectedDate || todayDate // Use selected filter date as default
         })
         setShowDeliveryModal(true)
     }
@@ -250,6 +254,7 @@ function Delivery() {
 
         const bottlesDelivered = parseInt(deliveryForm.bottlesDelivered)
         const receiveBottles = parseInt(deliveryForm.receiveBottles) || 0
+        const submissionDate = deliveryForm.deliveryDate || todayDate
 
         // Find selected product
         const selectedProduct = products.find(p => p.id === deliveryForm.productId)
@@ -262,45 +267,83 @@ function Delivery() {
         const unitPrice = selectedProduct.price || 0
         const total = bottlesDelivered * unitPrice
 
-        // Update or Create delivery
-        if (editingDelivery) {
-            // Calculate new total based on edited bottles
-            const newTotal = bottlesDelivered * unitPrice
+        // Helper function to process submission logic
+        const processSubmission = async () => {
+            // Update or Create delivery
+            if (editingDelivery) {
+                // Calculate new total based on edited bottles
+                const newTotal = bottlesDelivered * unitPrice
 
-            // Find the original order for this delivery (by date and customer)
-            const orders = useDataStore.getState().orders
-            const originalOrder = orders.find(o =>
-                o.customerId === selectedCustomer.id &&
-                (o.orderDate === todayDate || o.createdAt?.startsWith(todayDate))
-            )
+                // Find the original order for this delivery (by date and customer)
+                const orders = useDataStore.getState().orders
+                const originalOrder = orders.find(o =>
+                    o.customerId === selectedCustomer.id &&
+                    (o.orderDate === submissionDate || o.createdAt?.startsWith(submissionDate))
+                )
 
-            // Debug log to check why it might be failing
-            console.log('Editing Delivery - Found Order:', originalOrder, { customerId: selectedCustomer.id, date: todayDate })
+                // Debug log to check why it might be failing
+                console.log('Editing Delivery - Found Order:', originalOrder, { customerId: selectedCustomer.id, date: submissionDate })
 
-            if (originalOrder) {
-                // Update the order total
-                // Note: Balance update is now handled automatically in dataStore's updateOrder
-                // Prepare items for update (crucial for DB persistence of total)
-                const updatedItems = [{
-                    productId: selectedProduct.uuid || selectedProduct.id,
-                    productName: selectedProduct.name,
-                    qty: bottlesDelivered,
-                    price: unitPrice
-                }]
+                if (originalOrder) {
+                    // Update the order total
+                    // Note: Balance update is now handled automatically in dataStore's updateOrder
+                    // Prepare items for update (crucial for DB persistence of total)
+                    const updatedItems = [{
+                        productId: selectedProduct.uuid || selectedProduct.id,
+                        productName: selectedProduct.name,
+                        qty: bottlesDelivered,
+                        price: unitPrice
+                    }]
 
-                await updateOrder(originalOrder.id, {
-                    total: newTotal,
-                    items: updatedItems,
+                    await updateOrder(originalOrder.id, {
+                        total: newTotal,
+                        items: updatedItems,
+                        bottlesDelivered: bottlesDelivered,
+                        receiveBottles: receiveBottles,
+                        notes: deliveryForm.notes || null,
+                        customerId: selectedCustomer.id // Ensure balance update logic has customerId
+                    })
+                    console.log('Order updated from delivery page')
+                } else {
+                    // Was likely SKIPPED (so order deleted), now marked delivered again.
+                    // We must create a NEW order to register the sale and update balance.
+                    console.log('Editing Delivery - No Order Found (Likely Skipped). Creating new order.')
+                    const newOrder = await addOrder({
+                        customerId: selectedCustomer.id,
+                        customerUuid: selectedCustomer.uuid,
+                        customerName: selectedCustomer.name,
+                        customerPhone: selectedCustomer.phone,
+                        customerAddress: selectedCustomer.address,
+                        items: [{
+                            productId: selectedProduct.uuid,
+                            productName: selectedProduct.name,
+                            quantity: bottlesDelivered,
+                            price: unitPrice
+                        }],
+                        total: newTotal,
+                        bottlesDelivered: bottlesDelivered,
+                        receiveBottles: receiveBottles,
+                        orderDate: submissionDate,
+                        deliveryDate: submissionDate,
+                        notes: deliveryForm.notes || null
+                    })
+
+                    // Immediately mark as delivered to trigger balance update
+                    if (newOrder) {
+                        await updateOrderStatus(newOrder.id, 'delivered')
+                    }
+                }
+
+                // Update delivery record
+                await updateDelivery(editingDelivery.id, {
                     bottlesDelivered: bottlesDelivered,
                     receiveBottles: receiveBottles,
-                    notes: deliveryForm.notes || null,
-                    customerId: selectedCustomer.id // Ensure balance update logic has customerId
+                    notes: deliveryForm.notes,
+                    deliveryDate: submissionDate,
+                    status: 'delivered'
                 })
-                console.log('Order updated from delivery page')
             } else {
-                // Was likely SKIPPED (so order deleted), now marked delivered again.
-                // We must create a NEW order to register the sale and update balance.
-                console.log('Editing Delivery - No Order Found (Likely Skipped). Creating new order.')
+                // Create order as DELIVERED (since we're marking it delivered in delivery section)
                 const newOrder = await addOrder({
                     customerId: selectedCustomer.id,
                     customerUuid: selectedCustomer.uuid,
@@ -308,79 +351,45 @@ function Delivery() {
                     customerPhone: selectedCustomer.phone,
                     customerAddress: selectedCustomer.address,
                     items: [{
-                        productId: selectedProduct.uuid,
+                        productId: selectedProduct.uuid, // Use UUID for DB link
                         productName: selectedProduct.name,
                         quantity: bottlesDelivered,
                         price: unitPrice
                     }],
-                    total: newTotal,
+                    total: total,
                     bottlesDelivered: bottlesDelivered,
                     receiveBottles: receiveBottles,
-                    orderDate: todayDate,
-                    deliveryDate: todayDate,
+                    orderDate: submissionDate,  // FIXED: Use orderDate instead of deliveryDate
+                    deliveryDate: submissionDate,
                     notes: deliveryForm.notes || null
                 })
 
-                // Immediately mark as delivered to trigger balance update
+                // Mark order as delivered immediately
                 if (newOrder) {
                     await updateOrderStatus(newOrder.id, 'delivered')
                 }
-            }
 
-            // Update delivery record
-            await updateDelivery(editingDelivery.id, {
-                bottlesDelivered: bottlesDelivered,
-                receiveBottles: receiveBottles,
-                notes: deliveryForm.notes,
-                status: 'delivered'
-            })
-        } else {
-            // Create order as DELIVERED (since we're marking it delivered in delivery section)
-            const newOrder = await addOrder({
-                customerId: selectedCustomer.id,
-                customerUuid: selectedCustomer.uuid,
-                customerName: selectedCustomer.name,
-                customerPhone: selectedCustomer.phone,
-                customerAddress: selectedCustomer.address,
-                items: [{
-                    productId: selectedProduct.uuid, // Use UUID for DB link
-                    productName: selectedProduct.name,
-                    quantity: bottlesDelivered,
-                    price: unitPrice
-                }],
-                total: total,
-                bottlesDelivered: bottlesDelivered,
-                receiveBottles: receiveBottles,
-                orderDate: todayDate,  // FIXED: Use orderDate instead of deliveryDate
-                deliveryDate: todayDate,
-                notes: deliveryForm.notes || null
-            })
-
-            // Mark order as delivered immediately
-            if (newOrder) {
-                await updateOrderStatus(newOrder.id, 'delivered')
-            }
-
-            await addDelivery({
-                customerId: selectedCustomer.id,
-                customerName: selectedCustomer.name,
-                deliveryDate: todayDate,
-                bottlesDelivered: bottlesDelivered,
-                receiveBottles: receiveBottles,
-                notes: deliveryForm.notes,
-                deliveryDay: selectedDay,
-                status: 'delivered'
-            })
-        } // End processSubmission
+                await addDelivery({
+                    customerId: selectedCustomer.id,
+                    customerName: selectedCustomer.name,
+                    deliveryDate: submissionDate,
+                    bottlesDelivered: bottlesDelivered,
+                    receiveBottles: receiveBottles,
+                    notes: deliveryForm.notes,
+                    deliveryDay: selectedDay,
+                    status: 'delivered'
+                })
+            } // End processSubmission
+        }
 
         // Check for duplicates if NEW delivery
         if (!editingDelivery) {
-            const existingDeliveries = getDeliveriesForCustomer(selectedCustomer.id, todayDate)
+            const existingDeliveries = getDeliveriesForCustomer(selectedCustomer.id, submissionDate)
             if (existingDeliveries.length > 0) {
                 setConfirmModal({
                     isOpen: true,
-                    title: 'Duplicate Delivery',
-                    message: `This customer already has ${existingDeliveries.length} delivery(ies) today. Add another separate delivery?`,
+                    title: 'Possible Duplicate',
+                    message: `This customer already has ${existingDeliveries.length} delivery(ies) for this date. Add another separate delivery?`,
                     type: 'warning',
                     confirmText: 'Yes, Add Another',
                     onConfirm: async () => {
@@ -397,70 +406,79 @@ function Delivery() {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
         setEditingDelivery(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '', deliveryDate: '' })
     }
 
-    const handleSkipDelivery = (customer) => {
+    const handleSkipDelivery = (customer, deliveryToSkip = null) => {
         setConfirmModal({
             isOpen: true,
             title: 'Skip Customer Delivery',
-            message: `Are you sure you want to skip delivery for ${customer.name}? This will remove any existing order for today and revert balance.`,
+            message: `Are you sure you want to skip delivery for ${customer.name}? This will remove any existing order for this delivery and revert balance.`,
             type: 'warning',
             confirmText: 'Skip',
             onConfirm: async () => {
-                const existingDelivery = getDeliveryForCustomer(customer.id, todayDate)
+                const targetDate = deliveryToSkip?.deliveryDate || todayDate
 
-                if (existingDelivery) {
-                    // Update existing delivery to skipped
-                    await updateDelivery(existingDelivery.id, {
+                // 1. Update/Add Delivery Record
+                if (deliveryToSkip) {
+                    await updateDelivery(deliveryToSkip.id, {
                         status: 'skipped',
                         bottlesDelivered: 0,
                         receiveBottles: 0,
                         notes: 'Skipped'
                     })
                 } else {
-                    // New skipped delivery
-                    await addDelivery({
-                        customerId: customer.id,
-                        customerName: customer.name,
-                        deliveryDate: todayDate,
-                        bottlesDelivered: 0,
-                        receiveBottles: 0,
-                        notes: 'Skipped',
-                        deliveryDay: selectedDay,
-                        status: 'skipped'
-                    })
+                    // Try to find if one exists for today anyway to update instead of add duplicate
+                    const existing = getDeliveryForCustomer(customer.id, todayDate)
+                    if (existing) {
+                        await updateDelivery(existing.id, { status: 'skipped', bottlesDelivered: 0, receiveBottles: 0, notes: 'Skipped' })
+                    } else {
+                        await addDelivery({
+                            customerId: customer.id,
+                            customerName: customer.name,
+                            deliveryDate: todayDate,
+                            bottlesDelivered: 0,
+                            receiveBottles: 0,
+                            notes: 'Skipped',
+                            deliveryDay: selectedDay,
+                            status: 'skipped'
+                        })
+                    }
                 }
 
-                // Handle Linked Order Cleanup
+                // 2. Handle Linked Order Cleanup & Balance Revert
                 const orders = useDataStore.getState().orders
-                // Find ANY order for this customer today
-                // Find ANY order for this customer today
+                // Find order matching the delivery date
                 const originalOrder = orders.find(o =>
                     o.customerId === customer.id &&
-                    (o.orderDate === todayDate || o.createdAt?.startsWith(todayDate))
+                    (o.orderDate === targetDate || o.createdAt?.startsWith(targetDate))
+                    // If deliveryToSkip has ID, ideally we link by ID, but we don't have that link. Date is best proxy.
                 )
 
                 if (originalOrder) {
                     console.log('Skipping delivery. Cleaning up order:', originalOrder)
 
-                    // 1. If delivered, we MUST revert balance first
+                    // Revert balance if it was delivered
                     if (originalOrder.status === 'delivered') {
-                        await updateOrderStatus(originalOrder.id, 'pending')
+                        await updateOrderStatus(originalOrder.id, 'pending') // Reverts balance
                         console.log('Order status reverted to pending (Balance Restored)')
                     }
 
-                    // 2. Delete the order to remove bottle counts from Dashboard stats
+                    // Delete order
                     await deleteOrder(originalOrder.id)
-                    console.log('Order deleted to clear stats')
+                    console.log('Order deleted.')
+                } else {
+                    console.log('No associated order found to cleanup for this delivery date.')
                 }
+
+                setConfirmModal(prev => ({ ...prev, isOpen: false }))
             }
         })
     }
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '' })
+        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '', deliveryDate: '' })
     }
 
     // Handle customer selection in modal
@@ -472,7 +490,8 @@ function Delivery() {
             // Pre-fill form with customer preferences if any (like required bottles)
             setDeliveryForm(prev => ({
                 ...prev,
-                bottlesDelivered: customer.requiredBottles || 1
+                bottlesDelivered: customer.requiredBottles || 1,
+                deliveryDate: selectedDate || todayDate // Reset date to selected when changing customer
             }))
         }
     }
@@ -622,12 +641,14 @@ function Delivery() {
                                             <motion.tr
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                onClick={() => toggleExpand(customer.id)}
+                                                onClick={() => setRowActionModal({ isOpen: true, customer, deliveries: customerDeliveries })}
                                                 {...mouseHandlers}
                                                 style={{ cursor: 'pointer', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                                             >
                                                 <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                        onClick={(e) => { e.stopPropagation(); toggleExpand(customer.id) }}
+                                                    >
                                                         {index + 1}
                                                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                                     </div>
@@ -688,7 +709,8 @@ function Delivery() {
                                                     animate={{ opacity: 1, height: 'auto' }}
                                                     className={`${delivery.status === 'delivered' ? styles.deliveredRow : ''} ${delivery.status === 'skipped' ? styles.skippedRow : ''}`}
                                                     {...mouseHandlers}
-                                                    style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} // Dimmer bg for children
+                                                    onClick={() => setRowActionModal({ isOpen: true, customer, deliveries: [delivery] })}
+                                                    style={{ backgroundColor: 'rgba(0,0,0,0.1)', cursor: 'pointer' }} // Dimmer bg for children
                                                 >
                                                     <td style={{ paddingLeft: '40px' }}>↳ {dIndex + 1}</td>
                                                     <td colSpan={3} style={{ opacity: 0.7 }}>
@@ -713,7 +735,7 @@ function Delivery() {
                                                             <button
                                                                 className={`${styles.actionBtn} ${styles.skipped}`}
                                                                 title="Delete/Skip"
-                                                                onClick={(e) => { e.stopPropagation(); handleSkipDelivery(customer) }}
+                                                                onClick={(e) => { e.stopPropagation(); handleSkipDelivery(customer, delivery) }}
                                                             >
                                                                 <XCircle size={16} />
                                                             </button>
@@ -737,6 +759,8 @@ function Delivery() {
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: index * 0.02 }}
                                         className={`${status === 'delivered' ? styles.deliveredRow : ''} ${status === 'skipped' ? styles.skippedRow : ''}`}
+                                        onClick={() => setRowActionModal({ isOpen: true, customer, deliveries: customerDeliveries })}
+                                        style={{ cursor: 'pointer' }}
                                     >
                                         <td>{index + 1}</td>
                                         <td>
@@ -775,7 +799,10 @@ function Delivery() {
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.delivered}`}
                                                     title={isDelivered ? "Edit Delivery" : "Mark Delivered"}
-                                                    onClick={() => isDelivered ? handleEditDelivery(customer, delivery) : handleMarkDelivered(customer)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        isDelivered ? handleEditDelivery(customer, delivery) : handleMarkDelivered(customer)
+                                                    }}
                                                     disabled={!isDelivered && status === 'skipped'}
                                                 >
                                                     {isDelivered && status === 'delivered' ? <Edit size={16} /> : <CheckCircle size={16} />}
@@ -783,7 +810,10 @@ function Delivery() {
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.skipped}`}
                                                     title="Skip"
-                                                    onClick={() => handleSkipDelivery(customer)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleSkipDelivery(customer)
+                                                    }}
                                                 >
                                                     <XCircle size={16} />
                                                 </button>
@@ -800,7 +830,7 @@ function Delivery() {
                             <div className={styles.emptyState}>
                                 <Truck size={48} />
                                 <h3>No deliveries scheduled</h3>
-                                <p>No customers found for {selectedDay}</p>
+                                <p>No deliveries found for the selected criteria.</p>
                             </div>
                         )
                     }
@@ -820,28 +850,30 @@ function Delivery() {
                             </div>
 
                             {!selectedCustomer ? (
-                                // CUSTOMER SELECTION STEP
-                                <div className={styles.customerSelection}>
+                                <div className={styles.modalBody}>
                                     <div className={styles.formGroup}>
                                         <label>Select Customer</label>
                                         <select
-                                            className={styles.formSelect}
+                                            className={styles.formInput}
                                             onChange={handleCustomerSelect}
                                             defaultValue=""
                                         >
                                             <option value="" disabled>Choose a customer...</option>
-                                            {customers.filter(c => c.status === 'active').sort((a, b) => a.name.localeCompare(b.name)).map(c => (
-                                                <option key={c.id} value={c.id}>
-                                                    {c.name} ({c.address})
-                                                </option>
-                                            ))}
+                                            {customers
+                                                .filter(c => c.status === 'active')
+                                                .sort((a, b) => a.name.localeCompare(b.name))
+                                                .map(c => (
+                                                    <option key={c.id} value={c.id}>
+                                                        {c.name} - {c.address}
+                                                    </option>
+                                                ))
+                                            }
                                         </select>
                                         <p className={styles.helpText}>Search for a customer to add a delivery</p>
                                     </div>
                                 </div>
                             ) : (
-                                // DELIVERY DETAILS FORM
-                                <form onSubmit={handleDeliverySubmit} className={styles.deliveryForm}>
+                                <form onSubmit={handleDeliverySubmit} className={styles.modalBody}>
                                     <div className={styles.customerInfo}>
                                         <div className={styles.infoRow}>
                                             <User size={18} />
@@ -886,49 +918,50 @@ function Delivery() {
                                         <select
                                             value={deliveryForm.productId}
                                             onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
-                                            className={styles.formSelect}
+                                            className={styles.formInput}
                                             required
                                         >
-                                            <option value="">Select Product...</option>
+                                            <option value="" disabled>Select Product</option>
                                             {products.map(p => (
                                                 <option key={p.id} value={p.id}>
-                                                    {p.name} (Rs {p.price})
+                                                    {p.name} - Rs {p.price}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
 
-                                    <div className={styles.formGroup}>
-                                        <label>Bottles Delivered</label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={deliveryForm.bottlesDelivered}
-                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
-                                            required
-                                            className={styles.formInput}
-                                        />
+                                    <div className={styles.formRow}>
+                                        <div className={styles.formGroup}>
+                                            <label>Bottles Delivered</label>
+                                            <input
+                                                type="number"
+                                                value={deliveryForm.bottlesDelivered}
+                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
+                                                className={styles.formInput}
+                                                required
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Empty Received</label>
+                                            <input
+                                                type="number"
+                                                value={deliveryForm.receiveBottles}
+                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
+                                                className={styles.formInput}
+                                                min="0"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className={styles.formGroup}>
-                                        <label>Receive Bottles (Empty Returns)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={deliveryForm.receiveBottles}
-                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
-                                            className={styles.formInput}
-                                        />
-                                    </div>
-
-                                    <div className={styles.formGroup}>
-                                        <label>Notes (Optional)</label>
+                                        <label>Notes</label>
                                         <textarea
                                             value={deliveryForm.notes}
                                             onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
                                             className={styles.formTextarea}
+                                            placeholder="Any delivery notes..."
                                             rows="3"
-                                            placeholder="Any additional notes..."
                                         />
                                     </div>
 
@@ -943,7 +976,7 @@ function Delivery() {
                                     )}
 
                                     <div className={styles.modalActions}>
-                                        <button type="button" onClick={handleCloseModal} className={styles.cancelBtn}>
+                                        <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
                                             Cancel
                                         </button>
                                         <button type="submit" className={styles.submitBtn}>
@@ -988,7 +1021,9 @@ function Delivery() {
                                     icon={XCircle}
                                     onClick={() => {
                                         setRowActionModal({ ...rowActionModal, isOpen: false })
-                                        handleSkipDelivery(rowActionModal.customer)
+                                        // If single delivery, pass it to skip
+                                        const deliveryToSkip = rowActionModal.deliveries?.length === 1 ? rowActionModal.deliveries[0] : null
+                                        handleSkipDelivery(rowActionModal.customer, deliveryToSkip)
                                     }}
                                 >
                                     Skip Customer
@@ -1005,6 +1040,43 @@ function Delivery() {
                                         }}
                                     >
                                         Edit Delivery
+                                    </Button>
+                                )}
+
+                                {/* Show Delete button for existing deliveries */}
+                                {rowActionModal.deliveries?.length === 1 && (
+                                    <Button
+                                        variant="danger"
+                                        icon={XCircle}
+                                        style={{ backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}
+                                        onClick={async () => {
+                                            setRowActionModal({ ...rowActionModal, isOpen: false })
+                                            const delivery = rowActionModal.deliveries[0]
+                                            const customer = rowActionModal.customer
+
+                                            if (confirm('Are you sure you want to delete this delivery? This will revert any balance changes.')) {
+                                                const orders = useDataStore.getState().orders
+                                                const order = orders.find(o =>
+                                                    o.customerId === customer.id &&
+                                                    (o.orderDate === delivery.deliveryDate || o.createdAt?.startsWith(delivery.deliveryDate))
+                                                )
+
+                                                if (order) {
+                                                    // 1. Revert Balance (if delivered)
+                                                    if (order.status === 'delivered') {
+                                                        await updateOrderStatus(order.id, 'pending')
+                                                    }
+                                                    // 2. Delete Order
+                                                    await deleteOrder(order.id)
+                                                }
+
+                                                // 3. Delete Delivery Record
+                                                // Need to import deleteDelivery or use getState()
+                                                await deleteDelivery(delivery.id)
+                                            }
+                                        }}
+                                    >
+                                        Delete Delivery
                                     </Button>
                                 )}
 

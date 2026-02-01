@@ -878,13 +878,16 @@ export const addAreaToDb = async (areaData) => {
 export const updateAreaInDb = async (areaId, updates) => {
     if (!isSupabaseConfigured()) return
 
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.name) dbUpdates.name = updates.name
+    if (updates.description !== undefined) dbUpdates.description = updates.description
+    if (updates.status) dbUpdates.status = updates.status
+    if (updates.deliveryDays) dbUpdates.delivery_days = updates.deliveryDays
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority
+
     const { error } = await supabase
         .from('areas')
-        .update({
-            name: updates.name,
-            description: updates.description,
-            status: updates.status
-        })
+        .update(dbUpdates)
         .eq('area_id', areaId)
 
     if (error) handleError(error, 'update area')

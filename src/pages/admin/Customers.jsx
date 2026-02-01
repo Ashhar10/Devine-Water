@@ -289,7 +289,7 @@ function Customers() {
         e.preventDefault()
 
         if (editingCustomer) {
-            updateCustomer(editingCustomer.id, formData)
+            await updateCustomer(editingCustomer.id, formData)
         } else {
             // Add customer
             const newCustomer = await addCustomer(formData)
@@ -692,13 +692,21 @@ function Customers() {
                                         <button
                                             key={product.id}
                                             type="button"
-                                            className={`${styles.dayBtn} ${formData.assignedProducts.includes(product.uuid) ? styles.selected : ''}`}
-                                            onClick={() => setFormData(prev => ({
-                                                ...prev,
-                                                assignedProducts: prev.assignedProducts.includes(product.uuid)
-                                                    ? prev.assignedProducts.filter(id => id !== product.uuid)
-                                                    : [...prev.assignedProducts, product.uuid]
-                                            }))}
+                                            className={`${styles.dayBtn} ${formData.assignedProducts?.includes(product.uuid) ? styles.selected : ''}`}
+                                            onClick={() => {
+                                                if (!product.uuid) {
+                                                    console.error('Product missing UUID:', product)
+                                                    return
+                                                }
+                                                setFormData(prev => {
+                                                    const current = prev.assignedProducts || []
+                                                    const newAssigned = current.includes(product.uuid)
+                                                        ? current.filter(id => id !== product.uuid)
+                                                        : [...current, product.uuid]
+                                                    console.log('Updating assigned products:', newAssigned)
+                                                    return { ...prev, assignedProducts: newAssigned }
+                                                })
+                                            }}
                                             style={{ minWidth: 'auto', padding: '8px 12px' }}
                                         >
                                             {product.name}

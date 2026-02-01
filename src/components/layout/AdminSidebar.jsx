@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useDataStore } from '../../store/dataStore'
+import ConfirmationModal from '../common/ConfirmationModal'
 import {
     LayoutDashboard,
     Wallet,
@@ -36,12 +37,16 @@ function AdminSidebar({ collapsed, onToggle }) {
     const closeTimeoutRef = useRef(null)
     const navigate = useNavigate()
     const logout = useDataStore(state => state.logout)
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
     const handleLogout = () => {
-        if (confirm('Are you sure you want to logout?')) {
-            logout()
-            navigate('/login')
-        }
+        setShowLogoutConfirm(true)
+    }
+
+    const confirmLogout = () => {
+        logout()
+        navigate('/login')
+        setShowLogoutConfirm(false)
     }
 
     // Open sidebar on hover
@@ -116,6 +121,16 @@ function AdminSidebar({ collapsed, onToggle }) {
             <button className={styles.toggleBtn} onClick={onToggle}>
                 {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
+
+            <ConfirmationModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={confirmLogout}
+                title="Logout Confirmation"
+                message="Are you sure you want to log out of your account?"
+                confirmText="Logout"
+                type="danger"
+            />
         </aside>
     )
 }

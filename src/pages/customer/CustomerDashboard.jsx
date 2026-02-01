@@ -29,11 +29,8 @@ function CustomerDashboard() {
     const usagePercentage = (currentUsage / monthlyLimit) * 100
 
     const [showOrderModal, setShowOrderModal] = useState(false)
-    const [orderData, setOrderData] = useState({
-        productId: '',
-        quantity: 1,
-        notes: ''
-    })
+    const [orderItems, setOrderItems] = useState([{ productId: '', quantity: 1 }])
+    const [orderNotes, setOrderNotes] = useState('')
 
     const recentActivity = [
         ...customerBills.slice(0, 2).map(b => ({
@@ -48,30 +45,66 @@ function CustomerDashboard() {
         }))
     ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3)
 
+    const addOrderItem = () => {
+        setOrderItems([...orderItems, { productId: '', quantity: 1 }])
+    }
+
+    const removeOrderItem = (index) => {
+        setOrderItems(orderItems.filter((_, i) => i !== index))
+    }
+
+    const updateOrderItem = (index, field, value) => {
+        const newItems = [...orderItems]
+        newItems[index] = { ...newItems[index], [field]: value }
+        if (field === 'quantity') {
+            newItems[index].quantity = parseInt(value) || 1
+        }
+        setOrderItems(newItems)
+    }
+
+    const calculateTotal = () => {
+        return orderItems.reduce((sum, item) => {
+            const product = products.find(p => p.id === item.productId)
+            return sum + (product ? product.price * item.quantity : 0)
+        }, 0)
+    }
+
     const handlePlaceOrder = (e) => {
         e.preventDefault()
-        if (!currentCustomer || !orderData.productId) return
+        if (!currentCustomer) return
 
-        const product = products.find(p => p.id === orderData.productId)
-        if (!product) return
+        // Filter out incomplete items
+        const validItems = orderItems.filter(item => item.productId && item.quantity > 0)
+        if (validItems.length === 0) {
+            alert('Please select at least one product.')
+            return
+        }
+
+        const itemsPayload = validItems.map(item => {
+            const product = products.find(p => p.id === item.productId)
+            return {
+                name: product.name,
+                productId: product.uuid,
+                qty: parseInt(item.quantity),
+                price: product.price
+            }
+        })
+
+        const totalAmount = calculateTotal()
 
         addOrder({
             customerId: currentCustomer.id,
             customerUuid: currentCustomer.uuid,
             salesmanId: null, // Indicates customer placed it themselves
             orderDate: new Date().toISOString().split('T')[0],
-            items: [{
-                name: product.name,
-                productId: product.uuid,
-                qty: parseInt(orderData.quantity),
-                price: product.price
-            }],
-            total: product.price * parseInt(orderData.quantity),
-            notes: orderData.notes
+            items: itemsPayload,
+            total: totalAmount,
+            notes: orderNotes
         })
 
         setShowOrderModal(false)
-        setOrderData({ productId: '', quantity: 1, notes: '' })
+        setOrderItems([{ productId: '', quantity: 1 }])
+        setOrderNotes('')
         alert('Order placed successfully!')
     }
 
@@ -247,35 +280,61 @@ function CustomerDashboard() {
                                 <button onClick={() => setShowOrderModal(false)} className={styles.closeBtn}>×</button>
                             </div>
                             <form onSubmit={handlePlaceOrder} className={styles.form}>
-                                <div className={styles.formGroup}>
-                                    <label>Select Product</label>
-                                    <select
-                                        required
-                                        value={orderData.productId}
-                                        onChange={e => setOrderData({ ...orderData, productId: e.target.value })}
-                                    >
-                                        <option value="">Choose a product...</option>
-                                        {products.filter(p => p.status === 'active').map(p => (
-                                            <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
-                                        ))}
-                                    </select>
+
+                                <div className={styles.itemsList}>
+                                    {orderItems.map((item, index) => (
+                                        <div key={index} className={styles.itemRow}>
+                                            <div className={styles.formGroup}>
+                                                <label>Product</label>
+                                                <select
+                                                    required
+                                                    value={item.productId}
+                                                    onChange={e => updateOrderItem(index, 'productId', e.target.value)}
+                                                >
+                                                    <option value="">Select...</option>
+                                                    {products.filter(p => p.status === 'active').map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Qty</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={item.quantity}
+                                                    onChange={e => updateOrderItem(index, 'quantity', e.target.value)}
+                                                />
+                                            </div>
+                                            {orderItems.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeBtn}
+                                                    onClick={() => removeOrderItem(index)}
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>Quantity</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        required
-                                        value={orderData.quantity}
-                                        onChange={e => setOrderData({ ...orderData, quantity: e.target.value })}
-                                    />
+
+                                <button type="button" className={styles.addMoreBtn} onClick={addOrderItem}>
+                                    + Add Another Product
+                                </button>
+
+                                <div className={styles.totalRow}>
+                                    <span>Total Amount:</span>
+                                    <span>Rs {calculateTotal().toLocaleString()}</span>
                                 </div>
+
                                 <div className={styles.formGroup}>
                                     <label>Notes (Optional)</label>
                                     <textarea
                                         placeholder="e.g. Leave near the gate"
-                                        value={orderData.notes}
-                                        onChange={e => setOrderData({ ...orderData, notes: e.target.value })}
+                                        value={orderNotes}
+                                        onChange={e => setOrderNotes(e.target.value)}
                                     />
                                 </div>
                                 <div className={styles.modalActions}>

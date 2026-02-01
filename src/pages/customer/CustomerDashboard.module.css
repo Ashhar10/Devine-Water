@@ -346,6 +346,66 @@
     margin-top: var(--space-md);
 }
 
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: var(--space-xs);
+}
+
+.itemRow {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: var(--space-sm);
+    align-items: end;
+}
+
+.removeBtn {
+    background: var(--error-subtle);
+    color: var(--error);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 2px;
+}
+
+.addMoreBtn {
+    background: transparent;
+    border: 1px dashed var(--glass-border);
+    color: var(--primary-cyan);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+}
+
+.addMoreBtn:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--primary-cyan);
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--glass-border);
+    margin-top: var(--space-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
 @media (max-width: 768px) {
     .welcome {
         flex-direction: column;

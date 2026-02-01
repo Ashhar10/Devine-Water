@@ -127,3 +127,37 @@
         grid-template-columns: 1fr;
     }
 }
+
+.productTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.productTable th {
+    text-align: left;
+    padding: var(--space-sm);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.productTable td {
+    padding: var(--space-md) var(--space-sm);
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.productTable tr:last-child td {
+    border-bottom: none;
+}
+
+.productName {
+    font-weight: 500;
+}
+
+.productPrice {
+    font-family: var(--font-mono);
+    color: var(--primary-cyan);
+}

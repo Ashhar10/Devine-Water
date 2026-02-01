@@ -7,6 +7,7 @@ import styles from './Overview.module.css'
 function Overview() {
     const currentUser = useDataStore(state => state.currentUser)
     const customers = useDataStore(state => state.customers)
+    const products = useDataStore(state => state.products)
 
     const currentCustomer = customers.find(c => c.uuid === currentUser?.customerId) ||
         customers.find(c => c.email === currentUser?.email) ||
@@ -67,6 +68,27 @@ function Overview() {
                         <Clock size={16} />
                         Your alternate delivery days are {currentCustomer?.deliveryDays?.join(', ')}.
                     </p>
+                </GlassCard>
+
+                {/* Rate List Card */}
+                <GlassCard className={styles.rateCard} delay={0.3}>
+                    <h3 className={styles.sectionTitle}>Product Rates</h3>
+                    <table className={styles.productTable}>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products.filter(p => p.status === 'active').map(product => (
+                                <tr key={product.id}>
+                                    <td className={styles.productName}>{product.name}</td>
+                                    <td className={styles.productPrice}>Rs {product.price}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </GlassCard>
             </div>
         </div>

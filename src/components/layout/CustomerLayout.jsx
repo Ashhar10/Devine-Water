@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Home, Receipt, BarChart2, MessageCircle, Droplets } from 'lucide-react'
+import { Home, Receipt, BarChart2, MessageCircle } from 'lucide-react'
+import TopHeader from './TopHeader'
 import styles from './CustomerLayout.module.css'
 
 const navItems = [
@@ -16,14 +17,7 @@ function CustomerLayout() {
     return (
         <div className={styles.layout}>
             {/* Header */}
-            <header className={styles.header}>
-                <div className={styles.logo}>
-                    <div className={styles.logoIcon}>
-                        <Droplets size={24} />
-                    </div>
-                    <span className={styles.logoText}>Devine Water</span>
-                </div>
-            </header>
+            <TopHeader title="Devine Water" />
 
             {/* Main content */}
             <main className={styles.content}>

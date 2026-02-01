@@ -119,6 +119,10 @@ function OrdersBilling() {
                     const isSelectedDate = o.orderDate === selectedDate
                     return isPending && isSelectedDate
                 }
+                if (activeTab === 'customer') {
+                    // Orders placed by customers directly (salesmanId is null)
+                    return o.salesmanId === null || o.salesmanId === undefined || o.salesmanId === ''
+                }
                 return true
             })
             .filter(o => filterStatus === 'all' || o.status === filterStatus)
@@ -429,6 +433,13 @@ function OrdersBilling() {
                     Delivered
                     <span className={styles.tabCount}>{orders.filter(o => o.status === 'delivered').length}</span>
                 </button>
+                <button
+                    className={`${styles.tab} ${activeTab === 'customer' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('customer')}
+                >
+                    Customer Orders
+                    <span className={styles.tabCount}>{orders.filter(o => !o.salesmanId).length}</span>
+                </button>
             </div>
 
             {/* Orders List */}
@@ -564,6 +575,89 @@ function OrdersBilling() {
                             ))}
                         </div>
                     ))
+                ) : activeTab === 'customer' ? (
+                    /* CUSTOMER REQUESTS VIEW */
+                    filteredOrders.length === 0 ? (
+                        <div className={styles.empty}>No customer requests found.</div>
+                    ) : (
+                        filteredOrders.map((order, index) => (
+                            <motion.div
+                                key={order.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <GlassCard
+                                    className={styles.orderCard}
+                                    hover={false}
+                                    animate={false}
+                                    onClick={() => toggleOrder(order.id)}
+                                >
+                                    <div className={styles.orderMain}>
+                                        <div className={styles.orderInfo}>
+                                            <span className={styles.orderId} style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>Pinging</span>
+                                            <span className={styles.orderCustomer}>{order.customerName}</span>
+                                            <span className={styles.orderDate}>
+                                                {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <div className={styles.orderMeta}>
+                                            <span className={styles.orderTotal}>Rs {order.total.toLocaleString()}</span>
+                                            <StatusBadge status={order.status} />
+                                            <motion.div
+                                                animate={{ rotate: expandedOrder === order.id ? 180 : 0 }}
+                                                className={styles.expandIcon}
+                                            >
+                                                <ChevronDown size={20} />
+                                            </motion.div>
+                                        </div>
+                                    </div>
+                                    <AnimatePresence>
+                                        {expandedOrder === order.id && (
+                                            <motion.div
+                                                className={styles.orderDetails}
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                            >
+                                                <div className={styles.detailsGrid}>
+                                                    <div className={styles.detailSection}>
+                                                        <h4>Items Requested</h4>
+                                                        <ul>
+                                                            {order.items.map((item, i) => (
+                                                                <li key={i}>{item.name} x {item.qty}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                    <div className={styles.detailSection}>
+                                                        <h4>Customer Note</h4>
+                                                        <p>{order.notes || 'No notes shared'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.detailActions}>
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        icon={Edit}
+                                                        onClick={(e) => handleEditOrder(e, order)}
+                                                    >
+                                                        Assign Staff
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                    >
+                                                        Direct Delivery
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </GlassCard>
+                            </motion.div>
+                        ))
+                    )
                 ) : activeTab === 'pending' ? (
                     /* PENDING VIEW (Unified: Scheduled + Skipped + Manual) */
                     <div className={styles.pendingContainer}>

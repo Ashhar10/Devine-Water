@@ -12,12 +12,16 @@ import {
     UserCog,
     Menu,
     X,
-    User
+    User,
+    Home,
+    Calendar,
+    Receipt,
+    MessageCircle
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import styles from './MobileNav.module.css'
 
-const navItems = [
+const adminItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Home', end: true },
     { path: '/admin/products', icon: Package, label: 'Products' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
@@ -31,8 +35,18 @@ const navItems = [
     { path: '/customer', icon: User, label: 'Customer Panel' },
 ]
 
+const customerItems = [
+    { path: '/customer', icon: Home, label: 'Overview', end: true },
+    { path: '/customer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/customer/calendar', icon: Calendar, label: 'Calendar' },
+    { path: '/customer/finance', icon: Receipt, label: 'Finance' },
+    { path: '/customer/support', icon: MessageCircle, label: 'Contact Us' },
+]
+
 function MobileNav({ isOpen, onClose, onOpen }) {
     const currentUser = useDataStore(state => state.currentUser)
+    const items = currentUser?.role === 'customer' ? customerItems : adminItems
+
     return (
         <>
             {/* Floating Menu Button - center bottom */}
@@ -47,7 +61,9 @@ function MobileNav({ isOpen, onClose, onOpen }) {
             {/* Horizontal Scroll Menu Bar */}
             <div className={`${styles.menuBar} ${isOpen ? styles.visible : ''}`}>
                 <nav className={styles.navScroll}>
-                    {navItems.filter(item => {
+                    {items.filter(item => {
+                        // Customers see all customer items
+                        if (currentUser?.role === 'customer') return true
                         // Super Admins see everything
                         if (currentUser?.email === 'admin@devinewater.pk') return true
                         // Only show if section is in permitted list

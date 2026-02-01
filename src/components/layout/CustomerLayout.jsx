@@ -1,51 +1,72 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Home, Receipt, Calendar, MessageCircle, LayoutDashboard } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import CustomerSidebar from './CustomerSidebar'
+import MobileNav from './MobileNav'
 import TopHeader from './TopHeader'
-import styles from './CustomerLayout.module.css'
+import styles from './AdminLayout.module.css' // Reuse AdminLayout styles for consistency
 
-const navItems = [
-    { path: '/customer', icon: Home, label: 'Overview', end: true },
-    { path: '/customer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/customer/calendar', icon: Calendar, label: 'Calendar' },
-    { path: '/customer/finance', icon: Receipt, label: 'Finance' },
-    { path: '/customer/support', icon: MessageCircle, label: 'Contact Us' },
-]
+const pageTitles = {
+    '/customer': { title: 'Account Overview', subtitle: 'Manage your profile and account settings' },
+    '/customer/dashboard': { title: 'Dashboard', subtitle: 'Your water usage and orders overview' },
+    '/customer/calendar': { title: 'Calendar Report', subtitle: 'Detailed usage calendar' },
+    '/customer/finance': { title: 'Finance Details', subtitle: 'Billing and payment history' },
+    '/customer/support': { title: 'Contact Us', subtitle: 'Get help and support' },
+}
 
 function CustomerLayout() {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+    const [isMobile, setIsMobile] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const location = useLocation()
+
+    // Detect mobile screen
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileMenuOpen(false)
+    }, [location.pathname])
+
+    const currentPage = pageTitles[location.pathname] || { title: 'Customer Panel', subtitle: '' }
 
     return (
         <div className={styles.layout}>
-            {/* Header */}
-            <TopHeader title="Devine Water" />
+            {/* Desktop Sidebar - hidden on mobile */}
+            {!isMobile && (
+                <CustomerSidebar
+                    collapsed={sidebarCollapsed}
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                />
+            )}
 
-            {/* Main content */}
-            <main className={styles.content}>
-                <Outlet />
-            </main>
+            <div className={`${styles.main} ${!isMobile && sidebarCollapsed ? styles.collapsed : ''} ${isMobile ? styles.mobile : ''}`}>
+                <TopHeader
+                    title={currentPage.title}
+                    subtitle={currentPage.subtitle}
+                    onMenuClick={() => isMobile ? setMobileMenuOpen(true) : setSidebarCollapsed(!sidebarCollapsed)}
+                    isMobile={isMobile}
+                />
 
-            {/* Bottom navigation (mobile) */}
-            <nav className={styles.bottomNav}>
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        end={item.end}
-                        className={({ isActive }) =>
-                            `${styles.navItem} ${isActive ? styles.active : ''}`
-                        }
-                    >
-                        <motion.div
-                            className={styles.navItemInner}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <item.icon size={22} />
-                            <span className={styles.navLabel}>{item.label}</span>
-                        </motion.div>
-                    </NavLink>
-                ))}
-            </nav>
+                <main className={styles.content}>
+                    <Outlet />
+                </main>
+            </div>
+
+            {/* Mobile Bottom Navigation */}
+            {isMobile && (
+                <MobileNav
+                    isOpen={mobileMenuOpen}
+                    onClose={() => setMobileMenuOpen(false)}
+                    onOpen={() => setMobileMenuOpen(true)}
+                />
+            )}
         </div>
     )
 }

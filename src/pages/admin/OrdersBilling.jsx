@@ -255,6 +255,35 @@ function OrdersBilling() {
         updateOrderPayment(orderId, 'paid')
     }
 
+    // Helper: Group orders by date (Today, Yesterday, etc.)
+    const getGroupedOrders = () => {
+        const groups = {}
+        const today = new Date().toISOString().split('T')[0]
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+        filteredOrders.forEach(order => {
+            let dateKey = order.orderDate || order.createdAt?.split('T')[0] || 'Unknown Date'
+            if (dateKey === today) dateKey = 'Today'
+            else if (dateKey === yesterday) dateKey = 'Yesterday'
+
+            if (!groups[dateKey]) groups[dateKey] = []
+            groups[dateKey].push(order)
+        })
+
+        // Sort keys: Today, Yesterday, then desc date
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            if (a === 'Today') return -1
+            if (b === 'Today') return 1
+            if (a === 'Yesterday') return -1
+            if (b === 'Yesterday') return 1
+            return b.localeCompare(a) // Descending date
+        })
+
+        return { groups, sortedKeys }
+    }
+
+    const { groups, sortedKeys } = getGroupedOrders()
+
     return (
         <div className={styles.orders}>
             {/* Header */}
@@ -324,133 +353,278 @@ function OrdersBilling() {
 
             {/* Orders List */}
             <div className={styles.ordersList}>
-                {filteredOrders.map((order, index) => (
-                    <motion.div
-                        key={order.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <GlassCard
-                            className={styles.orderCard}
-                            hover={false}
-                            animate={false}
-                            onClick={() => toggleOrder(order.id)}
-                        >
-                            <div className={styles.orderMain}>
-                                <div className={styles.orderInfo}>
-                                    <span className={styles.orderId}>{order.id}</span>
-                                    <span className={styles.orderCustomer}>{order.customerName}</span>
-                                    <span className={styles.orderDate}>
-                                        {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
-                                    </span>
-                                </div>
-                                <div className={styles.orderMeta}>
-                                    <span className={styles.orderTotal}>Rs {order.total.toLocaleString()}</span>
-                                    <StatusBadge status={order.status} />
-                                    <motion.div
-                                        animate={{ rotate: expandedOrder === order.id ? 180 : 0 }}
-                                        className={styles.expandIcon}
+                {activeTab === 'all' ? (
+                    /* GROUPED VIEW for 'All' */
+                    sortedKeys.map(groupKey => (
+                        <div key={groupKey} className={styles.groupSection}>
+                            <h3 className={styles.groupTitle}>{groupKey}</h3>
+                            {groups[groupKey].map((order, index) => (
+                                <motion.div
+                                    key={order.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <GlassCard
+                                        className={styles.orderCard}
+                                        hover={false}
+                                        animate={false}
+                                        onClick={() => toggleOrder(order.id)}
                                     >
-                                        <ChevronDown size={20} />
-                                    </motion.div>
-                                </div>
-                            </div>
-
-                            <AnimatePresence>
-                                {expandedOrder === order.id && (
-                                    <motion.div
-                                        className={styles.orderDetails}
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className={styles.detailsGrid}>
-                                            <div className={styles.detailSection}>
-                                                <h4>Order Details</h4>
-                                                <p><strong>Payment:</strong> <StatusBadge status={order.paymentStatus} size="sm" /></p>
-                                                <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                                        <div className={styles.orderMain}>
+                                            <div className={styles.orderInfo}>
+                                                <span className={styles.orderId}>{order.id}</span>
+                                                <span className={styles.orderCustomer}>{order.customerName}</span>
+                                                <span className={styles.orderDate}>
+                                                    {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
+                                                </span>
                                             </div>
-                                            <div className={styles.detailSection}>
-                                                <h4>Order Items</h4>
-                                                <table className={styles.itemsTable}>
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Item</th>
-                                                            <th>Qty</th>
-                                                            <th>Price</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {order.items.map((item, i) => (
-                                                            <tr key={i}>
-                                                                <td>{item.name}</td>
-                                                                <td>{item.qty}</td>
-                                                                <td>Rs {item.price}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
+                                            <div className={styles.orderMeta}>
+                                                <span className={styles.orderTotal}>Rs {order.total.toLocaleString()}</span>
+                                                <StatusBadge status={order.status} />
+                                                <motion.div
+                                                    animate={{ rotate: expandedOrder === order.id ? 180 : 0 }}
+                                                    className={styles.expandIcon}
+                                                >
+                                                    <ChevronDown size={20} />
+                                                </motion.div>
                                             </div>
                                         </div>
-                                        <div className={styles.detailActions}>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                icon={FileText}
-                                                onClick={(e) => handleViewInvoice(e, order)}
-                                            >
-                                                View Invoice
-                                            </Button>
 
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                icon={Edit}
-                                                onClick={(e) => handleEditOrder(e, order)}
-                                            >
-                                                Edit
-                                            </Button>
-
-                                            {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                                                <>
-                                                    <Button
-                                                        variant="success"
-                                                        size="sm"
-                                                        icon={Check}
-                                                        onClick={() => handleStatusChange(order.id, 'delivered')}
-                                                    >
-                                                        Mark Delivered
-                                                    </Button>
-                                                    {order.paymentStatus === 'pending' && (
+                                        <AnimatePresence>
+                                            {expandedOrder === order.id && (
+                                                <motion.div
+                                                    className={styles.orderDetails}
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <div className={styles.detailsGrid}>
+                                                        <div className={styles.detailSection}>
+                                                            <h4>Order Details</h4>
+                                                            <p><strong>Payment:</strong> <StatusBadge status={order.paymentStatus} size="sm" /></p>
+                                                            <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                                                        </div>
+                                                        <div className={styles.detailSection}>
+                                                            <h4>Order Items</h4>
+                                                            <table className={styles.itemsTable}>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Item</th>
+                                                                        <th>Qty</th>
+                                                                        <th>Price</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {order.items.map((item, i) => (
+                                                                        <tr key={i}>
+                                                                            <td>{item.name}</td>
+                                                                            <td>{item.qty}</td>
+                                                                            <td>Rs {item.price}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.detailActions}>
                                                         <Button
-                                                            variant="primary"
+                                                            variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handlePaymentChange(order.id)}
+                                                            icon={FileText}
+                                                            onClick={(e) => handleViewInvoice(e, order)}
                                                         >
-                                                            Mark Paid
+                                                            View Invoice
                                                         </Button>
-                                                    )}
-                                                </>
-                                            )}
 
-                                            <Button
-                                                variant="danger"
-                                                size="sm"
-                                                icon={Trash2}
-                                                onClick={(e) => handleDeleteClick(e, order.id)}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </GlassCard>
-                    </motion.div>
-                ))}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            icon={Edit}
+                                                            onClick={(e) => handleEditOrder(e, order)}
+                                                        >
+                                                            Edit
+                                                        </Button>
+
+                                                        {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                                                            <>
+                                                                <Button
+                                                                    variant="success"
+                                                                    size="sm"
+                                                                    icon={Check}
+                                                                    onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                                >
+                                                                    Mark Delivered
+                                                                </Button>
+                                                                {order.paymentStatus === 'pending' && (
+                                                                    <Button
+                                                                        variant="primary"
+                                                                        size="sm"
+                                                                        onClick={() => handlePaymentChange(order.id)}
+                                                                    >
+                                                                        Mark Paid
+                                                                    </Button>
+                                                                )}
+                                                            </>
+                                                        )}
+
+                                                        <Button
+                                                            variant="danger"
+                                                            size="sm"
+                                                            icon={Trash2}
+                                                            onClick={(e) => handleDeleteClick(e, order.id)}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </GlassCard>
+                                </motion.div>
+                            ))}
+                        </div>
+                    ))
+                ) : (
+                    /* FLAT VIEW for Pending/Delivered */
+                    filteredOrders.map((order, index) => (
+                        <motion.div
+                            key={order.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <GlassCard
+                                className={styles.orderCard}
+                                hover={false}
+                                animate={false}
+                                onClick={() => toggleOrder(order.id)}
+                            >
+                                <div className={styles.orderMain}>
+                                    <div className={styles.orderInfo}>
+                                        <span className={styles.orderId}>{order.id}</span>
+                                        <span className={styles.orderCustomer}>{order.customerName}</span>
+                                        <span className={styles.orderDate}>
+                                            {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <div className={styles.orderMeta}>
+                                        <span className={styles.orderTotal}>Rs {order.total.toLocaleString()}</span>
+                                        <StatusBadge status={order.status} />
+                                        <motion.div
+                                            animate={{ rotate: expandedOrder === order.id ? 180 : 0 }}
+                                            className={styles.expandIcon}
+                                        >
+                                            <ChevronDown size={20} />
+                                        </motion.div>
+                                    </div>
+                                </div>
+
+                                <AnimatePresence>
+                                    {expandedOrder === order.id && (
+                                        <motion.div
+                                            className={styles.orderDetails}
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className={styles.detailsGrid}>
+                                                <div className={styles.detailSection}>
+                                                    <h4>Order Details</h4>
+                                                    <p><strong>Payment:</strong> <StatusBadge status={order.paymentStatus} size="sm" /></p>
+                                                    <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                                                </div>
+                                                <div className={styles.detailSection}>
+                                                    <h4>Order Items</h4>
+                                                    <table className={styles.itemsTable}>
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Item</th>
+                                                                <th>Qty</th>
+                                                                <th>Price</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {order.items.map((item, i) => (
+                                                                <tr key={i}>
+                                                                    <td>{item.name}</td>
+                                                                    <td>{item.qty}</td>
+                                                                    <td>Rs {item.price}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div className={styles.detailActions}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon={FileText}
+                                                    onClick={(e) => handleViewInvoice(e, order)}
+                                                >
+                                                    View Invoice
+                                                </Button>
+
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon={Edit}
+                                                    onClick={(e) => handleEditOrder(e, order)}
+                                                >
+                                                    Edit
+                                                </Button>
+
+                                                {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                                                    <>
+                                                        <Button
+                                                            variant="success"
+                                                            size="sm"
+                                                            icon={Check}
+                                                            onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                        >
+                                                            Mark Delivered
+                                                        </Button>
+                                                        {order.paymentStatus === 'pending' && (
+                                                            <Button
+                                                                variant="primary"
+                                                                size="sm"
+                                                                onClick={() => handlePaymentChange(order.id)}
+                                                            >
+                                                                Mark Paid
+                                                            </Button>
+                                                        )}
+                                                    </>
+                                                )}
+
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    icon={Trash2}
+                                                    onClick={(e) => handleDeleteClick(e, order.id)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </GlassCard>
+                        </motion.div>
+                    ))
+                )}
+
+                {filteredOrders.length === 0 && (
+                    <div className={styles.emptyState}>
+                        <FileText size={48} />
+                        <h3>No orders found</h3>
+                        <p>Try adjusting your filters or date selection</p>
+                    </div>
+                )}
             </div>
 
             {/* New Order Modal */}

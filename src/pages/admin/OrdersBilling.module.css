@@ -489,3 +489,28 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Grouping Styles */
+.groupSection {
+    margin-bottom: var(--space-xl);
+}
+
+.groupTitle {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.groupTitle::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 18px;
+    background: var(--primary-cyan);
+    border-radius: var(--radius-full);
+}

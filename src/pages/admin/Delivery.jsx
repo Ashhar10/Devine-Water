@@ -480,47 +480,37 @@ function Delivery() {
         setConfirmModal({
             isOpen: true,
             title: 'Delete Delivery',
-            message: `Are you sure you want to delete this delivery? Any associated order will be removed and balance changes reverted.`,
+            message: `Are you sure you want to delete this delivery? It will be reverted to 'Pending' status.`,
             type: 'danger',
-            confirmText: 'Delete',
+            confirmText: 'Delete & Revert',
             onConfirm: async () => {
                 const orders = useDataStore.getState().orders
 
-                // Enhanced Order Finding Logic for Duplicates
+                // Enhanced Order Finding Logic
                 let orderToDelete = null;
 
-                // 1. Filter candidates by customer and date
-                const candidates = orders.filter(o =>
-                    o.customerId === customer.id &&
-                    (o.orderDate === delivery.deliveryDate || o.createdAt?.startsWith(delivery.deliveryDate))
-                )
+                // 1. Filter candidates by customer
+                // Robust: Check matches on YYYY-MM-DD of local time
+                const candidates = orders.filter(o => {
+                    if (o.customerId !== customer.id) return false;
+
+                    // Direct date match
+                    if (o.orderDate === delivery.deliveryDate) return true;
+
+                    // CreatedAt match (first 10 chars)
+                    if (o.createdAt && o.createdAt.startsWith(delivery.deliveryDate)) return true;
+
+                    // Fallback: If orderDate is close?
+                    return false;
+                })
 
                 if (candidates.length === 1) {
                     orderToDelete = candidates[0]
                 } else if (candidates.length > 1) {
-                    // Ambiguous! Try to match by properties
-                    // Priority 1: Match exact CreatedAt (if within small window)
-                    if (delivery.createdAt) {
-                        const dTime = new Date(delivery.createdAt).getTime()
-                        const closest = candidates.reduce((prev, curr) => {
-                            const cTime = new Date(curr.createdAt).getTime()
-                            const diff = Math.abs(cTime - dTime)
-                            return diff < prev.diff ? { diff, order: curr } : prev
-                        }, { diff: Infinity, order: null })
+                    // Ambiguous! Priority: Match exact bottle count
+                    orderToDelete = candidates.find(o => o.bottlesDelivered === delivery.bottlesDelivered)
 
-                        // If closest is within 5 minutes, assume match
-                        if (closest.diff < 5 * 60 * 1000) {
-                            orderToDelete = closest.order
-                        }
-                    }
-
-                    // Priority 2: Match bottles count
-                    if (!orderToDelete) {
-                        const exactBottleMatch = candidates.find(o => o.bottlesDelivered === delivery.bottlesDelivered)
-                        if (exactBottleMatch) orderToDelete = exactBottleMatch
-                    }
-
-                    // Priority 3: Just take the last one (assuming user is interacting with recent)
+                    // Fallback to last created
                     if (!orderToDelete) {
                         orderToDelete = candidates[candidates.length - 1]
                     }
@@ -535,7 +525,7 @@ function Delivery() {
                     // 2. Delete Order
                     await deleteOrder(orderToDelete.id)
                 } else {
-                    console.warn('Deleting Delivery but NO matching order found.')
+                    console.warn('Deleting Delivery but NO matching order found. Proceeding to delete Delivery record.')
                 }
 
                 // 3. Delete Delivery Record
@@ -804,7 +794,14 @@ function Delivery() {
                                                             <button
                                                                 className={`${styles.actionBtn} ${styles.skipped}`}
                                                                 title="Delete/Skip"
-                                                                onClick={(e) => { e.stopPropagation(); handleSkipDelivery(customer, delivery) }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (delivery.status === 'delivered') {
+                                                                        handleDeleteDelivery(delivery, customer)
+                                                                    } else {
+                                                                        handleSkipDelivery(customer, delivery)
+                                                                    }
+                                                                }}
                                                             >
                                                                 <XCircle size={16} />
                                                             </button>
@@ -878,10 +875,14 @@ function Delivery() {
                                                 </button>
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.skipped}`}
-                                                    title="Skip"
+                                                    title={isDelivered && status === 'delivered' ? "Delete/Revert" : "Skip"}
                                                     onClick={(e) => {
                                                         e.stopPropagation()
-                                                        handleSkipDelivery(customer)
+                                                        if (isDelivered && status === 'delivered') {
+                                                            handleDeleteDelivery(delivery, customer)
+                                                        } else {
+                                                            handleSkipDelivery(customer)
+                                                        }
                                                     }}
                                                 >
                                                     <XCircle size={16} />

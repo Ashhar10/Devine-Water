@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
-import AdminSidebar from './AdminSidebar'
+import { useNavigate, Outlet, useLocation } from 'react-router-dom'
+import AdminSidebar, { navItems } from './AdminSidebar'
 import MobileNav from './MobileNav'
 import TopHeader from './TopHeader'
+import { useDataStore } from '../../store/dataStore'
 import styles from './AdminLayout.module.css'
 
 const pageTitles = {
@@ -23,6 +24,8 @@ function AdminLayout() {
     const [isMobile, setIsMobile] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const location = useLocation()
+    const navigate = useNavigate()
+    const currentUser = useDataStore(state => state.currentUser)
 
     // Detect mobile screen
     useEffect(() => {
@@ -33,6 +36,37 @@ function AdminLayout() {
         window.addEventListener('resize', checkMobile)
         return () => window.removeEventListener('resize', checkMobile)
     }, [])
+
+    // Permission-based redirection
+    useEffect(() => {
+        if (!currentUser) return
+
+        const isSuperAdmin = currentUser.email === 'admin@devinewater.pk'
+        if (isSuperAdmin) return
+
+        const permittedSections = currentUser.permittedSections || []
+        const currentPath = location.pathname
+
+        // If at the root /admin or any subpath, check if permitted
+        if (currentPath.startsWith('/admin')) {
+            const isPermitted = permittedSections.includes(currentPath)
+
+            // Special handling for the root /admin (Dashboard)
+            if (currentPath === '/admin' && !isPermitted) {
+                // Redirect to the first available section
+                const firstAvailable = navItems.find(item => permittedSections.includes(item.path))
+                if (firstAvailable) {
+                    navigate(firstAvailable.path, { replace: true })
+                }
+            } else if (currentPath !== '/admin' && !isPermitted) {
+                // If trying to access a restricted subpage, redirect to first available
+                const firstAvailable = navItems.find(item => permittedSections.includes(item.path))
+                if (firstAvailable) {
+                    navigate(firstAvailable.path, { replace: true })
+                }
+            }
+        }
+    }, [location.pathname, currentUser, navigate])
 
     // Close mobile menu on route change
     useEffect(() => {

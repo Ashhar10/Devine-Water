@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
 
-const navItems = [
+export const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { path: '/admin/products', icon: Package, label: 'Products' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
@@ -90,8 +90,8 @@ function AdminSidebar({ collapsed, onToggle }) {
             {/* Navigation */}
             <nav className={styles.nav}>
                 {navItems.filter(item => {
-                    // Admins see everything
-                    if (currentUser?.role === 'admin') return true
+                    // Super Admins see everything
+                    if (currentUser?.email === 'admin@devinewater.pk') return true
                     // Only show if section is in permitted list
                     return currentUser?.permittedSections?.includes(item.path)
                 }).map((item) => (

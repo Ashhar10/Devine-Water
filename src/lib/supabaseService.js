@@ -62,7 +62,7 @@ export const addCustomerToDb = async (customerData) => {
 
     const customerId = generateId('CUS')
 
-
+    console.log('Adding customer to DB:', customerData)
 
     const { data, error } = await supabase
         .from('customers')
@@ -90,7 +90,17 @@ export const addCustomerToDb = async (customerData) => {
         .select()
         .single()
 
-    if (error) handleError(error, 'add customer')
+    if (error) {
+        console.error('Database error adding customer:', error)
+        handleError(error, 'add customer')
+    }
+
+    if (!data) {
+        console.error('No data returned from customer insert')
+        return null
+    }
+
+    console.log('Customer added successfully:', data)
 
     return {
         id: data.customer_id,

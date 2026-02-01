@@ -228,6 +228,7 @@ export const useDataStore = create(
             getCustomerById: (id) => get().customers.find(c => c.id === id),
 
             addCustomer: async (data) => {
+                console.log('addCustomer called with:', data)
                 const newCustomer = {
                     ...data,
                     id: `CUS-${generateId()}`,
@@ -243,19 +244,31 @@ export const useDataStore = create(
                 // Persist to Supabase
                 try {
                     const dbCustomer = await addCustomerToDb(data)
+                    console.log('DB response:', dbCustomer)
                     if (dbCustomer) {
                         set(state => ({
                             customers: state.customers.map(c =>
                                 c.id === newCustomer.id ? dbCustomer : c
                             )
                         }))
+                        console.log('Customer successfully saved to DB')
                         return dbCustomer
+                    } else {
+                        console.error('No customer data returned from DB')
+                        // Rollback optimistic update
+                        set(state => ({
+                            customers: state.customers.filter(c => c.id !== newCustomer.id)
+                        }))
+                        return null
                     }
                 } catch (error) {
                     console.error('Failed to add customer to DB:', error)
+                    // Rollback optimistic update
+                    set(state => ({
+                        customers: state.customers.filter(c => c.id !== newCustomer.id)
+                    }))
+                    throw error
                 }
-
-                return newCustomer
             },
 
             updateCustomer: async (id, data) => {

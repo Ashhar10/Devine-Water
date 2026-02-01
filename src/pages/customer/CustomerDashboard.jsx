@@ -292,9 +292,20 @@ function CustomerDashboard() {
                                                     onChange={e => updateOrderItem(index, 'productId', e.target.value)}
                                                 >
                                                     <option value="">Select...</option>
-                                                    {products.filter(p => p.status === 'active').map(p => (
-                                                        <option key={p.id} value={p.id}>{p.name} - Rs {p.price}</option>
-                                                    ))}
+                                                    {products
+                                                        .filter(p => {
+                                                            if (p.status !== 'active') return false
+                                                            // Check assigned products for current customer
+                                                            if (currentCustomer?.assignedProducts?.length > 0) {
+                                                                return currentCustomer.assignedProducts.includes(p.uuid)
+                                                            }
+                                                            return true
+                                                        })
+                                                        .map(p => (
+                                                            <option key={p.id} value={p.id}>
+                                                                {p.name}
+                                                            </option>
+                                                        ))}
                                                 </select>
                                             </div>
                                             <div className={styles.formGroup}>
@@ -324,10 +335,11 @@ function CustomerDashboard() {
                                     + Add Another Product
                                 </button>
 
-                                <div className={styles.totalRow}>
+                                {/* Total hidden for customers as per price hiding policy */}
+                                {/* <div className={styles.totalRow}>
                                     <span>Total Amount:</span>
                                     <span>Rs {calculateTotal().toLocaleString()}</span>
-                                </div>
+                                </div> */}
 
                                 <div className={styles.formGroup}>
                                     <label>Notes (Optional)</label>

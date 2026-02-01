@@ -24,6 +24,7 @@ import styles from './AdminDashboard.module.css'
 
 function AdminDashboard() {
     // Get raw data from store - stable references
+    const currentUser = useDataStore(state => state.currentUser)
     const customers = useDataStore(state => state.customers)
     const orders = useDataStore(state => state.orders)
     const investments = useDataStore(state => state.investments)
@@ -91,15 +92,15 @@ function AdminDashboard() {
             pendingOrders,
             todayOrders,
             totalDeliveredOrders,
-            areasToDeliver, // This is now a string
+            areasToDeliver,
             totalBottles,
             deliveredBottles,
-            revenue: monthlyRevenue, // Updated to use Monthly Cash Flow
+            revenue: monthlyRevenue,
             expenses: expenses,
-            profit: income - expenses, // Keeping profit as Total for now, or should it be monthly? Leaving as Total based on context
+            profit: income - expenses,
             outstanding: totalOutstanding
         }
-    }, [customers, orders, investments, expenditures, payments, areas]) // Added areas to dependencies
+    }, [customers, orders, investments, expenditures, payments, areas])
 
     // Transform orders data for bottles chart
     const bottlesData = useMemo(() => {
@@ -145,7 +146,7 @@ function AdminDashboard() {
     })), [orders])
 
     // Slider Data Configuration
-    const revenueSlides = [
+    const revenueSlides = currentUser?.designation === 'Administrator' ? [
         {
             title: 'Monthly Revenue',
             value: stats.revenue,
@@ -162,7 +163,7 @@ function AdminDashboard() {
             link: '/admin/customers',
             linkText: 'Manage Balances'
         }
-    ]
+    ] : []
 
     const orderSlides = [
         {
@@ -185,7 +186,7 @@ function AdminDashboard() {
         },
         {
             title: 'Areas to Deliver',
-            value: stats.areasToDeliver, // This will now be a string
+            value: stats.areasToDeliver,
             icon: MapPin,
             color: 'success'
         },
@@ -229,11 +230,13 @@ function AdminDashboard() {
                     onClick={() => window.location.href = '/admin/customers'}
                 />
 
-                {/* Revenue Slider */}
-                <StatSlider
-                    slides={revenueSlides}
-                    interval={3500} // Slightly offset
-                />
+                {/* Revenue Slider - Only for Admin */}
+                {currentUser?.designation === 'Administrator' && (
+                    <StatSlider
+                        slides={revenueSlides}
+                        interval={3500} // Slightly offset
+                    />
+                )}
             </section>
 
             {/* Charts Row */}
@@ -249,17 +252,19 @@ function AdminDashboard() {
                     showLegend
                     className={styles.chartCard}
                 />
-                <DataChart
-                    title="Revenue vs Expenses"
-                    subtitle="Financial overview"
-                    data={revenueData}
-                    type="bar"
-                    dataKeys={['revenue', 'expenses']}
-                    colors={['#00e5a0', '#ff6b6b']}
-                    height={280}
-                    showLegend
-                    className={styles.chartCard}
-                />
+                {currentUser?.designation === 'Administrator' && (
+                    <DataChart
+                        title="Revenue vs Expenses"
+                        subtitle="Financial overview"
+                        data={revenueData}
+                        type="bar"
+                        dataKeys={['revenue', 'expenses']}
+                        colors={['#00e5a0', '#ff6b6b']}
+                        height={280}
+                        showLegend
+                        className={styles.chartCard}
+                    />
+                )}
             </section>
 
             {/* Quick Stats & Recent Orders */}
@@ -286,15 +291,17 @@ function AdminDashboard() {
                                 <span className={styles.statValue}>{stats.pendingOrders}</span>
                             </div>
                         </div>
-                        <div className={styles.statItem}>
-                            <div className={styles.statIconUp}>
-                                <ArrowUpRight size={18} />
+                        {currentUser?.designation === 'Administrator' && (
+                            <div className={styles.statItem}>
+                                <div className={styles.statIconUp}>
+                                    <ArrowUpRight size={18} />
+                                </div>
+                                <div className={styles.statInfo}>
+                                    <span className={styles.statLabel}>Net Profit</span>
+                                    <span className={styles.statValue}>Rs {stats.profit.toLocaleString()}</span>
+                                </div>
                             </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statLabel}>Net Profit</span>
-                                <span className={styles.statValue}>Rs {stats.profit.toLocaleString()}</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </GlassCard>
 

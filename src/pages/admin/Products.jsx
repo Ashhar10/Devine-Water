@@ -39,11 +39,12 @@ function Products() {
         minStockAlert: 10
     })
 
+    const currentUser = useDataStore(state => state.currentUser) // Add this
     const products = useDataStore(state => state.products)
     const addProduct = useDataStore(state => state.addProduct)
     const updateProduct = useDataStore(state => state.updateProduct)
     const deleteProduct = useDataStore(state => state.deleteProduct)
-    const updateProductStock = useDataStore(state => state.updateProductStock)
+    const updateProductStock = useDataStore(state => state.updateProductStock) // Fixed syntax error here
 
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -191,7 +192,11 @@ function Products() {
                 <GlassCard className={styles.statCard}>
                     <TrendingUp size={24} className={`${styles.statIcon} ${styles.success}`} />
                     <div className={styles.statContent}>
-                        <span className={`${styles.statValue} ${styles.success}`}>Rs {stats.totalValue.toLocaleString()}</span>
+                        {currentUser?.designation === 'Administrator' ? (
+                            <span className={`${styles.statValue} ${styles.success}`}>Rs {stats.totalValue.toLocaleString()}</span>
+                        ) : (
+                            <span className={`${styles.statValue} ${styles.success}`}>-</span>
+                        )}
                         <span className={styles.statLabel}>Stock Value</span>
                     </div>
                 </GlassCard>
@@ -219,16 +224,18 @@ function Products() {
                             </div>
 
                             <div className={styles.cardBody}>
-                                <div className={styles.priceRow}>
-                                    <div className={styles.priceItem}>
-                                        <span className={styles.priceLabel}>Sale Price</span>
-                                        <span className={styles.priceValue}>Rs {product.price}</span>
+                                {currentUser?.designation === 'Administrator' && (
+                                    <div className={styles.priceRow}>
+                                        <div className={styles.priceItem}>
+                                            <span className={styles.priceLabel}>Sale Price</span>
+                                            <span className={styles.priceValue}>Rs {product.price}</span>
+                                        </div>
+                                        <div className={styles.priceItem}>
+                                            <span className={styles.priceLabel}>Purchase</span>
+                                            <span className={styles.priceValueMuted}>Rs {product.purchasePrice || 0}</span>
+                                        </div>
                                     </div>
-                                    <div className={styles.priceItem}>
-                                        <span className={styles.priceLabel}>Purchase</span>
-                                        <span className={styles.priceValueMuted}>Rs {product.purchasePrice || 0}</span>
-                                    </div>
-                                </div>
+                                )}
 
                                 <div className={styles.stockSection}>
                                     <div className={styles.stockInfo}>

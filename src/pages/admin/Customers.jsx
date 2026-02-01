@@ -901,26 +901,28 @@ function Customers() {
                                     </div>
                                 </div>
 
-                                {/* Financial Summary */}
-                                <div className={styles.detailsSection}>
-                                    <h4><Wallet size={18} /> Financial Summary</h4>
-                                    <div className={styles.statsRow}>
-                                        <div className={styles.statBox}>
-                                            <span className={styles.statValue}>Rs {selectedCustomerDetails.totalSpent?.toLocaleString() || 0}</span>
-                                            <span className={styles.statLabel}>Total Spent</span>
-                                        </div>
-                                        <div className={styles.statBox}>
-                                            <span className={`${styles.statValue} ${selectedCustomerDetails.currentBalance > 0 ? styles.warning : ''}`}>
-                                                Rs {selectedCustomerDetails.currentBalance?.toLocaleString() || 0}
-                                            </span>
-                                            <span className={styles.statLabel}>Current Balance</span>
-                                        </div>
-                                        <div className={styles.statBox}>
-                                            <span className={styles.statValue}>Rs {selectedCustomerDetails.securityDeposit?.toLocaleString() || 0}</span>
-                                            <span className={styles.statLabel}>Security Deposit</span>
+                                {currentUser?.designation === 'Administrator' && (
+                                    /* Financial Summary */
+                                    <div className={styles.detailsSection}>
+                                        <h4><Wallet size={18} /> Financial Summary</h4>
+                                        <div className={styles.statsRow}>
+                                            <div className={styles.statBox}>
+                                                <span className={styles.statValue}>Rs {selectedCustomerDetails.totalSpent?.toLocaleString() || 0}</span>
+                                                <span className={styles.statLabel}>Total Spent</span>
+                                            </div>
+                                            <div className={styles.statBox}>
+                                                <span className={`${styles.statValue} ${selectedCustomerDetails.currentBalance > 0 ? styles.warning : ''}`}>
+                                                    Rs {selectedCustomerDetails.currentBalance?.toLocaleString() || 0}
+                                                </span>
+                                                <span className={styles.statLabel}>Current Balance</span>
+                                            </div>
+                                            <div className={styles.statBox}>
+                                                <span className={styles.statValue}>Rs {selectedCustomerDetails.securityDeposit?.toLocaleString() || 0}</span>
+                                                <span className={styles.statLabel}>Security Deposit</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Order History */}
                                 <div className={styles.detailsSection}>
@@ -935,7 +937,9 @@ function Customers() {
                                                     </div>
                                                     <div>
                                                         <StatusBadge status={order.status} size="sm" />
-                                                        <span className={styles.orderTotal}>Rs {order.total}</span>
+                                                        {currentUser?.designation === 'Administrator' && (
+                                                            <span className={styles.orderTotal}>Rs {order.total}</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
@@ -981,10 +985,12 @@ function Customers() {
                                             <span className={styles.detailLabel}>Required Bottles:</span>
                                             <span className={styles.detailValue}>{selectedCustomerDetails.requiredBottles || 1}/delivery</span>
                                         </div>
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Opening Balance:</span>
-                                            <span className={styles.detailValue}>Rs {selectedCustomerDetails.openingBalance || 0}</span>
-                                        </div>
+                                        {currentUser?.designation === 'Administrator' && (
+                                            <div className={styles.detailItem}>
+                                                <span className={styles.detailLabel}>Opening Balance:</span>
+                                                <span className={styles.detailValue}>Rs {selectedCustomerDetails.openingBalance || 0}</span>
+                                            </div>
+                                        )}
                                         <div className={styles.detailItem}>
                                             <span className={styles.detailLabel}>Status:</span>
                                             <StatusBadge status={selectedCustomerDetails.status} size="sm" />

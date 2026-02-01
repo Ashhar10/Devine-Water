@@ -4,15 +4,19 @@ import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
-import styles from './BillingPayments.module.css'
+import styles from './Finance.module.css'
 
-function BillingPayments() {
+function Finance() {
     const customers = useDataStore(state => state.customers)
     const bills = useDataStore(state => state.bills)
     const payBill = useDataStore(state => state.payBill)
 
     // Simulate logged-in customer (first active customer)
-    const currentCustomer = customers.find(c => c.status === 'active') || customers[0]
+    const currentUser = useDataStore(state => state.currentUser)
+    const currentCustomer = customers.find(c => c.uuid === currentUser?.customerId) ||
+        customers.find(c => c.email === currentUser?.email) ||
+        customers[0]
+
     const customerBills = bills
         .filter(b => b.customerId === currentCustomer?.id)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -30,7 +34,7 @@ function BillingPayments() {
                 <GlassCard className={styles.currentBill} glow glowColor="warning">
                     <div className={styles.billHeader}>
                         <div>
-                            <h2 className={styles.billTitle}>Current Bill</h2>
+                            <h2 className={styles.billTitle}>Finance Details</h2>
                             <span className={styles.billPeriod}>{pendingBill.month}</span>
                         </div>
                         <StatusBadge status="pending" />
@@ -112,4 +116,4 @@ function BillingPayments() {
     )
 }
 
-export default BillingPayments
+export default Finance

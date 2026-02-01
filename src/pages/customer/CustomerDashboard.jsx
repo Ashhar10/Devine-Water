@@ -98,8 +98,8 @@ function CustomerDashboard() {
                     <div className={styles.infoValue}>Rs {currentCustomer?.currentBalance?.toLocaleString() || 0}</div>
                 </GlassCard>
                 <GlassCard className={styles.infoCard} delay={0.1}>
-                    <div className={styles.infoLabel}>Assigned Area</div>
-                    <div className={styles.infoValue}>{currentCustomer?.areaId || 'Default Area'}</div>
+                    <div className={styles.infoLabel}>Scheduled Deliveries</div>
+                    <div className={styles.infoValue}>{currentCustomer?.deliveryDays?.join(', ') || 'Contact Admin'}</div>
                 </GlassCard>
                 <GlassCard className={styles.infoCard} delay={0.15}>
                     <div className={styles.infoLabel}>Delivery Address</div>
@@ -199,17 +199,17 @@ function CustomerDashboard() {
 
             {/* Quick Actions */}
             <div className={styles.quickActions}>
-                <GlassCard className={styles.actionCard} delay={0.3} onClick={() => window.location.href = '/customer/usage'}>
+                <GlassCard className={styles.actionCard} delay={0.3} onClick={() => window.location.href = '/customer/calendar'}>
                     <TrendingUp size={24} className={styles.actionIcon} />
-                    <span className={styles.actionLabel}>View Usage</span>
+                    <span className={styles.actionLabel}>Calendar Report</span>
                 </GlassCard>
-                <GlassCard className={styles.actionCard} delay={0.4} onClick={() => window.location.href = '/customer/billing'}>
+                <GlassCard className={styles.actionCard} delay={0.4} onClick={() => window.location.href = '/customer/finance'}>
                     <Receipt size={24} className={styles.actionIcon} />
-                    <span className={styles.actionLabel}>Bill History</span>
+                    <span className={styles.actionLabel}>Finance Details</span>
                 </GlassCard>
                 <GlassCard className={styles.actionCard} delay={0.5} onClick={() => window.location.href = '/customer/support'}>
                     <Bell size={24} className={styles.actionIcon} />
-                    <span className={styles.actionLabel}>Support</span>
+                    <span className={styles.actionLabel}>Contact Us</span>
                 </GlassCard>
             </div>
 

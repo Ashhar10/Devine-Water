@@ -67,49 +67,118 @@
 }
 
 /* Toggle */
-.toggleWrapper {
+/* Calendar Header */
+.calendarNav {
     display: flex;
-    justify-content: center;
-}
-
-.toggle {
-    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
-    padding: 4px;
 }
 
-.toggleBtn {
-    padding: var(--space-sm) var(--space-lg);
+.monthTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.navBtn {
     background: transparent;
     border: none;
-    border-radius: var(--radius-md);
     color: var(--text-secondary);
-    font-weight: 500;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xs);
+    border-radius: var(--radius-full);
     transition: all var(--transition-fast);
 }
 
-.toggleBtn:hover {
-    color: var(--text-primary);
+.navBtn:hover {
+    background: var(--glass-bg);
+    color: var(--primary-cyan);
 }
 
-.toggleBtn.active {
-    background: var(--primary-cyan);
-    color: var(--bg-deep-space);
-}
-
-/* Chart Card */
-.chartCard {
-    min-height: 360px;
-}
-
-/* Breakdown Card */
-.breakdownCard {
+/* Report Card */
+.reportCard {
     display: flex;
     flex-direction: column;
     gap: var(--space-lg);
+}
+
+.reportHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.monthTotal {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.logsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.logItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    gap: var(--space-md);
+}
+
+.logDate {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    min-width: 100px;
+}
+
+.logDate svg {
+    color: var(--primary-cyan);
+}
+
+.logDetails {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.logItems {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.logPrice {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 80px;
+    text-align: right;
+}
+
+.emptyLogs {
+    padding: var(--space-xl);
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
 }
 
 .sectionTitle {
@@ -120,93 +189,19 @@
     margin: 0;
 }
 
-.breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
+@media (max-width: 600px) {
+    .logItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+    }
 
-.breakdownItem {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-md);
-    background: var(--glass-bg);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--glass-border);
-}
+    .logDetails {
+        width: 100%;
+        justify-content: space-between;
+    }
 
-.breakdownLeft {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-}
-
-.calendarIcon {
-    color: var(--text-muted);
-}
-
-.monthName {
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.breakdownRight {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-}
-
-.usageBar {
-    width: 80px;
-    height: 6px;
-    background: var(--glass-border);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-}
-
-.usageProgress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-cyan), var(--primary-teal));
-    border-radius: var(--radius-full);
-}
-
-.usageValue {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--primary-cyan);
-    min-width: 50px;
-    text-align: right;
-}
-
-.costValue {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    min-width: 70px;
-    text-align: right;
-}
-
-/* Tips Card */
-.tipsCard {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.tipsList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-    margin: 0;
-    padding-left: var(--space-lg);
-}
-
-.tipsList li {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
-
-.tipsList li::marker {
-    color: var(--primary-cyan);
+    .logPrice {
+        text-align: left;
+    }
 }

@@ -21,9 +21,9 @@ import Payments from './pages/admin/Payments'
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard'
-import BillingPayments from './pages/customer/BillingPayments'
-import WaterUsage from './pages/customer/WaterUsage'
-import Support from './pages/customer/Support'
+import Finance from './pages/customer/Finance'
+import CalendarReport from './pages/customer/CalendarReport'
+import ContactUs from './pages/customer/ContactUs'
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -118,9 +118,9 @@ function App() {
                 </ProtectedRoute>
             }>
                 <Route index element={<CustomerDashboard />} />
-                <Route path="billing" element={<BillingPayments />} />
-                <Route path="usage" element={<WaterUsage />} />
-                <Route path="support" element={<Support />} />
+                <Route path="finance" element={<Finance />} />
+                <Route path="calendar" element={<CalendarReport />} />
+                <Route path="support" element={<ContactUs />} />
             </Route>
 
             {/* Catch all - redirect to login */}

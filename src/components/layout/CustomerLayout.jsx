@@ -1,14 +1,14 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Home, Receipt, BarChart2, MessageCircle } from 'lucide-react'
+import { Home, Receipt, Calendar, MessageCircle } from 'lucide-react'
 import TopHeader from './TopHeader'
 import styles from './CustomerLayout.module.css'
 
 const navItems = [
-    { path: '/customer', icon: Home, label: 'Home', end: true },
-    { path: '/customer/billing', icon: Receipt, label: 'Billing' },
-    { path: '/customer/usage', icon: BarChart2, label: 'Usage' },
-    { path: '/customer/support', icon: MessageCircle, label: 'Support' },
+    { path: '/customer', icon: Home, label: 'Dashboard', end: true },
+    { path: '/customer/calendar', icon: Calendar, label: 'Calendar' },
+    { path: '/customer/finance', icon: Receipt, label: 'Finance' },
+    { path: '/customer/support', icon: MessageCircle, label: 'Contact Us' },
 ]
 
 function CustomerLayout() {

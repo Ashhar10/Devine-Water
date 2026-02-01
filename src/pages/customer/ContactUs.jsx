@@ -4,7 +4,7 @@ import { MessageCircle, Send, Clock, CheckCircle, HelpCircle, X } from 'lucide-r
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
-import styles from './Support.module.css'
+import styles from './ContactUs.module.css'
 
 const faqs = [
     { q: 'How do I pay my bill online?', a: 'You can pay through the Billing section using any major credit card or bank transfer.' },
@@ -12,17 +12,21 @@ const faqs = [
     { q: 'How do I change my delivery address?', a: 'Contact our support team or update your profile in the app settings.' },
 ]
 
-function Support() {
+function ContactUs() {
     const [newTicketOpen, setNewTicketOpen] = useState(false)
     const [formData, setFormData] = useState({ subject: '', message: '' })
     const [expandedFaq, setExpandedFaq] = useState(null)
 
+    const currentUser = useDataStore(state => state.currentUser)
     const customers = useDataStore(state => state.customers)
     const tickets = useDataStore(state => state.supportTickets)
     const addTicket = useDataStore(state => state.addTicket)
 
     // Simulate logged-in customer
-    const currentCustomer = customers.find(c => c.status === 'active') || customers[0]
+    const currentCustomer = customers.find(c => c.uuid === currentUser?.customerId) ||
+        customers.find(c => c.email === currentUser?.email) ||
+        customers[0]
+
     const customerTickets = tickets.filter(t => t.customerId === currentCustomer?.id)
 
     const handleSubmit = (e) => {
@@ -41,10 +45,10 @@ function Support() {
             {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerIcon}>
-                    <HelpCircle size={32} />
+                    <MessageCircle size={32} />
                 </div>
-                <h1 className={styles.headerTitle}>How can we help?</h1>
-                <p className={styles.headerSubtitle}>Get support for your water service</p>
+                <h1 className={styles.headerTitle}>Contact Us</h1>
+                <p className={styles.headerSubtitle}>We are here to help you</p>
             </div>
 
             {/* New Ticket Button */}
@@ -183,4 +187,4 @@ function Support() {
     )
 }
 
-export default Support
+export default ContactUs

@@ -143,7 +143,7 @@ export const useDataStore = create(
                     if (pendingDeliveries.length > 0) {
                         get().syncPendingDeliveries()
                     }
-                    console.log('✅ Data loaded from Supabase')
+
                 } catch (error) {
                     console.error('Failed to initialize:', error)
                     // On error, show empty data (NOT mock data)
@@ -492,13 +492,6 @@ export const useDataStore = create(
                             const difference = newTotal - oldTotal
                             const customer = get().customers.find(c => c.id === order.customerId)
                             if (customer) {
-                                console.log('Syncing customer balance (Order Edit):', {
-                                    customerId: order.customerId,
-                                    oldTotal,
-                                    newTotal,
-                                    difference,
-                                    oldBalance: customer.currentBalance
-                                })
                                 await get().updateCustomer(order.customerId, {
                                     currentBalance: (customer.currentBalance || 0) + difference
                                 })
@@ -853,10 +846,10 @@ export const useDataStore = create(
 
                 // Database persistence
                 try {
-                    console.log('Adding product to DB:', data)
+                    // console.log('Adding product to DB:', data)
                     const dbProduct = await addProductToDb(data)
                     if (dbProduct) {
-                        console.log('Product added successfully:', dbProduct)
+                        // console.log('Product added successfully:', dbProduct)
                         set(state => ({
                             products: state.products.map(p =>
                                 p.id === newProduct.id ? dbProduct : p

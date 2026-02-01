@@ -505,7 +505,9 @@ function OrdersBilling() {
                             // Logic synced with Delivery.jsx: Find customers scheduled for today OR with a manual delivery today
                             const scheduledCustomers = customers.filter(c => {
                                 const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate)));
-                                const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 || c.deliveryDays.includes(selectedDay);
+                                // Standardize matching (lowercase)
+                                const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 ||
+                                    c.deliveryDays.some(day => day.toLowerCase() === selectedDay.toLowerCase());
                                 return (matchesDay || hasDeliveryToday) && c.status === 'active';
                             });
 

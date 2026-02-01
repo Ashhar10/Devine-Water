@@ -589,13 +589,23 @@ export const useDataStore = create(
 
             deleteOrder: async (id) => {
                 const order = get().orders.find(o => o.id === id)
+                // Find linked delivery
+                const linkedDelivery = get().deliveries.find(d => d.orderId === id)
 
                 set(state => ({
                     orders: state.orders.filter(o => o.id !== id)
                 }))
 
                 try {
+                    // Delete order from DB
                     await deleteOrderFromDb(order.uuid)
+
+                    // Auto-delete linked delivery
+                    if (linkedDelivery) {
+                        console.log('Auto-deleting linked delivery:', linkedDelivery.id)
+                        await get().deleteDelivery(linkedDelivery.id)
+                    }
+
                 } catch (error) {
                     console.error('Failed to delete order from DB:', error)
                 }

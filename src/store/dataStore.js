@@ -1378,6 +1378,11 @@ export const useDataStore = create(
                     d => d.customerId === customerId && d.deliveryDate === date
                 )
             },
+            getDeliveriesForCustomer: (customerId, date) => {
+                return get().deliveries.filter(
+                    d => d.customerId === customerId && d.deliveryDate === date
+                )
+            },
 
             addDelivery: async (data) => {
                 const newDelivery = {

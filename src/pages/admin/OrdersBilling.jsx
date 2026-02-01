@@ -19,7 +19,10 @@ import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './OrdersBilling.module.css'
 
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 function OrdersBilling() {
+
     const [expandedOrder, setExpandedOrder] = useState(null)
     const [activeTab, setActiveTab] = useState('all')  // 'delivered', 'pending', 'all'
     const [filterStatus, setFilterStatus] = useState('all')
@@ -50,6 +53,12 @@ function OrdersBilling() {
     const updateOrderStatus = useDataStore(state => state.updateOrderStatus)
     const updateOrderPayment = useDataStore(state => state.updateOrderPayment)
     const deliveries = useDataStore(state => state.deliveries) // Added deliveries for skipped tab
+
+    // Derive selectedDay from selectedDate
+    const dateObj = new Date(selectedDate)
+    const dayIndex = dateObj.getDay()
+    const selectedDay = DAYS_OF_WEEK[dayIndex === 0 ? 6 : dayIndex - 1]
+
 
     // Get salesmen (staff/admin)
     const salesmen = users.filter(u => u.role === 'admin' || u.role === 'staff')
@@ -493,18 +502,52 @@ function OrdersBilling() {
                             <h4>Scheduled Deliveries ({new Date(selectedDate).toLocaleDateString()})</h4>
                         </div>
                         {(() => {
-                            const pendingDeliveries = deliveries.filter(d =>
-                                d.status === 'pending' &&
-                                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
-                            );
+                            // Logic synced with Delivery.jsx: Find customers scheduled for today OR with a manual delivery today
+                            const scheduledCustomers = customers.filter(c => {
+                                const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate)));
+                                const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 || c.deliveryDays.includes(selectedDay);
+                                return (matchesDay || hasDeliveryToday) && c.status === 'active';
+                            });
 
-                            if (pendingDeliveries.length === 0) {
+                            // Now find "Pending" work from these customers
+                            const pendingItems = [];
+
+                            scheduledCustomers.forEach(customer => {
+                                const customerDeliveries = deliveries.filter(d =>
+                                    d.customerId === customer.id &&
+                                    (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+                                );
+
+                                if (customerDeliveries.length === 0) {
+                                    // Scheduled but no delivery record yet = PENDING
+                                    pendingItems.push({
+                                        id: `scheduled-${customer.id}`,
+                                        customerName: customer.name,
+                                        notes: 'Scheduled for today',
+                                        status: 'pending'
+                                    });
+                                } else {
+                                    // Has delivery records, check if any are 'pending'
+                                    customerDeliveries.forEach(d => {
+                                        if (d.status === 'pending') {
+                                            pendingItems.push({
+                                                id: d.id,
+                                                customerName: d.customerName || customer.name,
+                                                notes: d.notes || 'Manual delivery',
+                                                status: 'pending'
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+
+                            if (pendingItems.length === 0) {
                                 return <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No pending deliveries for this date.</div>
                             }
 
-                            return pendingDeliveries.map((delivery, index) => (
+                            return pendingItems.map((item, index) => (
                                 <motion.div
-                                    key={delivery.id}
+                                    key={item.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
@@ -514,11 +557,11 @@ function OrdersBilling() {
                                         <div className={styles.orderMain}>
                                             <div className={styles.orderInfo}>
                                                 <span className={styles.orderId} style={{ backgroundColor: '#e3f2fd', color: '#1565c0' }}>Scheduled</span>
-                                                <span className={styles.orderCustomer}>{delivery.customerName}</span>
+                                                <span className={styles.orderCustomer}>{item.customerName}</span>
                                             </div>
                                             <div className={styles.orderMeta}>
                                                 <span className={styles.orderTotal} style={{ color: '#aaa' }}>
-                                                    {delivery.notes || 'No notes'}
+                                                    {item.notes}
                                                 </span>
                                                 <StatusBadge status="pending" />
                                             </div>

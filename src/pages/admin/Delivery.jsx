@@ -282,7 +282,7 @@ function Delivery() {
                 )
 
                 // Debug log to check why it might be failing
-                console.log('Editing Delivery - Found Order:', originalOrder, { customerId: selectedCustomer.id, date: submissionDate })
+
 
                 if (originalOrder) {
                     // Update the order total
@@ -303,11 +303,11 @@ function Delivery() {
                         notes: deliveryForm.notes || null,
                         customerId: selectedCustomer.id // Ensure balance update logic has customerId
                     })
-                    console.log('Order updated from delivery page')
+
                 } else {
                     // Was likely SKIPPED (so order deleted), now marked delivered again.
                     // We must create a NEW order to register the sale and update balance.
-                    console.log('Editing Delivery - No Order Found (Likely Skipped). Creating new order.')
+
                     const newOrder = await addOrder({
                         customerId: selectedCustomer.id,
                         customerUuid: selectedCustomer.uuid,
@@ -456,19 +456,19 @@ function Delivery() {
                 )
 
                 if (originalOrder) {
-                    console.log('Skipping delivery. Cleaning up order:', originalOrder)
+
 
                     // Revert balance if it was delivered
                     if (originalOrder.status === 'delivered') {
                         await updateOrderStatus(originalOrder.id, 'pending') // Reverts balance
-                        console.log('Order status reverted to pending (Balance Restored)')
+
                     }
 
                     // Delete order
                     await deleteOrder(originalOrder.id)
-                    console.log('Order deleted.')
+
                 } else {
-                    console.log('No associated order found to cleanup for this delivery date.')
+
                 }
 
                 setConfirmModal(prev => ({ ...prev, isOpen: false }))
@@ -517,7 +517,7 @@ function Delivery() {
                 }
 
                 if (orderToDelete) {
-                    console.log('Deleting Delivery. Found Order match:', orderToDelete)
+
                     // 1. Revert Balance (if delivered)
                     if (orderToDelete.status === 'delivered') {
                         await updateOrderStatus(orderToDelete.id, 'pending')

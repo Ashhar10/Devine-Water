@@ -11,34 +11,61 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
 }
 
-.timeToggle {
+.rangeSelector {
     display: flex;
+    gap: var(--space-xs);
     background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    padding: var(--space-xs);
     border-radius: var(--radius-lg);
-    padding: 4px;
+    border: 1px solid var(--glass-border);
 }
 
-.toggleBtn {
-    padding: var(--space-sm) var(--space-lg);
+.presetBtn {
+    padding: var(--space-xs) var(--space-lg);
     background: transparent;
     border: none;
     border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
-.toggleBtn:hover {
+.presetBtn:hover {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
 }
 
-.toggleBtn.active {
-    background: var(--primary-cyan);
+.presetBtn.active {
+    background: linear-gradient(135deg, var(--primary-cyan), var(--primary-teal));
     color: var(--bg-deep-space);
+    font-weight: 600;
+}
+
+.customDates {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 0 var(--space-md);
+}
+
+.customDates span {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.dateInput {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    outline: none;
+    color-scheme: dark;
 }
 
 .actions {

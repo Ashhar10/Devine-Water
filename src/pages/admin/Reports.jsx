@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Download, Calendar, Droplets, DollarSign, Users } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
@@ -8,57 +8,185 @@ import DataChart from '../../components/charts/DataChart'
 import styles from './Reports.module.css'
 
 function Reports() {
+    // State for filtering
+    const [reportPreset, setReportPreset] = useState('monthly') // 'daily', 'weekly', 'monthly', 'custom'
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date()
+        d.setMonth(d.getMonth() - 1)
+        return d.toISOString().split('T')[0]
+    })
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+    const [showDatePicker, setShowDatePicker] = useState(false)
+
     // Get real data from store
     const orders = useDataStore(state => state.orders)
     const investments = useDataStore(state => state.investments)
     const expenditures = useDataStore(state => state.expenditures)
     const customers = useDataStore(state => state.customers)
 
-    // Calculate revenue from orders
+    // Filter data based on date range
+    const filteredOrders = useMemo(() => {
+        return orders.filter(o => {
+            const orderDate = (o.orderDate || o.createdAt)?.split('T')[0]
+            return orderDate >= startDate && orderDate <= endDate
+        })
+    }, [orders, startDate, endDate])
+
+    const filteredExpenditures = useMemo(() => {
+        return expenditures.filter(e => {
+            const expDate = (e.date || e.createdAt)?.split('T')[0]
+            return expDate >= startDate && expDate <= endDate
+        })
+    }, [expenditures, startDate, endDate])
+
+    // Update preset dates
+    const handlePresetChange = (preset) => {
+        setReportPreset(preset)
+        const end = new Date().toISOString().split('T')[0]
+        let start = new Date()
+
+        if (preset === 'daily') {
+            start = new Date()
+        } else if (preset === 'weekly') {
+            start.setDate(start.getDate() - 7)
+        } else if (preset === 'monthly') {
+            start.setMonth(start.getMonth() - 1)
+        }
+
+        if (preset !== 'custom') {
+            setStartDate(start.toISOString().split('T')[0])
+            setEndDate(end)
+            setShowDatePicker(false)
+        } else {
+            setShowDatePicker(true)
+        }
+    }
+
+    const handleExport = () => {
+        if (filteredOrders.length === 0) {
+            alert('No data to export for the selected range.')
+            return
+        }
+
+        // CSV Header
+        const headers = ['Order ID', 'Date', 'Customer', 'Product', 'Qty', 'Total', 'Status', 'Payment']
+
+        // CSV Rows
+        const rows = filteredOrders.map(o => [
+            o.id,
+            o.orderDate || o.createdAt?.split('T')[0],
+            o.customerName,
+            o.items?.map(i => i.productName).join('; ') || 'N/A',
+            o.items?.reduce((sum, i) => sum + i.qty, 0) || 0,
+            o.total,
+            o.status,
+            o.paymentStatus
+        ])
+
+        const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n')
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+
+        link.setAttribute('href', url)
+        link.setAttribute('download', `Devine_Water_Report_${startDate}_to_${endDate}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    const handleCustomerExport = () => {
+        if (customers.length === 0) {
+            alert('No customer data to export.')
+            return
+        }
+
+        // CSV Header for customers
+        const headers = ['Customer ID', 'Name', 'Phone', 'Address', 'Area', 'Total Orders', 'Total Bottles', 'Current Balance', 'Status']
+
+        // CSV Rows
+        const rows = customers.map(c => {
+            const customerOrders = orders.filter(o => o.customerId === c.id)
+            const totalBottles = customerOrders.reduce((sum, o) =>
+                sum + (o.items?.reduce((s, i) => s + i.qty, 0) || 0), 0)
+
+            return [
+                c.id,
+                c.name,
+                c.phone,
+                `"${c.address?.replace(/"/g, '""')}"`, // Quote address to handle commas
+                c.areaId || 'N/A',
+                customerOrders.length,
+                totalBottles,
+                c.currentBalance || 0,
+                c.status
+            ]
+        })
+
+        const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n')
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+
+        link.setAttribute('href', url)
+        link.setAttribute('download', `Devine_Water_Customer_Report.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    // Calculate revenue from filtered orders
     const revenueData = useMemo(() => {
-        const monthly = {}
-        orders.forEach(order => {
+        const daily = {}
+        filteredOrders.forEach(order => {
             if (order.status === 'delivered') {
-                const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
-                monthly[month] = (monthly[month] || 0) + order.total
+                const date = (order.orderDate || order.createdAt)?.split('T')[0]
+                daily[date] = (daily[date] || 0) + order.total
             }
         })
-        return Object.entries(monthly).map(([name, revenue]) => ({ name, revenue }))
-    }, [orders])
+        return Object.entries(daily)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([name, revenue]) => ({ name: name.split('-').slice(1).join('/'), revenue }))
+    }, [filteredOrders])
 
-    // Transform orders data for bottles chart
-    const chartData = useMemo(() => {
-        const monthly = {}
-        orders.forEach(order => {
-            const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
-            const bottles = order.items?.reduce((sum, item) => sum + item.qty, 0) || 0
-            if (!monthly[month]) {
-                monthly[month] = { delivered: 0, total: 0 }
-            }
-            monthly[month].total += bottles
-            if (order.status === 'delivered') {
-                monthly[month].delivered += bottles
-            }
-        })
-        return Object.entries(monthly).map(([name, data]) => ({
-            name,
-            bottles: data.total,
-            delivered: data.delivered
-        }))
-    }, [orders])
-
-    // Calculate totals
+    // Calculate totals based on filtered data
     const totals = useMemo(() => {
-        const totalBottles = orders.reduce((sum, o) =>
+        const totalBottles = filteredOrders.reduce((sum, o) =>
             sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
-        // Fixed: Revenue should be from delivered orders, not investments
-        const totalRevenue = orders.reduce((sum, o) =>
+
+        const totalRevenue = filteredOrders.reduce((sum, o) =>
             o.status === 'delivered' ? sum + (o.total || 0) : sum, 0)
-        const totalExpenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
+
+        const totalExpenses = filteredExpenditures.reduce((sum, exp) => sum + exp.amount, 0)
         const activeCustomers = customers.filter(c => c.status === 'active').length
 
         return { totalBottles, totalRevenue, totalExpenses, activeCustomers }
-    }, [orders, investments, expenditures, customers])
+    }, [filteredOrders, filteredExpenditures, customers])
+
+    // Transform orders data for bottles chart
+    const chartData = useMemo(() => {
+        const daily = {}
+        filteredOrders.forEach(order => {
+            const date = (order.orderDate || order.createdAt)?.split('T')[0]
+            const bottles = order.items?.reduce((sum, item) => sum + item.qty, 0) || 0
+            if (!daily[date]) {
+                daily[date] = { delivered: 0, total: 0 }
+            }
+            daily[date].total += bottles
+            if (order.status === 'delivered') {
+                daily[date].delivered += bottles
+            }
+        })
+        return Object.entries(daily)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([name, data]) => ({
+                name: name.split('-').slice(1).join('/'),
+                bottles: data.total,
+                delivered: data.delivered
+            }))
+    }, [filteredOrders])
 
     // Format numbers
     const formatNumber = (num) => {
@@ -69,8 +197,8 @@ function Reports() {
 
     const summaryStats = [
         {
-            label: 'Total Orders',
-            value: orders.length.toString(),
+            label: 'Orders in Range',
+            value: filteredOrders.length.toString(),
             icon: Droplets,
             color: 'cyan'
         },
@@ -93,12 +221,46 @@ function Reports() {
             {/* Header */}
             <div className={styles.header}>
                 <h2 className={styles.title}>Reports</h2>
+                <div className={styles.rangeSelector}>
+                    <button
+                        className={`${styles.presetBtn} ${reportPreset === 'daily' ? styles.active : ''}`}
+                        onClick={() => handlePresetChange('daily')}
+                    >
+                        Daily
+                    </button>
+                    <button
+                        className={`${styles.presetBtn} ${reportPreset === 'weekly' ? styles.active : ''}`}
+                        onClick={() => handlePresetChange('weekly')}
+                    >
+                        Weekly
+                    </button>
+                    <button
+                        className={`${styles.presetBtn} ${reportPreset === 'monthly' ? styles.active : ''}`}
+                        onClick={() => handlePresetChange('monthly')}
+                    >
+                        Monthly
+                    </button>
+                    {showDatePicker ? (
+                        <div className={styles.customDates}>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.dateInput} />
+                            <span>to</span>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.dateInput} />
+                        </div>
+                    ) : (
+                        <button
+                            className={`${styles.presetBtn} ${reportPreset === 'custom' ? styles.active : ''}`}
+                            onClick={() => handlePresetChange('custom')}
+                        >
+                            Custom
+                        </button>
+                    )}
+                </div>
                 <div className={styles.actions}>
-                    <Button variant="ghost" icon={Calendar} size="sm">
-                        Custom Range
+                    <Button variant="outline" icon={Download} size="sm" onClick={handleCustomerExport}>
+                        Customer Report
                     </Button>
-                    <Button variant="primary" icon={Download} size="sm">
-                        Export Report
+                    <Button variant="primary" icon={Download} size="sm" onClick={handleExport}>
+                        Order Report
                     </Button>
                 </div>
             </div>

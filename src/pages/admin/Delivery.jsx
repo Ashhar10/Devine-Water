@@ -430,9 +430,10 @@ function Delivery() {
                 // Handle Linked Order Cleanup
                 const orders = useDataStore.getState().orders
                 // Find ANY order for this customer today
+                // Find ANY order for this customer today
                 const originalOrder = orders.find(o =>
                     o.customerId === customer.id &&
-                    o.orderDate === todayDate
+                    (o.orderDate === todayDate || o.createdAt?.startsWith(todayDate))
                 )
 
                 if (originalOrder) {

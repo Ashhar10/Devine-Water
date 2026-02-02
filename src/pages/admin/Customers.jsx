@@ -63,6 +63,7 @@ function Customers() {
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
 
     const customers = useDataStore(state => state.customers)
+    const currentUser = useDataStore(state => state.currentUser)
     const products = useDataStore(state => state.products)
     const orders = useDataStore(state => state.orders)
     const deliveries = useDataStore(state => state.deliveries)

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
@@ -216,7 +216,7 @@ function AdminDashboard() {
             icon: Clock,
             color: 'warning',
             prefix: 'Rs ',
-            link: '/admin/customers',
+            link: '/admin/payments',
             linkText: 'Manage Balances'
         }
     ] : []

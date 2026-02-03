@@ -12,7 +12,9 @@ import {
     Check,
     Trash2,
     Edit,
-    Calendar
+    Calendar,
+    Filter,
+    RefreshCw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -22,6 +24,12 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './OrdersBilling.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+const FILTER_MODES = {
+    MONTH: 'month',
+    WEEK: 'week',
+    CUSTOM: 'custom'
+}
 
 function OrdersBilling() {
 
@@ -51,7 +59,39 @@ function OrdersBilling() {
     const [editingOrderId, setEditingOrderId] = useState(null)
     const [orderToDelete, setOrderToDelete] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])  // Date picker like Delivery
+
+    // Date Filter State
+    const [filterMode, setFilterMode] = useState(FILTER_MODES.MONTH)
+    const [customRange, setCustomRange] = useState({
+        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0]
+    })
+
+    const dateRange = useMemo(() => {
+        const now = new Date()
+        let start, end
+
+        if (filterMode === FILTER_MODES.MONTH) {
+            start = new Date(now.getFullYear(), now.getMonth(), 1)
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        } else if (filterMode === FILTER_MODES.WEEK) {
+            const day = now.getDay()
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Start from Monday
+            start = new Date(now.setDate(diff))
+            start.setHours(0, 0, 0, 0)
+            end = new Date(start)
+            end.setDate(end.getDate() + 6)
+            end.setHours(23, 59, 59, 999)
+        } else {
+            start = new Date(customRange.startDate)
+            end = new Date(customRange.endDate)
+            end.setHours(23, 59, 59, 999)
+        }
+
+        return { start, end }
+    }, [filterMode, customRange])
+
+    const selectedDate = useMemo(() => new Date().toISOString().split('T')[0], [])
     const [newOrder, setNewOrder] = useState({
         customerId: '',
         items: [{ productId: '', quantity: 1, returnQuantity: 0 }],
@@ -101,19 +141,19 @@ function OrdersBilling() {
 
     // Filter by tab with date filtering for pending/delivered (using selected date) - Memoized
     const filteredOrders = useMemo(() => {
+        const { start, end } = dateRange
         return orders
             .filter(o => {
-                if (!o.orderDate) return false
+                const date = o.orderDate ? new Date(o.orderDate) : new Date(o.createdAt)
+                const isWithinRange = date >= start && date <= end
+
+                if (!isWithinRange) return false
 
                 if (activeTab === 'delivered') {
-                    const isDelivered = o.status === 'delivered'
-                    const isSelectedDate = o.orderDate === selectedDate
-                    return isDelivered && isSelectedDate
+                    return o.status === 'delivered'
                 }
                 if (activeTab === 'pending') {
-                    const isPending = o.status === 'pending'
-                    const isSelectedDate = o.orderDate === selectedDate
-                    return isPending && isSelectedDate
+                    return o.status === 'pending'
                 }
                 if (activeTab === 'customer') {
                     // Orders placed by customers directly (salesmanId is null)
@@ -126,31 +166,46 @@ function OrdersBilling() {
                 o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 o.id.toLowerCase().includes(searchTerm.toLowerCase())
             )
-    }, [orders, activeTab, selectedDate, filterStatus, searchTerm])
+    }, [orders, activeTab, dateRange, filterStatus, searchTerm])
 
-    // Memoize Pending Items for the selected date - Optimized
+    // Memoize Pending Items for the selected range - Optimized
     const { pendingItems, skippedItems } = useMemo(() => {
         if (activeTab !== 'pending') return { pendingItems: [], skippedItems: [] }
 
+        const { start, end } = dateRange
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        // For scheduling context, we use TODAY if it's within range, otherwise we use the START of the range
+        const focusDate = (today >= start && today <= end) ? new Date() : start
+        const focusDateStr = focusDate.toISOString().split('T')[0]
+
+        const focusDayIndex = focusDate.getDay()
+        const mapping = [6, 0, 1, 2, 3, 4, 5]
+        const focusDay = DAYS_OF_WEEK[mapping[focusDayIndex]]
+
         const scheduledCustomers = customers.filter(c => {
-            const hasDeliveryToday = deliveries.some(d => d.customerId === c.id && (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate)));
+            const hasDeliveryInFocus = deliveries.some(d =>
+                d.customerId === c.id &&
+                (d.deliveryDate === focusDateStr || d.deliveryDate?.startsWith(focusDateStr))
+            );
             const matchesDay = !c.deliveryDays || c.deliveryDays.length === 0 ||
-                c.deliveryDays.some(day => day.toLowerCase() === selectedDay.toLowerCase());
-            return (matchesDay || hasDeliveryToday) && c.status === 'active';
+                c.deliveryDays.some(day => day.toLowerCase() === focusDay.toLowerCase());
+            return (matchesDay || hasDeliveryInFocus) && c.status === 'active';
         });
 
         const pItems = [];
         scheduledCustomers.forEach(customer => {
             const customerDeliveries = deliveries.filter(d =>
                 d.customerId === customer.id &&
-                (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+                (d.deliveryDate === focusDateStr || d.deliveryDate?.startsWith(focusDateStr))
             );
 
             if (customerDeliveries.length === 0) {
                 pItems.push({
                     id: `scheduled-${customer.id}`,
                     customerName: customer.name,
-                    notes: `Scheduled for ${new Date(selectedDate).toLocaleDateString()}`,
+                    notes: `Scheduled for ${focusDate.toLocaleDateString()}`,
                     status: 'pending'
                 });
             } else {
@@ -167,13 +222,14 @@ function OrdersBilling() {
             }
         });
 
+        // Skipped items now respect the WHOLE range
         const sItems = deliveries.filter(d =>
             d.status === 'skipped' &&
-            (d.deliveryDate === selectedDate || d.deliveryDate?.startsWith(selectedDate))
+            new Date(d.deliveryDate) >= start && new Date(d.deliveryDate) <= end
         );
 
         return { pendingItems: pItems, skippedItems: sItems };
-    }, [activeTab, customers, deliveries, selectedDate, selectedDay])
+    }, [activeTab, customers, deliveries, dateRange])
 
 
 
@@ -401,40 +457,67 @@ function OrdersBilling() {
 
     return (
         <div className={styles.orders}>
-            {/* Header */}
-            <div className={styles.header}>
-                <div className={styles.searchWrapper}>
-                    <Search size={18} className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Search orders..."
-                        className={styles.searchInput}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            {/* Unified Filter Bar */}
+            <header className={styles.filterBar}>
+                <div className={styles.filterGroup}>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.MONTH ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.MONTH)}
+                    >
+                        This Month
+                    </button>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.WEEK ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.WEEK)}
+                    >
+                        This Week
+                    </button>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.CUSTOM ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.CUSTOM)}
+                    >
+                        Custom Range
+                    </button>
                 </div>
-                <div className={styles.actions}>
-                    {/* Date Picker (like Delivery panel) */}
-                    <div className={styles.datePickerWrapper}>
-                        <Calendar size={18} className={styles.calendarIcon} />
+
+                {filterMode === FILTER_MODES.CUSTOM && (
+                    <motion.div
+                        className={styles.customDateRange}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
                         <input
                             type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
                             className={styles.dateInput}
+                            value={customRange.startDate}
+                            onChange={(e) => setCustomRange({ ...customRange, startDate: e.target.value })}
                         />
-                    </div>
-                    <select
-                        className={styles.filterSelect}
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
+                        <span className={styles.dateSeparator}>to</span>
+                        <input
+                            type="date"
+                            className={styles.dateInput}
+                            value={customRange.endDate}
+                            onChange={(e) => setCustomRange({ ...customRange, endDate: e.target.value })}
+                        />
+                    </motion.div>
+                )}
+
+                <div className={styles.filterActions}>
+                    <button
+                        className={styles.resetBtn}
+                        onClick={() => {
+                            setFilterMode(FILTER_MODES.MONTH)
+                            setCustomRange({
+                                startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                                endDate: new Date().toISOString().split('T')[0]
+                            })
+                            setSearchTerm('')
+                            setFilterStatus('all')
+                        }}
                     >
-                        <option value="all">All Orders</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
+                        <RefreshCw size={16} />
+                        <span>Reset</span>
+                    </button>
                     <Button variant="primary" icon={Plus} onClick={() => {
                         setIsEditing(false)
                         setEditingOrderId(null)
@@ -443,6 +526,34 @@ function OrdersBilling() {
                     }}>
                         New Order
                     </Button>
+                </div>
+            </header>
+
+            {/* Sub-header with Search and Status Filter */}
+            <div className={styles.subHeader}>
+                <div className={styles.searchWrapper}>
+                    <Search size={18} className={styles.searchIcon} />
+                    <input
+                        type="text"
+                        placeholder="Search by customer name or ID..."
+                        className={styles.searchInput}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                <div className={styles.metaFilters}>
+                    <select
+                        className={styles.filterSelect}
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
             </div>
 
@@ -699,7 +810,7 @@ function OrdersBilling() {
                     <div className={styles.pendingContainer}>
                         {/* Section 1: Scheduled Deliveries */}
                         <div className={styles.sectionHeader} style={{ marginTop: 0 }}>
-                            <h4>Scheduled Deliveries ({new Date(selectedDate).toLocaleDateString()})</h4>
+                            <h4>Scheduled Deliveries ({new Date().toLocaleDateString()})</h4>
                         </div>
                         {pendingItems.length === 0 ? (
                             <div style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', marginBottom: '20px' }}>No pending deliveries for this date.</div>
@@ -763,7 +874,7 @@ function OrdersBilling() {
                                                                 setNewOrder({
                                                                     ...newOrder,
                                                                     customerId: customer.id,
-                                                                    orderDate: selectedDate
+                                                                    orderDate: delivery.deliveryDate?.split('T')[0] || new Date().toISOString().split('T')[0]
                                                                 })
                                                                 setShowNewOrderModal(true)
                                                             }

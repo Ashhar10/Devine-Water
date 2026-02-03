@@ -16,6 +16,12 @@ function StatSlider({ slides = [], interval = 5000 }) {
     const [isPaused, setIsPaused] = useState(false)
 
     useEffect(() => {
+        if (currentIndex >= slides.length && slides.length > 0) {
+            setCurrentIndex(0)
+        }
+    }, [slides.length, currentIndex])
+
+    useEffect(() => {
         if (isPaused || slides.length <= 1) return
 
         const timer = setInterval(() => {
@@ -37,7 +43,9 @@ function StatSlider({ slides = [], interval = 5000 }) {
 
     if (!slides.length) return null
 
-    const currentSlide = slides[currentIndex]
+    const currentSlide = slides[currentIndex] || slides[0]
+    if (!currentSlide) return null
+
     const Icon = currentSlide.icon
 
     return (

@@ -54,12 +54,23 @@ function AdminDashboard() {
             ? areaNames.slice(0, 2).join(', ') + (areaNames.length > 2 ? ` +${areaNames.length - 2}` : '')
             : 'No Routes'
 
-        // Calculate total bottles from orders
-        const totalBottles = orders.reduce((sum, o) =>
-            sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
-        const deliveredBottles = orders
-            .filter(o => o.status === 'delivered')
-            .reduce((sum, o) => sum + (o.items?.reduce((s, item) => s + item.qty, 0) || 0), 0)
+        // Calculate total bottles and group by product for delivered orders
+        const bottlesByProduct = {}
+        let deliveredBottles = 0
+        let totalBottles = 0
+
+        orders.forEach(order => {
+            const orderBottles = order.items?.reduce((s, item) => s + (parseInt(item.qty) || 0), 0) || 0
+            totalBottles += orderBottles
+
+            if (order.status === 'delivered') {
+                deliveredBottles += orderBottles
+                order.items?.forEach(item => {
+                    const name = item.name || 'Unknown Item'
+                    bottlesByProduct[name] = (bottlesByProduct[name] || 0) + (parseInt(item.qty) || 0)
+                })
+            }
+        })
 
         const totalDeliveredOrders = orders.filter(o => o.status === 'delivered').length
 
@@ -95,6 +106,7 @@ function AdminDashboard() {
             areasToDeliver,
             totalBottles,
             deliveredBottles,
+            bottlesByProduct,
             revenue: monthlyRevenue,
             expenses: expenses,
             profit: income - expenses,
@@ -165,6 +177,25 @@ function AdminDashboard() {
         }
     ] : []
 
+    const bottleSlides = useMemo(() => {
+        const pSlides = Object.entries(stats.bottlesByProduct || {}).map(([name, count]) => ({
+            title: `${name} Delivered`,
+            value: count,
+            icon: Droplets,
+            color: 'cyan'
+        }))
+
+        return [
+            ...pSlides,
+            {
+                title: 'Total Bottles Delivered',
+                value: stats.deliveredBottles,
+                icon: Droplets,
+                color: 'teal'
+            }
+        ]
+    }, [stats.bottlesByProduct, stats.deliveredBottles])
+
     const orderSlides = [
         {
             title: 'Total Orders',
@@ -202,14 +233,9 @@ function AdminDashboard() {
                     interval={3000}
                 />
 
-                <KPICard
-                    title="Bottles Delivered"
-                    value={stats.deliveredBottles}
-                    icon={Droplets}
-                    trend="up"
-                    trendValue={8.2}
-                    color="teal"
-                    delay={0.1}
+                <StatSlider
+                    slides={bottleSlides}
+                    interval={2500}
                 />
                 <KPICard
                     title="Active Customers"

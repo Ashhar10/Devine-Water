@@ -12,7 +12,10 @@ import {
     MapPin,
     CheckCircle,
     Clock,
-    User
+    User,
+    Calendar,
+    Filter,
+    RefreshCw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -20,7 +23,14 @@ import KPICard from '../../components/ui/KPICard'
 import StatusBadge from '../../components/ui/StatusBadge'
 import DataChart from '../../components/charts/DataChart'
 import StatSlider from '../../components/dashboard/StatSlider'
+import Button from '../../components/ui/Button'
 import styles from './AdminDashboard.module.css'
+
+const FILTER_MODES = {
+    MONTH: 'month',
+    WEEK: 'week',
+    CUSTOM: 'custom'
+}
 
 function AdminDashboard() {
     // Get raw data from store - stable references
@@ -31,16 +41,69 @@ function AdminDashboard() {
     const expenditures = useDataStore(state => state.expenditures)
     const payments = useDataStore(state => state.payments)
     const areas = useDataStore(state => state.areas)
+    const products = useDataStore(state => state.products)
+
+    const [filterMode, setFilterMode] = useState(FILTER_MODES.MONTH)
+    const [customRange, setCustomRange] = useState({
+        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0]
+    })
+
+    const dateRange = useMemo(() => {
+        const now = new Date()
+        let start, end
+
+        if (filterMode === FILTER_MODES.MONTH) {
+            start = new Date(now.getFullYear(), now.getMonth(), 1)
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        } else if (filterMode === FILTER_MODES.WEEK) {
+            const day = now.getDay()
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Start from Monday
+            start = new Date(now.setDate(diff))
+            start.setHours(0, 0, 0, 0)
+            end = new Date(start)
+            end.setDate(end.getDate() + 6)
+            end.setHours(23, 59, 59, 999)
+        } else {
+            start = new Date(customRange.startDate)
+            end = new Date(customRange.endDate)
+            end.setHours(23, 59, 59, 999)
+        }
+
+        return { start, end }
+    }, [filterMode, customRange])
 
     // Compute stats with useMemo to avoid recalculation
     const stats = useMemo(() => {
+        const { start, end } = dateRange
+
+        const filteredOrders = orders.filter(o => {
+            const date = new Date(o.createdAt || o.orderDate)
+            return date >= start && date <= end
+        })
+
+        const filteredPayments = payments.filter(p => {
+            const date = new Date(p.paymentDate || p.createdAt)
+            return date >= start && date <= end
+        })
+
+        const filteredInvestments = investments.filter(i => {
+            const date = new Date(i.investmentDate || i.createdAt)
+            return date >= start && date <= end
+        })
+
+        const filteredExpenditures = expenditures.filter(e => {
+            const date = new Date(e.date || e.createdAt)
+            return date >= start && date <= end
+        })
+
         const activeCustomers = customers.filter(c => c.status === 'active').length
         const totalOutstanding = customers.reduce((sum, c) => sum + (c.currentBalance || 0), 0)
 
         const todayStr = new Date().toISOString().split('T')[0]
-        const todayOrdersList = orders.filter(o => o.createdAt?.startsWith(todayStr))
+        const todayOrdersList = filteredOrders.filter(o => (o.createdAt || o.orderDate)?.startsWith(todayStr))
         const todayOrders = todayOrdersList.length
-        const pendingOrders = orders.filter(o => o.status === 'pending').length
+        const pendingOrders = filteredOrders.filter(o => o.status === 'pending').length
 
         // Calculate Areas to Deliver (Scheduled for Today)
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -54,12 +117,12 @@ function AdminDashboard() {
             ? areaNames.slice(0, 2).join(', ') + (areaNames.length > 2 ? ` +${areaNames.length - 2}` : '')
             : 'No Routes'
 
-        // Calculate total bottles and group by product for delivered orders
+        // Calculate total bottles and group by product for delivered orders (in filtered range)
         const bottlesByProduct = {}
         let deliveredBottles = 0
         let totalBottles = 0
 
-        orders.forEach(order => {
+        filteredOrders.forEach(order => {
             const orderBottles = order.items?.reduce((s, item) => s + (parseInt(item.qty) || 0), 0) || 0
             totalBottles += orderBottles
 
@@ -72,34 +135,15 @@ function AdminDashboard() {
             }
         })
 
-        const totalDeliveredOrders = orders.filter(o => o.status === 'delivered').length
+        const totalDeliveredOrders = filteredOrders.filter(o => o.status === 'delivered').length
 
-        const income = investments.reduce((sum, inv) => sum + inv.amount, 0)
-        const expenses = expenditures.reduce((sum, exp) => sum + exp.amount, 0)
-
-        // Calculate Monthly Revenue (Cash Flow Basis)
-        // Sum of all 'customer' payments received this month + Investments this month
-        const currentMonth = new Date().getMonth()
-        const currentYear = new Date().getFullYear()
-
-        const monthlyPayments = payments.filter(p => {
-            const pDate = new Date(p.paymentDate)
-            return p.paymentType === 'customer' &&
-                pDate.getMonth() === currentMonth &&
-                pDate.getFullYear() === currentYear
-        }).reduce((sum, p) => sum + parseFloat(p.amount), 0)
-
-        const monthlyInvestments = investments.filter(i => {
-            const iDate = new Date(i.investmentDate || i.createdAt)
-            return iDate.getMonth() === currentMonth &&
-                iDate.getFullYear() === currentYear
-        }).reduce((sum, i) => sum + i.amount, 0)
-
-        const monthlyRevenue = monthlyPayments + monthlyInvestments
+        const income = filteredInvestments.reduce((sum, inv) => sum + inv.amount, 0)
+        const currentMonthRevenue = filteredPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0) + income
+        const expenses = filteredExpenditures.reduce((sum, exp) => sum + exp.amount, 0)
 
         return {
             totalCustomers: activeCustomers,
-            totalOrders: orders.length,
+            totalOrders: filteredOrders.length,
             pendingOrders,
             todayOrders,
             totalDeliveredOrders,
@@ -107,12 +151,12 @@ function AdminDashboard() {
             totalBottles,
             deliveredBottles,
             bottlesByProduct,
-            revenue: monthlyRevenue,
+            revenue: currentMonthRevenue,
             expenses: expenses,
             profit: income - expenses,
             outstanding: totalOutstanding
         }
-    }, [customers, orders, investments, expenditures, payments, areas])
+    }, [customers, orders, investments, expenditures, payments, areas, dateRange])
 
     // Transform orders data for bottles chart
     const bottlesData = useMemo(() => {
@@ -178,12 +222,28 @@ function AdminDashboard() {
     ] : []
 
     const bottleSlides = useMemo(() => {
-        const pSlides = Object.entries(stats.bottlesByProduct || {}).map(([name, count]) => ({
-            title: `${name} Delivered`,
-            value: count,
-            icon: Droplets,
-            color: 'cyan'
-        }))
+        // Create slides ONLY for products that have deliveries > 0 in this range
+        const pSlides = (products || [])
+            .filter(product => (stats.bottlesByProduct?.[product.name] || 0) > 0)
+            .map(product => {
+                const count = stats.bottlesByProduct?.[product.name] || 0
+                return {
+                    title: `${product.name} Delivered`,
+                    value: count,
+                    icon: Droplets,
+                    color: 'cyan'
+                }
+            })
+
+        // If no deliveries at all, return a default slide
+        if (pSlides.length === 0) {
+            return [{
+                title: 'Bottles Delivered',
+                value: 0,
+                icon: Droplets,
+                color: 'teal'
+            }]
+        }
 
         return [
             ...pSlides,
@@ -194,7 +254,7 @@ function AdminDashboard() {
                 color: 'teal'
             }
         ]
-    }, [stats.bottlesByProduct, stats.deliveredBottles])
+    }, [products, stats.bottlesByProduct, stats.deliveredBottles])
 
     const orderSlides = [
         {
@@ -225,6 +285,69 @@ function AdminDashboard() {
 
     return (
         <div className={styles.dashboard}>
+            {/* Date Filters */}
+            <header className={styles.filterBar}>
+                <div className={styles.filterGroup}>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.MONTH ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.MONTH)}
+                    >
+                        This Month
+                    </button>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.WEEK ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.WEEK)}
+                    >
+                        This Week
+                    </button>
+                    <button
+                        className={`${styles.filterBtn} ${filterMode === FILTER_MODES.CUSTOM ? styles.active : ''}`}
+                        onClick={() => setFilterMode(FILTER_MODES.CUSTOM)}
+                    >
+                        Custom Range
+                    </button>
+                </div>
+
+                {filterMode === FILTER_MODES.CUSTOM && (
+                    <motion.div
+                        className={styles.customDateRange}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <input
+                            type="date"
+                            className={styles.dateInput}
+                            value={customRange.startDate}
+                            onChange={(e) => setCustomRange({ ...customRange, startDate: e.target.value })}
+                        />
+                        <span className={styles.dateSeparator}>to</span>
+                        <input
+                            type="date"
+                            className={styles.dateInput}
+                            value={customRange.endDate}
+                            onChange={(e) => setCustomRange({ ...customRange, endDate: e.target.value })}
+                        />
+                    </motion.div>
+                )}
+
+                <div className={styles.filterActions}>
+                    <button
+                        className={styles.resetBtn}
+                        onClick={() => {
+                            setFilterMode(FILTER_MODES.MONTH)
+                            setCustomRange({
+                                startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                                endDate: new Date().toISOString().split('T')[0]
+                            })
+                        }}
+                        title="Reset to current month"
+                    >
+                        <RefreshCw size={16} />
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </header>
+
             {/* KPI Cards */}
             <section className={styles.kpiGrid}>
                 {/* Orders Slider */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import GlassCard from '../ui/GlassCard'
@@ -10,6 +11,7 @@ import styles from './StatSlider.module.css'
  * @param {number} interval - Auto-slide interval in ms (default: 5000)
  */
 function StatSlider({ slides = [], interval = 5000 }) {
+    const navigate = useNavigate()
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isPaused, setIsPaused] = useState(false)
 
@@ -86,7 +88,7 @@ function StatSlider({ slides = [], interval = 5000 }) {
                                     className={styles.actionBtn}
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        window.location.href = currentSlide.link
+                                        navigate(currentSlide.link)
                                     }}
                                 >
                                     {currentSlide.linkText || 'Open Panel'}

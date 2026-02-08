@@ -748,6 +748,8 @@ export const fetchProducts = async () => {
         currentStock: p.current_stock,
         minStockAlert: p.min_stock_alert,
         status: p.status,
+        designations: p.designations || [],
+        visibility: p.visibility || 'public',
         createdAt: p.created_at?.split('T')[0]
     })) || []
 }

@@ -50,6 +50,7 @@ const getEmptyFormData = () => ({
     latitude: null,
     longitude: null,
     areaId: '',
+    status: 'active',
     deliveryDays: [],
     assignedProducts: [],
     requiredBottles: 1,
@@ -427,6 +428,7 @@ function Customers() {
             latitude: customer.latitude || null,
             longitude: customer.longitude || null,
             areaId: customer.areaId || '',
+            status: customer.status || 'active',
             deliveryDays: customer.deliveryDays || [],
             assignedProducts: Array.isArray(customer.assignedProducts)
                 ? customer.assignedProducts
@@ -891,6 +893,24 @@ function Customers() {
                                     required
                                 />
                             </div>
+
+                            {editingCustomer && (
+                                <div className={styles.formGroup}>
+                                    <label>Account Status</label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        style={{
+                                            borderColor: formData.status === 'active' ? '#10b981' : '#ef4444',
+                                            color: formData.status === 'active' ? '#10b981' : '#ef4444',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            )}
 
                             {/* Password field for new customers */}
                             {!editingCustomer && (

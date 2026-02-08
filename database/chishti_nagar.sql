@@ -58,7 +58,7 @@ BEGIN
 
     -- Customer: Anmol Kali (C3)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C3', 'Anmol Kali', 'C3@gmail.com', '0310-4430600', 'Chishti Nagar', v_area_id, {}, 0, 0, -6140.0, -6140.0)
+    VALUES ('C3', 'Anmol Kali', 'C3@gmail.com', '0310-4430600', 'Chishti Nagar', v_area_id, ARRAY[]::text[], 0, 0, -6140.0, -6140.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -78,7 +78,7 @@ BEGIN
 
     -- Customer: Jameel (C4)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C4', 'Jameel', 'C4@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, 0.0, 0.0)
+    VALUES ('C4', 'Jameel', 'C4@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -98,7 +98,7 @@ BEGIN
 
     -- Customer: Veradh (C5)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C5', 'Veradh', 'C5@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Wednesday', 'Thursday', 'Saturday'], 2, 0, 0.0, 0.0)
+    VALUES ('C5', 'Veradh', 'C5@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Wednesday', 'Thursday', 'Saturday'], 2, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -218,7 +218,7 @@ BEGIN
 
     -- Customer: Barira Shahid (C16)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C16', 'Barira Shahid', 'C16@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 1, 0, 0.0, 0.0)
+    VALUES ('C16', 'Barira Shahid', 'C16@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 1, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -398,7 +398,7 @@ BEGIN
 
     -- Customer: Qurban Bhai (C30)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C30', 'Qurban Bhai', 'C30@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -1200.0, -1200.0)
+    VALUES ('C30', 'Qurban Bhai', 'C30@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -1200.0, -1200.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -518,7 +518,7 @@ BEGIN
 
     -- Customer: Danial Alam (C44)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C44', 'Danial Alam', 'C44@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Saturday', 'Tuesday'], 1, 0, 0.0, 0.0)
+    VALUES ('C44', 'Danial Alam', 'C44@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Saturday', 'Tuesday'], 1, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -578,7 +578,7 @@ BEGIN
 
     -- Customer: Naqash (C51)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C51', 'Naqash', 'C51@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -480.0, -480.0)
+    VALUES ('C51', 'Naqash', 'C51@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -480.0, -480.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -658,7 +658,7 @@ BEGIN
 
     -- Customer: Ayaz (C55)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C55', 'Ayaz', 'C55@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Wednesday', 'Thursday', 'Saturday'], 1, 0, -2420.0, -2420.0)
+    VALUES ('C55', 'Ayaz', 'C55@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Wednesday', 'Thursday', 'Saturday'], 1, 0, -2420.0, -2420.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -678,7 +678,7 @@ BEGIN
 
     -- Customer: Owais Naqash (C56)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C56', 'Owais Naqash', 'C56@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Sunday', 'Wednesday'], 0, 0, -560.0, -560.0)
+    VALUES ('C56', 'Owais Naqash', 'C56@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Sunday', 'Wednesday'], 0, 0, -560.0, -560.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -738,7 +738,7 @@ BEGIN
 
     -- Customer: Hassan Tariq (C60)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C60', 'Hassan Tariq', 'C60@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -1360.0, -1360.0)
+    VALUES ('C60', 'Hassan Tariq', 'C60@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 2, 0, -1360.0, -1360.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -798,7 +798,7 @@ BEGIN
 
     -- Customer: Shani (C64)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C64', 'Shani', 'C64@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 0, 0, 0.0, 0.0)
+    VALUES ('C64', 'Shani', 'C64@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 0, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -818,7 +818,7 @@ BEGIN
 
     -- Customer: Masjid (C65)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C65', 'Masjid', 'C65@gmail.com', NULL, 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], 0, 0, 0.0, 0.0)
+    VALUES ('C65', 'Masjid', 'C65@gmail.com', '', 'Chishti Nagar', v_area_id, ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], 0, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,

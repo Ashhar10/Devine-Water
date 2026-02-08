@@ -24,6 +24,7 @@ import {
     TrendingUp,
     User,
     LayoutGrid,
+    ArrowUpDown,
     List,
     Download,
     ChevronDown
@@ -70,6 +71,7 @@ function Customers() {
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
     const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
     const [dateFilter, setDateFilter] = useState('all') // all, current_month, last_month, week, custom
+    const [sortMethod, setSortMethod] = useState('name') // 'name', 'id', 'area_id'
     const [customDates, setCustomDates] = useState({
         start: '',
         end: ''
@@ -148,6 +150,7 @@ function Customers() {
         setEditingCustomer(null)
         setShowAddModal(true)
     }
+
 
     const handleAreaSubmit = async (e) => {
         e.preventDefault()
@@ -239,7 +242,7 @@ function Customers() {
     }
 
     const filteredCustomers = useMemo(() => {
-        return customers.filter(customer => {
+        let result = customers.filter(customer => {
             const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 customer.phone.includes(searchTerm) ||
                 (customer.address && customer.address.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -247,7 +250,34 @@ function Customers() {
             const matchesDate = isDateInRange(customer.createdAt)
             return matchesSearch && matchesDate
         })
-    }, [customers, searchTerm, dateFilter, customDates])
+
+        // Sorting Logic
+        return result.sort((a, b) => {
+            if (sortMethod === 'name') {
+                return a.name.localeCompare(b.name)
+            } else if (sortMethod === 'id') {
+                // Extract numeric part of ID (e.g. C1 -> 1)
+                const numA = parseInt((a.id || '').replace(/\D/g, '')) || 0
+                const numB = parseInt((b.id || '').replace(/\D/g, '')) || 0
+                return numA - numB
+            } else if (sortMethod === 'area_id') {
+                // Sort by Area Name then by ID
+                const areaA = areas.find(area => area.uuid === a.areaId)?.name || ''
+                const areaB = areas.find(area => area.uuid === b.areaId)?.name || ''
+
+                if (areaA !== areaB) {
+                    return areaA.localeCompare(areaB)
+                }
+
+                // If areas are same, sort by ID
+                const numA = parseInt((a.id || '').replace(/\D/g, '')) || 0
+                const numB = parseInt((b.id || '').replace(/\D/g, '')) || 0
+                return numA - numB
+            }
+            return 0
+        })
+
+    }, [customers, searchTerm, dateFilter, customDates, sortMethod, areas])
 
     const filteredAreas = areas.filter(a =>
         a.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -449,6 +479,19 @@ function Customers() {
                             <option value="current_month">This Month</option>
                             <option value="last_month">Last Month</option>
                             <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <div className={styles.dateSelector} style={{ marginLeft: '10px' }}>
+                        <ArrowUpDown size={18} className={styles.filterIcon} />
+                        <select
+                            value={sortMethod}
+                            onChange={(e) => setSortMethod(e.target.value)}
+                            className={styles.filterSelect}
+                        >
+                            <option value="name">Sort by Name</option>
+                            <option value="id">Sort by ID</option>
+                            <option value="area_id">Sort by Area + ID</option>
                         </select>
                     </div>
 

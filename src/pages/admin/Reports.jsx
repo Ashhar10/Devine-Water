@@ -265,9 +265,9 @@ function Reports() {
                             <button onClick={() => handleExportData('excel', 'customers')}>Customers List</button>
                             <button onClick={() => handleExportData('excel', 'vendors')}>Vendors List</button>
                             <div className={styles.menuLabel}>SQL Queries</div>
-                            <button onClick={() => handleExportData('sql', 'all')}>All Tables (Full Dump)</button>
                             <button onClick={() => handleExportData('sql', 'orders')}>Orders Table</button>
                             <button onClick={() => handleExportData('sql', 'customers')}>Customers Table</button>
+                            <button onClick={() => handleExportData('sql', 'vendors')}>Vendors Table</button>
                         </div>
                     </div>
                 </div>

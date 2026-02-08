@@ -520,16 +520,6 @@ function OrdersBilling() {
                         <span>Reset</span>
                     </button>
 
-                    <div className={styles.exportDropdown}>
-                        <Button variant="outline" icon={Download} size="sm">
-                            Export
-                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
-                        </Button>
-                        <div className={styles.dropdownMenu}>
-                            <button onClick={() => handleExportData('excel')}>Excel File</button>
-                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
-                        </div>
-                    </div>
 
                     <Button variant="primary" icon={Plus} onClick={() => {
                         setIsEditing(false)

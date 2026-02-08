@@ -138,7 +138,7 @@ BEGIN
 
     -- Customer: Abdullah Pappu (C29)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C29', 'Abdullah Pappu', 'C29@gmail.com', NULL, 'Mansoor Nagar', v_area_id, ARRAY['Sunday', 'Wednesday'], 2, 0, 0.0, 0.0)
+    VALUES ('C29', 'Abdullah Pappu', 'C29@gmail.com', '', 'Mansoor Nagar', v_area_id, ARRAY['Sunday', 'Wednesday'], 2, 0, 0.0, 0.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -148,7 +148,7 @@ BEGIN
 
     IF v_cust_id IS NOT NULL THEN
         INSERT INTO users (user_id, email, password, name, role, phone, customer_id)
-        VALUES ('C29', 'C29@gmail.com', 'Devine@C29', 'Abdullah Pappu', 'customer', NULL, v_cust_id)
+        VALUES ('C29', 'C29@gmail.com', 'Devine@C29', 'Abdullah Pappu', 'customer', '', v_cust_id)
         ON CONFLICT (user_id) DO UPDATE SET
             email = EXCLUDED.email,
             password = EXCLUDED.password,
@@ -238,7 +238,7 @@ BEGIN
 
     -- Customer: Naeem (C48)
     INSERT INTO customers (customer_id, name, email, phone, address, area_id, delivery_days, required_bottles, outstanding_bottles, opening_balance, current_balance)
-    VALUES ('C48', 'Naeem', 'C48@gmail.com', NULL, 'Mansoor Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 3, 0, -1680.0, -1680.0)
+    VALUES ('C48', 'Naeem', 'C48@gmail.com', '', 'Mansoor Nagar', v_area_id, ARRAY['Monday', 'Thursday', 'Saturday'], 3, 0, -1680.0, -1680.0)
     ON CONFLICT (customer_id) DO UPDATE SET 
         name = EXCLUDED.name,
         phone = EXCLUDED.phone,
@@ -248,7 +248,7 @@ BEGIN
 
     IF v_cust_id IS NOT NULL THEN
         INSERT INTO users (user_id, email, password, name, role, phone, customer_id)
-        VALUES ('C48', 'C48@gmail.com', 'Devine@C48', 'Naeem', 'customer', NULL, v_cust_id)
+        VALUES ('C48', 'C48@gmail.com', 'Devine@C48', 'Naeem', 'customer', '', v_cust_id)
         ON CONFLICT (user_id) DO UPDATE SET
             email = EXCLUDED.email,
             password = EXCLUDED.password,

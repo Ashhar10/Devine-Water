@@ -23,7 +23,6 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Products.module.css'
 
 const BOTTLE_TYPES = ['19L', '6L', '1.5L', '500ML', '330ML', 'Custom']
-const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'Premium'] // Product designations
 
 const CACHE_KEY = 'devine_product_form_cache'
 const getEmptyProductData = () => ({
@@ -52,10 +51,22 @@ function Products() {
 
     const currentUser = useDataStore(state => state.currentUser)
     const products = useDataStore(state => state.products)
+    const users = useDataStore(state => state.users) || []
     const addProduct = useDataStore(state => state.addProduct)
     const updateProduct = useDataStore(state => state.updateProduct)
     const deleteProduct = useDataStore(state => state.deleteProduct)
     const updateProductStock = useDataStore(state => state.updateProductStock)
+
+    // Get unique designations from users
+    const DESIGNATIONS = useMemo(() => {
+        const uniqueDesignations = new Set()
+        users.forEach(user => {
+            if (user.designation && user.designation.trim()) {
+                uniqueDesignations.add(user.designation.trim())
+            }
+        })
+        return Array.from(uniqueDesignations).sort()
+    }, [users])
 
     // Advanced filtering with designation tabs and visibility
     const filteredProducts = useMemo(() => {

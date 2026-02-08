@@ -440,44 +440,14 @@ function Shopkeeper() {
 
             {/* Stats Cards */}
             <div className={styles.statsRow}>
-                {activeTab === 'product' ? (
-                    <>
-                        <GlassCard className={styles.statCard} glow glowColor="cyan">
-                            <div className={styles.statIcon}>
-                                <ArrowDownRight size={24} className={styles.iconIn} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.amountIn.toLocaleString()}</span>
-                                <span className={styles.statLabel}>Amount In</span>
-                            </div>
-                        </GlassCard>
-                        <GlassCard className={styles.statCard}>
-                            <div className={styles.statIcon}>
-                                <ArrowUpRight size={24} className={styles.iconOut} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.amountOut.toLocaleString()}</span>
-                                <span className={styles.statLabel}>Amount Out</span>
-                            </div>
-                        </GlassCard>
-                        <GlassCard className={styles.statCard}>
-                            <div className={styles.statIcon}>
-                                <DollarSign size={24} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.netAmount.toLocaleString()}</span>
-                                <span className={styles.statLabel}>Net Amount</span>
-                            </div>
-                        </GlassCard>
-                    </>
-                ) : (
+                {activeTab === 'Water' ? (
                     <>
                         <GlassCard className={styles.statCard} glow glowColor="cyan">
                             <div className={styles.statIcon}>
                                 <Droplets size={24} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>{stats.totalLiters.toLocaleString()}</span>
+                                <span className={styles.statValue}>{stats.totalLiters?.toLocaleString() || 0}</span>
                                 <span className={styles.statLabel}>Total Liters</span>
                             </div>
                         </GlassCard>
@@ -486,7 +456,7 @@ function Shopkeeper() {
                                 <DollarSign size={24} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.totalRevenue.toLocaleString()}</span>
+                                <span className={styles.statValue}>Rs {stats.totalRevenue?.toLocaleString() || 0}</span>
                                 <span className={styles.statLabel}>Total Revenue</span>
                             </div>
                         </GlassCard>
@@ -495,8 +465,38 @@ function Shopkeeper() {
                                 <TrendingUp size={24} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.avgPrice.toFixed(2)}</span>
+                                <span className={styles.statValue}>Rs {stats.avgPrice?.toFixed(2) || '0.00'}</span>
                                 <span className={styles.statLabel}>Avg Price/Liter</span>
+                            </div>
+                        </GlassCard>
+                    </>
+                ) : (
+                    <>
+                        <GlassCard className={styles.statCard} glow glowColor="cyan">
+                            <div className={styles.statIcon}>
+                                <ArrowDownRight size={24} className={styles.iconIn} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>Rs {stats.amountIn?.toLocaleString() || 0}</span>
+                                <span className={styles.statLabel}>Amount In</span>
+                            </div>
+                        </GlassCard>
+                        <GlassCard className={styles.statCard}>
+                            <div className={styles.statIcon}>
+                                <ArrowUpRight size={24} className={styles.iconOut} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>Rs {stats.amountOut?.toLocaleString() || 0}</span>
+                                <span className={styles.statLabel}>Amount Out</span>
+                            </div>
+                        </GlassCard>
+                        <GlassCard className={styles.statCard}>
+                            <div className={styles.statIcon}>
+                                <DollarSign size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>Rs {stats.netAmount?.toLocaleString() || 0}</span>
+                                <span className={styles.statLabel}>Net Amount</span>
                             </div>
                         </GlassCard>
                     </>
@@ -555,7 +555,7 @@ function Shopkeeper() {
             <div className={viewMode === 'grid' ? styles.entriesGrid : styles.entriesList}>
                 {filteredEntries.length === 0 ? (
                     <div className={styles.emptyState}>
-                        {activeTab === 'product' ? <Store size={48} /> : <Droplets size={48} />}
+                        {activeTab === 'Water' ? <Droplets size={48} /> : <Store size={48} />}
                         <h3>No entries found</h3>
                         <p>Add your first {activeTab === 'Water' ? 'water sale' : `${activeTab} product entry`} to get started</p>
                     </div>

@@ -82,7 +82,7 @@ function Shopkeeper() {
         p.name.toLowerCase().includes('water') ||
         p.name.toLowerCase().includes('aqua')
     )
-    const otherProducts = shopkeeperProducts.filter(p => !waterProducts.includes(p))
+
 
     // Draft persistence for Product Entry
     useEffect(() => {
@@ -650,7 +650,7 @@ function Shopkeeper() {
                                     required
                                 >
                                     <option value="">Choose a product...</option>
-                                    {otherProducts.map(product => (
+                                    {shopkeeperProducts.map(product => (
                                         <option key={product.id} value={product.id}>
                                             {product.name} - Rs {product.price} / {product.bottleType}
                                         </option>

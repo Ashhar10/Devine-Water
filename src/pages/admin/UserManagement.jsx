@@ -22,6 +22,7 @@ const AVAILABLE_SECTIONS = [
     { label: 'Finance', path: '/admin/finance' },
     { label: 'Reports', path: '/admin/reports' },
     { label: 'Staff & Users', path: '/admin/users' },
+    { label: 'Shopkeeper', path: '/admin/shopkeeper' },
     { label: 'Customer Panel', path: '/customer' },
 ]
 

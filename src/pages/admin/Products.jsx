@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -23,7 +23,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Products.module.css'
 
 const BOTTLE_TYPES = ['19L', '6L', '1.5L', '500ML', '330ML', 'Custom']
-const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'General', 'Water']
+const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'Premium'] // Product designations
 
 const CACHE_KEY = 'devine_product_form_cache'
 const getEmptyProductData = () => ({
@@ -33,12 +33,13 @@ const getEmptyProductData = () => ({
     purchasePrice: '',
     currentStock: 0,
     minStockAlert: 10,
-    designation: 'General',
-    visibility: 'public'
+    designations: [], // Array of designation names
+    visibility: 'public' // 'public' or 'private'
 })
 
 function Products() {
     const [searchTerm, setSearchTerm] = useState('')
+    const [activeTab, setActiveTab] = useState('all') // Tab for designation filtering
     const [showAddModal, setShowAddModal] = useState(false)
     const [showStockModal, setShowStockModal] = useState(false)
     const [editingProduct, setEditingProduct] = useState(null)
@@ -49,17 +50,46 @@ function Products() {
     const [viewMode, setViewMode] = useState('grid')
     const [formData, setFormData] = useState(getEmptyProductData())
 
-    const currentUser = useDataStore(state => state.currentUser) // Add this
+    const currentUser = useDataStore(state => state.currentUser)
     const products = useDataStore(state => state.products)
     const addProduct = useDataStore(state => state.addProduct)
     const updateProduct = useDataStore(state => state.updateProduct)
     const deleteProduct = useDataStore(state => state.deleteProduct)
-    const updateProductStock = useDataStore(state => state.updateProductStock) // Fixed syntax error here
+    const updateProductStock = useDataStore(state => state.updateProductStock)
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.bottleType.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    // Advanced filtering with designation tabs and visibility
+    const filteredProducts = useMemo(() => {
+        let filtered = [...products]
+
+        // Apply search filter
+        if (searchTerm) {
+            filtered = filtered.filter(p =>
+                p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.bottleType.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        }
+
+        // Role-based visibility (non-admin users don't see private products)
+        if (currentUser?.role !== 'admin') {
+            filtered = filtered.filter(p => p.visibility !== 'private')
+
+            // Also filter by user's designation if they have one
+            if (currentUser?.designation) {
+                filtered = filtered.filter(p =>
+                    p.designations?.includes(currentUser.designation)
+                )
+            }
+        }
+
+        // Tab filtering (admin can use tabs to filter)
+        if (activeTab !== 'all') {
+            filtered = filtered.filter(p =>
+                p.designations?.includes(activeTab)
+            )
+        }
+
+        return filtered
+    }, [products, searchTerm, activeTab, currentUser])
 
     const stats = {
         total: products.length,
@@ -91,6 +121,18 @@ function Products() {
             }
         }
     }, [formData, showAddModal, editingProduct])
+
+    const handleDesignationToggle = (designation, checked) => {
+        const currentDesignations = formData.designations || []
+        const newDesignations = checked
+            ? [...currentDesignations, designation]
+            : currentDesignations.filter(d => d !== designation)
+
+        setFormData({
+            ...formData,
+            designations: newDesignations
+        })
+    }
 
     const clearDraft = () => {
         localStorage.removeItem(CACHE_KEY)
@@ -148,11 +190,9 @@ function Products() {
             name: product.name,
             bottleType: product.bottleType,
             price: product.price,
-            purchasePrice: product.purchasePrice || 0,
+            purchasePrice: product.purchasePrice || '',
             currentStock: product.currentStock,
-            minStockAlert: product.minStockAlert,
-            designation: product.designation || 'General',
-            visibility: product.visibility || 'public'
+            minStockAlert: product.minStockAlert
         })
         setShowAddModal(true)
     }
@@ -180,14 +220,7 @@ function Products() {
     const resetForm = () => {
         setShowAddModal(false)
         setEditingProduct(null)
-        setFormData({
-            name: '',
-            bottleType: '19L',
-            price: '',
-            purchasePrice: '',
-            currentStock: 0,
-            minStockAlert: 10
-        })
+        setFormData(getEmptyProductData())
     }
 
     return (
@@ -261,6 +294,25 @@ function Products() {
                         <span className={styles.statLabel}>Stock Value</span>
                     </div>
                 </GlassCard>
+            </div>
+
+            {/* Designation Tabs */}
+            <div className={styles.tabs}>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'all' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('all')}
+                >
+                    All Products
+                </button>
+                {DESIGNATIONS.map(designation => (
+                    <button
+                        key={designation}
+                        className={`${styles.tabBtn} ${activeTab === designation ? styles.active : ''}`}
+                        onClick={() => setActiveTab(designation)}
+                    >
+                        {designation}
+                    </button>
+                ))}
             </div>
 
             {/* Products Grid */}
@@ -525,47 +577,51 @@ function Products() {
                                     />
                                 </div>
                             </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label>Designation *</label>
-                                    <select
-                                        value={formData.designation}
-                                        onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                                        required
-                                    >
-                                        {DESIGNATIONS.map(designation => (
-                                            <option key={designation} value={designation}>{designation}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className={styles.formGroup}>
-                                    <label>Price Visibility *</label>
-                                    <div className={styles.radioGroup}>
-                                        <label className={styles.radioLabel}>
+
+                            {/* Designations */}
+                            <div className={styles.formGroup}>
+                                <label>Product Designations</label>
+                                <div className={styles.checkboxGroup}>
+                                    {DESIGNATIONS.map(designation => (
+                                        <label key={designation} className={styles.checkboxLabel}>
                                             <input
-                                                type="radio"
-                                                name="visibility"
-                                                value="public"
-                                                checked={formData.visibility === 'public'}
-                                                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                                                type="checkbox"
+                                                checked={formData.designations?.includes(designation)}
+                                                onChange={(e) => handleDesignationToggle(designation, e.target.checked)}
                                             />
-                                            <span>Public</span>
-                                            <small>Visible to {formData.designation} users</small>
+                                            <span>{designation}</span>
                                         </label>
-                                        <label className={styles.radioLabel}>
-                                            <input
-                                                type="radio"
-                                                name="visibility"
-                                                value="private"
-                                                checked={formData.visibility === 'private'}
-                                                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-                                            />
-                                            <span>Private</span>
-                                            <small>Admin only</small>
-                                        </label>
-                                    </div>
+                                    ))}
                                 </div>
+                                <small className={styles.fieldHelp}>Select which user designations can access this product</small>
                             </div>
+
+                            {/* Visibility Toggle */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.toggleContainer}>
+                                    <span className={styles.toggleLabel}>Product Visibility</span>
+                                    <div className={styles.visibilityToggle}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.visibility === 'private'}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                visibility: e.target.checked ? 'private' : 'public'
+                                            })}
+                                        />
+                                        <span className={styles.toggleSlider}></span>
+                                        <span className={styles.toggleText}>
+                                            {formData.visibility === 'private' ? '🔒 Private (Admin Only)' : '🌐 Public (Designated Users)'}
+                                        </span>
+                                    </div>
+                                </label>
+                                <small className={styles.fieldHelp}>
+                                    {formData.visibility === 'private'
+                                        ? 'Only admins can see this product, regardless of designation'
+                                        : 'Users with matching designation can see this product'}
+                                </small>
+                            </div>
+
                             <Button type="submit" variant="primary" fullWidth>
                                 {editingProduct ? 'Update Product' : 'Add Product'}
                             </Button>

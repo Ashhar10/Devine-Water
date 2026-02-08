@@ -25,7 +25,6 @@ import styles from './Shopkeeper.module.css'
 
 const CACHE_KEY_PRODUCT = 'devine_shopkeeper_product_cache'
 const CACHE_KEY_WATER = 'devine_shopkeeper_water_cache'
-const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'General']
 
 const getEmptyProductForm = () => ({
     productId: '',
@@ -47,7 +46,7 @@ const getEmptyWaterForm = () => ({
 })
 
 function Shopkeeper() {
-    const [activeTab, setActiveTab] = useState('Wholesale') // Changed to designation
+    const [activeTab, setActiveTab] = useState('product') // 'product' or 'water'
     const [searchTerm, setSearchTerm] = useState('')
     const [viewMode, setViewMode] = useState('grid')
     const [showProductModal, setShowProductModal] = useState(false)
@@ -67,18 +66,13 @@ function Shopkeeper() {
     const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
 
-    // Filter products by designation
+    // Filter products
     const waterProducts = products.filter(p =>
-        p.designation === 'Water' ||
         p.bottleType === '19L' || p.bottleType === '6L' ||
         p.name.toLowerCase().includes('water') ||
         p.name.toLowerCase().includes('aqua')
     )
-
-    // Filter products for current active tab
-    const tabProducts = activeTab === 'Water'
-        ? waterProducts
-        : products.filter(p => p.designation === activeTab)
+    const otherProducts = products.filter(p => !waterProducts.includes(p))
 
     // Draft persistence for Product Entry
     useEffect(() => {
@@ -141,17 +135,11 @@ function Shopkeeper() {
     const filteredEntries = useMemo(() => {
         let entries = [...shopkeeperEntries]
 
-        // Filter by tab (designation)
-        if (activeTab === 'Water') {
-            entries = entries.filter(e => e.entryType === 'water_sale')
+        // Filter by tab
+        if (activeTab === 'product') {
+            entries = entries.filter(e => e.entryType === 'product_in' || e.entryType === 'product_out')
         } else {
-            // Filter product entries by designation
-            entries = entries.filter(e => {
-                if (e.entryType === 'water_sale') return false
-                // Check if the entry's product matches the active designation
-                const product = products.find(p => p.id === e.productId)
-                return product?.designation === activeTab
-            })
+            entries = entries.filter(e => e.entryType === 'water_sale')
         }
 
         // Filter by date
@@ -200,17 +188,7 @@ function Shopkeeper() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        if (activeTab === 'Water') {
-            // Water sale stats
-            const totalLiters = filteredEntries.reduce((sum, e) => sum + parseFloat(e.liters || 0), 0)
-            const totalRevenue = filteredEntries.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
-            return {
-                totalLiters,
-                totalRevenue,
-                avgPrice: totalLiters > 0 ? totalRevenue / totalLiters : 0
-            }
-        } else {
-            // Product entry stats (for any designation)
+        if (activeTab === 'product') {
             const amountIn = filteredEntries
                 .filter(e => e.entryType === 'product_in')
                 .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
@@ -222,12 +200,20 @@ function Shopkeeper() {
                 amountOut,
                 netAmount: amountIn - amountOut
             }
+        } else {
+            const totalLiters = filteredEntries.reduce((sum, e) => sum + parseFloat(e.liters || 0), 0)
+            const totalRevenue = filteredEntries.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
+            return {
+                totalLiters,
+                totalRevenue,
+                avgPrice: totalLiters > 0 ? totalRevenue / totalLiters : 0
+            }
         }
     }, [filteredEntries, activeTab])
 
     // Product Sale handlers
     const handleProductSelect = (productId) => {
-        const product = tabProducts.find(p => p.id === productId)
+        const product = otherProducts.find(p => p.id === productId)
         if (product) {
             const amount = productForm.quantity * parseFloat(product.price || 0)
             setProductForm({
@@ -300,7 +286,7 @@ function Shopkeeper() {
     const handleProductSubmit = (e) => {
         e.preventDefault()
 
-        const selectedProduct = tabProducts.find(p => p.id === productForm.productId)
+        const selectedProduct = otherProducts.find(p => p.id === productForm.productId)
 
         const entry = {
             entryType: productForm.type === 'in' ? 'product_in' : 'product_out',
@@ -411,27 +397,24 @@ function Shopkeeper() {
                 <Button
                     variant="primary"
                     icon={Plus}
-                    onClick={() => activeTab === 'Water' ? setShowWaterModal(true) : setShowProductModal(true)}
+                    onClick={() => activeTab === 'product' ? setShowProductModal(true) : setShowWaterModal(true)}
                 >
-                    Add {activeTab === 'Water' ? 'Water Sale' : 'Product Entry'}
+                    Add {activeTab === 'product' ? 'Product Entry' : 'Water Sale'}
                 </Button>
             </div>
 
             {/* Tabs */}
             <div className={styles.tabsContainer}>
-                {DESIGNATIONS.map(designation => (
-                    <button
-                        key={designation}
-                        className={`${styles.tabBtn} ${activeTab === designation ? styles.active : ''}`}
-                        onClick={() => setActiveTab(designation)}
-                    >
-                        <Store size={18} />
-                        {designation}
-                    </button>
-                ))}
                 <button
-                    className={`${styles.tabBtn} ${activeTab === 'Water' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('Water')}
+                    className={`${styles.tabBtn} ${activeTab === 'product' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('product')}
+                >
+                    <Store size={18} />
+                    Product Entry
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'water' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('water')}
                 >
                     <Droplets size={18} />
                     Water Sale
@@ -440,44 +423,14 @@ function Shopkeeper() {
 
             {/* Stats Cards */}
             <div className={styles.statsRow}>
-                {activeTab === 'Water' ? (
-                    <>
-                        <GlassCard className={styles.statCard} glow glowColor="cyan">
-                            <div className={styles.statIcon}>
-                                <Droplets size={24} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>{stats.totalLiters?.toLocaleString() || 0}</span>
-                                <span className={styles.statLabel}>Total Liters</span>
-                            </div>
-                        </GlassCard>
-                        <GlassCard className={styles.statCard}>
-                            <div className={styles.statIcon}>
-                                <DollarSign size={24} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.totalRevenue?.toLocaleString() || 0}</span>
-                                <span className={styles.statLabel}>Total Revenue</span>
-                            </div>
-                        </GlassCard>
-                        <GlassCard className={styles.statCard}>
-                            <div className={styles.statIcon}>
-                                <TrendingUp size={24} />
-                            </div>
-                            <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.avgPrice?.toFixed(2) || '0.00'}</span>
-                                <span className={styles.statLabel}>Avg Price/Liter</span>
-                            </div>
-                        </GlassCard>
-                    </>
-                ) : (
+                {activeTab === 'product' ? (
                     <>
                         <GlassCard className={styles.statCard} glow glowColor="cyan">
                             <div className={styles.statIcon}>
                                 <ArrowDownRight size={24} className={styles.iconIn} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.amountIn?.toLocaleString() || 0}</span>
+                                <span className={styles.statValue}>Rs {stats.amountIn.toLocaleString()}</span>
                                 <span className={styles.statLabel}>Amount In</span>
                             </div>
                         </GlassCard>
@@ -486,7 +439,7 @@ function Shopkeeper() {
                                 <ArrowUpRight size={24} className={styles.iconOut} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.amountOut?.toLocaleString() || 0}</span>
+                                <span className={styles.statValue}>Rs {stats.amountOut.toLocaleString()}</span>
                                 <span className={styles.statLabel}>Amount Out</span>
                             </div>
                         </GlassCard>
@@ -495,8 +448,38 @@ function Shopkeeper() {
                                 <DollarSign size={24} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.netAmount?.toLocaleString() || 0}</span>
+                                <span className={styles.statValue}>Rs {stats.netAmount.toLocaleString()}</span>
                                 <span className={styles.statLabel}>Net Amount</span>
+                            </div>
+                        </GlassCard>
+                    </>
+                ) : (
+                    <>
+                        <GlassCard className={styles.statCard} glow glowColor="cyan">
+                            <div className={styles.statIcon}>
+                                <Droplets size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>{stats.totalLiters.toLocaleString()}</span>
+                                <span className={styles.statLabel}>Total Liters</span>
+                            </div>
+                        </GlassCard>
+                        <GlassCard className={styles.statCard}>
+                            <div className={styles.statIcon}>
+                                <DollarSign size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>Rs {stats.totalRevenue.toLocaleString()}</span>
+                                <span className={styles.statLabel}>Total Revenue</span>
+                            </div>
+                        </GlassCard>
+                        <GlassCard className={styles.statCard}>
+                            <div className={styles.statIcon}>
+                                <TrendingUp size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statValue}>Rs {stats.avgPrice.toFixed(2)}</span>
+                                <span className={styles.statLabel}>Avg Price/Liter</span>
                             </div>
                         </GlassCard>
                     </>
@@ -555,9 +538,9 @@ function Shopkeeper() {
             <div className={viewMode === 'grid' ? styles.entriesGrid : styles.entriesList}>
                 {filteredEntries.length === 0 ? (
                     <div className={styles.emptyState}>
-                        {activeTab === 'Water' ? <Droplets size={48} /> : <Store size={48} />}
+                        {activeTab === 'product' ? <Store size={48} /> : <Droplets size={48} />}
                         <h3>No entries found</h3>
-                        <p>Add your first {activeTab === 'Water' ? 'water sale' : `${activeTab} product entry`} to get started</p>
+                        <p>Add your first {activeTab === 'product' ? 'product entry' : 'water sale'} to get started</p>
                     </div>
                 ) : (
                     filteredEntries.map((entry, index) => (
@@ -651,7 +634,7 @@ function Shopkeeper() {
                                     required
                                 >
                                     <option value="">Choose a product...</option>
-                                    {tabProducts.map(product => (
+                                    {otherProducts.map(product => (
                                         <option key={product.id} value={product.id}>
                                             {product.name} - Rs {product.price} / {product.bottleType}
                                         </option>

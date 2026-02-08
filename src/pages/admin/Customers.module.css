@@ -622,6 +622,31 @@
     padding-left: 36px;
 }
 
+.passwordToggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.passwordToggle:hover {
+    color: #06b6d4;
+}
+
+.inputWithIcon input[type="text"],
+.inputWithIcon input[type="password"] {
+    padding-right: 40px;
+}
+
 .addressInput {
     display: flex;
     gap: 8px;

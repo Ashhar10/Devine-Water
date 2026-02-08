@@ -19,6 +19,7 @@ import {
     Map,
     Settings,
     Eye,
+    EyeOff,
     FileText,
     TrendingUp,
     User,
@@ -64,6 +65,7 @@ function Customers() {
     const [editingCustomer, setEditingCustomer] = useState(null)
     const [gettingLocation, setGettingLocation] = useState(false)
     const [hasCachedData, setHasCachedData] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState(getEmptyFormData())
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
     const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
@@ -854,13 +856,21 @@ function Customers() {
                                     <div className={styles.inputWithIcon}>
                                         <Lock size={16} className={styles.inputIcon} />
                                         <input
-                                            type="password"
+                                            type={showPassword ? "text" : "password"}
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                             placeholder="Password for customer login"
                                             required
                                             minLength={6}
                                         />
+                                        <button
+                                            type="button"
+                                            className={styles.passwordToggle}
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            tabIndex="-1"
+                                        >
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
                                     </div>
                                     <small className={styles.inputHint}>Customer will use phone + this password to login</small>
                                 </div>

@@ -561,25 +561,6 @@ function Delivery() {
         }
     }
 
-    const handleExportData = (type) => {
-        if (deliveryList.length === 0) return alert('No data to export.')
-
-        const exportData = deliveryList.map(d => ({
-            'Customer': d.name,
-            'Phone': d.phone,
-            'Area': d.area_name || d.areaId,
-            'Bottles Delivered': d.bottlesDelivered || 0,
-            'Bottles Received': d.receiveBottles || 0,
-            'Status': d.status,
-            'Outstanding Balance': d.currentBalance || 0
-        }))
-
-        if (type === 'excel') {
-            downloadAsExcel(exportData, `Delivery_Report_${selectedDate || todayDate}`, 'Deliveries')
-        } else {
-            downloadAsSQL(deliveryList, 'deliveries', 'Deliveries_Dump')
-        }
-    }
 
     return (
         <div className={styles.delivery}>
@@ -593,16 +574,6 @@ function Delivery() {
                     <span className={styles.date}>{today}</span>
                 </div>
                 <div className={styles.headerActions}>
-                    <div className={styles.exportDropdown}>
-                        <Button variant="outline" icon={Download} size="sm">
-                            Export
-                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
-                        </Button>
-                        <div className={styles.dropdownMenu}>
-                            <button onClick={() => handleExportData('excel')}>Excel File</button>
-                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
-                        </div>
-                    </div>
                     <Button variant="primary" icon={Plus} onClick={handleAddNewDelivery}>
                         Add Delivery
                     </Button>

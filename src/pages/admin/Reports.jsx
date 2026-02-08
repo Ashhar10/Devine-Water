@@ -45,6 +45,14 @@ function Reports() {
         })
     }, [expenditures, startDate, endDate])
 
+    const purchaseOrders = useDataStore(state => state.purchaseOrders)
+    const filteredPurchases = useMemo(() => {
+        return purchaseOrders.filter(p => {
+            const pDate = (p.date || p.createdAt)?.split('T')[0]
+            return pDate >= startDate && pDate <= endDate
+        })
+    }, [purchaseOrders, startDate, endDate])
+
     // Update preset dates
     const handlePresetChange = (preset) => {
         setReportPreset(preset)
@@ -68,80 +76,6 @@ function Reports() {
         }
     }
 
-    const handleExport = () => {
-        if (filteredOrders.length === 0) {
-            alert('No data to export for the selected range.')
-            return
-        }
-
-        // CSV Header
-        const headers = ['Order ID', 'Date', 'Customer', 'Product', 'Qty', 'Total', 'Status', 'Payment']
-
-        // CSV Rows
-        const rows = filteredOrders.map(o => [
-            o.id,
-            o.orderDate || o.createdAt?.split('T')[0],
-            o.customerName,
-            o.items?.map(i => i.productName).join('; ') || 'N/A',
-            o.items?.reduce((sum, i) => sum + i.qty, 0) || 0,
-            o.total,
-            o.status,
-            o.paymentStatus
-        ])
-
-        const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n')
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement('a')
-        const url = URL.createObjectURL(blob)
-
-        link.setAttribute('href', url)
-        link.setAttribute('download', `Devine_Water_Report_${startDate}_to_${endDate}.csv`)
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-    }
-
-    const handleCustomerExport = () => {
-        if (customers.length === 0) {
-            alert('No customer data to export.')
-            return
-        }
-
-        // CSV Header for customers
-        const headers = ['Customer ID', 'Name', 'Phone', 'Address', 'Area', 'Total Orders', 'Total Bottles', 'Current Balance', 'Status']
-
-        // CSV Rows
-        const rows = customers.map(c => {
-            const customerOrders = orders.filter(o => o.customerId === c.id)
-            const totalBottles = customerOrders.reduce((sum, o) =>
-                sum + (o.items?.reduce((s, i) => s + i.qty, 0) || 0), 0)
-
-            return [
-                c.id,
-                c.name,
-                c.phone,
-                `"${c.address?.replace(/"/g, '""')}"`, // Quote address to handle commas
-                c.areaId || 'N/A',
-                customerOrders.length,
-                totalBottles,
-                c.currentBalance || 0,
-                c.status
-            ]
-        })
-
-        const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n')
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement('a')
-        const url = URL.createObjectURL(blob)
-
-        link.setAttribute('href', url)
-        link.setAttribute('download', `Devine_Water_Customer_Report.csv`)
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-    }
 
     // Calculate revenue from filtered orders
     const revenueData = useMemo(() => {
@@ -202,7 +136,6 @@ function Reports() {
     }
 
     const vendors = useDataStore(state => state.vendors)
-    const purchaseOrders = useDataStore(state => state.purchaseOrders)
 
     const handleExportData = (type, category) => {
         const allData = {
@@ -228,7 +161,7 @@ function Reports() {
                 'Payable': v.currentBalance || 0,
                 'Total Spent': v.totalSpent || 0
             })),
-            purchases: purchaseOrders.map(p => ({
+            purchases: filteredPurchases.map(p => ({
                 'ID': p.po_id,
                 'Invoice': p.invoice_no,
                 'Vendor': vendors.find(v => v.uuid === p.vendorUuid)?.name || 'Unknown',
@@ -239,24 +172,23 @@ function Reports() {
 
         if (category === 'all') {
             if (type === 'excel') {
-                downloadMultipleAsExcel(allData, 'Full_Devine_Water_Report')
+                downloadMultipleAsExcel(allData, `Full_Report_${startDate}_to_${endDate}`)
             } else {
                 downloadMultipleAsSQL({
                     orders: filteredOrders,
                     customers: customers,
                     vendors: vendors,
-                    purchase_orders: purchaseOrders
-                }, 'Full_Database_Dump')
+                    purchase_orders: filteredPurchases
+                }, `Full_Dump_${startDate}_to_${endDate}`)
             }
         } else {
             const data = allData[category]
             if (type === 'excel') {
-                downloadAsExcel(data, `${category}_Report`, category)
+                downloadAsExcel(data, `${category}_Report_${startDate}_to_${endDate}`, category)
             } else {
-                // Mapping back to SQL table names
                 const tableMap = { orders: 'orders', customers: 'customers', vendors: 'vendors', purchases: 'purchase_orders' }
-                const rawDataMap = { orders: filteredOrders, customers: customers, vendors: vendors, purchases: purchaseOrders }
-                downloadAsSQL(rawDataMap[category], tableMap[category], `${category}_Dump`)
+                const rawDataMap = { orders: filteredOrders, customers: customers, vendors: vendors, purchases: filteredPurchases }
+                downloadAsSQL(rawDataMap[category], tableMap[category], `${category}_Dump_${startDate}_to_${endDate}`)
             }
         }
     }

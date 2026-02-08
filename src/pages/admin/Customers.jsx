@@ -251,41 +251,6 @@ function Customers() {
         a.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const handleExportData = (type) => {
-        if (filteredCustomers.length === 0) return alert('No data to export.')
-
-        const exportData = filteredCustomers.map(c => ({
-            'ID': c.id,
-            'Name': c.name,
-            'Phone': c.phone,
-            'Email': c.email || '',
-            'Address': c.address || '',
-            'Area': areas.find(a => a.id === c.areaId)?.name || 'N/A',
-            'Current Balance': c.currentBalance || 0,
-            'Security Deposit': c.securityDeposit || 0,
-            'Status': c.status,
-            'Created At': c.createdAt
-        }))
-
-        if (type === 'excel') {
-            downloadAsExcel(exportData, 'Customers_Report', 'Customers')
-        } else {
-            const dbReadyData = filteredCustomers.map(c => ({
-                customer_id: c.id,
-                name: c.name,
-                phone: c.phone,
-                email: c.email,
-                address: c.address,
-                area_id: c.areaId,
-                current_balance: c.currentBalance,
-                security_deposit: c.securityDeposit,
-                status: c.status,
-                created_at: c.createdAt
-            }))
-            downloadAsSQL(dbReadyData, 'customers', 'Customers_Dump')
-        }
-    }
-
     // Slides Configuration
     const customerSlides = [
         {
@@ -504,18 +469,7 @@ function Customers() {
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <div className={styles.exportDropdown}>
-                        <Button variant="outline" icon={Download} size="sm">
-                            Export
-                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
-                        </Button>
-                        <div className={styles.dropdownMenu}>
-                            <button onClick={() => handleExportData('excel')}>Excel File</button>
-                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
-                        </div>
-                    </div>
-
+                <div className={styles.headerActions}>
                     <div className={styles.viewToggle}>
                         <button
                             className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}

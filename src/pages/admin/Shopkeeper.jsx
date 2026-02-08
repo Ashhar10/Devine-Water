@@ -70,13 +70,19 @@ function Shopkeeper() {
     const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
 
-    // Filter products
-    const waterProducts = products.filter(p =>
+
+
+    // Filter products - show ONLY products assigned to Shopkeeper
+    const shopkeeperProducts = products.filter(p =>
+        p.designations && p.designations.includes('Shopkeeper')
+    )
+
+    const waterProducts = shopkeeperProducts.filter(p =>
         p.bottleType === '19L' || p.bottleType === '6L' ||
         p.name.toLowerCase().includes('water') ||
         p.name.toLowerCase().includes('aqua')
     )
-    const otherProducts = products.filter(p => !waterProducts.includes(p))
+    const otherProducts = shopkeeperProducts.filter(p => !waterProducts.includes(p))
 
     // Draft persistence for Product Entry
     useEffect(() => {

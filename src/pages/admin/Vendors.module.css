@@ -556,3 +556,111 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Ledger Modal Styles */
+.ledgerModal {
+    max-width: 900px !important;
+}
+
+.ledgerInfo {
+    display: flex;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.infoBox {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+}
+
+.ledgerTableContainer {
+    width: 100%;
+    margin-top: var(--space-md);
+    overflow-x: auto;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    max-height: 500px;
+}
+
+.ledgerTable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.ledgerTable th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-deep-space);
+    padding: var(--space-md);
+    text-align: left;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    z-index: 10;
+}
+
+.ledgerTable td {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--glass-border);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+}
+
+.ledgerTable tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.textRight {
+    text-align: right !important;
+}
+
+.debitCol {
+    color: var(--error);
+}
+
+.creditCol {
+    color: var(--success);
+}
+
+.balanceCol {
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.openingRow {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.ledgerLoading,
+.ledgerEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl);
+    color: var(--text-muted);
+    gap: var(--space-md);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 212, 255, 0.1);
+    border-top-color: var(--primary-cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

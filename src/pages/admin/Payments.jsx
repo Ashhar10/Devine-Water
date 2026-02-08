@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -61,6 +62,41 @@ function Payments() {
     const addPayment = useDataStore(state => state.addPayment)
     const updatePayment = useDataStore(state => state.updatePayment)
     const deletePayment = useDataStore(state => state.deletePayment)
+
+    const location = useLocation()
+
+    // Handle pre-selected vendor/customer from navigation state
+    useEffect(() => {
+        if (location.state?.vendorUuid) {
+            setFormData(prev => ({
+                ...prev,
+                paymentType: 'vendor',
+                referenceId: location.state.vendorUuid
+            }))
+
+            const vendor = vendors.find(v => v.uuid === location.state.vendorUuid)
+            if (vendor) {
+                setSelectedBalance(vendor.currentBalance || 0)
+            }
+
+            setShowPaymentModal(true)
+            // Clear state to avoid re-opening on manual refresh but keep navigation history clean
+            // window.history.replaceState({}, document.title)
+        } else if (location.state?.customerUuid) {
+            setFormData(prev => ({
+                ...prev,
+                paymentType: 'customer',
+                referenceId: location.state.customerUuid
+            }))
+
+            const customer = customers.find(c => c.uuid === location.state.customerUuid)
+            if (customer) {
+                setSelectedBalance(customer.currentBalance || 0)
+            }
+
+            setShowPaymentModal(true)
+        }
+    }, [location.state, vendors, customers])
 
     const filteredPayments = payments.filter(p => {
         const matchesType = filterType === 'all' || p.paymentType === filterType

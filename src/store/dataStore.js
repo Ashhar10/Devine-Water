@@ -21,6 +21,7 @@ import {
     addVendorToDb,
     updateVendorInDb,
     deleteVendorFromDb,
+    fetchVendorTransactions,
     addPaymentToDb,
     updatePaymentInDb,
     deletePaymentFromDb,
@@ -1637,6 +1638,19 @@ export const useDataStore = create(
                     console.log('Cleared pending deliveries from localStorage')
                 } catch (error) {
                     console.error('Failed to clear pending deliveries:', error)
+                }
+            },
+
+            getVendorLedger: async (vendorUuid) => {
+                set({ isLoading: true })
+                try {
+                    const transactions = await fetchVendorTransactions(vendorUuid)
+                    return transactions
+                } catch (error) {
+                    console.error('Failed to fetch vendor ledger:', error)
+                    return []
+                } finally {
+                    set({ isLoading: false })
                 }
             },
 

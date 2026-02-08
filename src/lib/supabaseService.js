@@ -1012,6 +1012,51 @@ export const deleteVendorFromDb = async (vendorId) => {
     if (error) handleError(error, 'delete vendor')
 }
 
+export const fetchVendorTransactions = async (vendorUuid) => {
+    if (!isSupabaseConfigured()) return []
+
+    // Fetch payments
+    const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('payment_type', 'vendor')
+        .eq('reference_id', vendorUuid)
+        .order('payment_date', { ascending: true })
+
+    if (paymentsError) handleError(paymentsError, 'fetch vendor payments')
+
+    // Fetch purchase orders (if any)
+    const { data: purchases, error: purchasesError } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .eq('vendor_id', vendorUuid)
+        .order('order_date', { ascending: true })
+
+    // We use a try-catch for purchases in case the table is empty or has issues
+    // though the query should just return empty array.
+
+    const transactions = [
+        ...(payments?.map(p => ({
+            id: p.id,
+            transactionId: p.payment_id,
+            date: p.payment_date,
+            description: `Payment via ${p.payment_mode}${p.remarks ? ': ' + p.remarks : ''}`,
+            type: 'credit', // Reduces payable balance
+            amount: parseFloat(p.amount)
+        })) || []),
+        ...(purchases?.map(p => ({
+            id: p.id,
+            transactionId: p.po_id,
+            date: p.order_date,
+            description: `Purchase Order: ${p.invoice_no}${p.remarks ? ': ' + p.remarks : ''}`,
+            type: 'debit', // Increases payable balance
+            amount: parseFloat(p.total_amount)
+        })) || [])
+    ]
+
+    return transactions.sort((a, b) => new Date(a.date) - new Date(b.date))
+}
+
 // =====================================================
 // BANKS
 // =====================================================

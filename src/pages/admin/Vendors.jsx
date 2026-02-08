@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -39,10 +40,17 @@ function Vendors() {
         remarks: ''
     })
 
+    const navigate = useNavigate()
+    const [showLedgerModal, setShowLedgerModal] = useState(false)
+    const [selectedVendorForLedger, setSelectedVendorForLedger] = useState(null)
+    const [ledgerTransactions, setLedgerTransactions] = useState([])
+    const [isLoadingLedger, setIsLoadingLedger] = useState(false)
+
     const vendors = useDataStore(state => state.vendors)
     const addVendor = useDataStore(state => state.addVendor)
     const updateVendor = useDataStore(state => state.updateVendor)
     const deleteVendor = useDataStore(state => state.deleteVendor)
+    const getVendorLedger = useDataStore(state => state.getVendorLedger)
 
     const filteredVendors = vendors.filter(v =>
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,6 +124,25 @@ function Vendors() {
             openingBalance: 0,
             remarks: ''
         })
+    }
+
+    const handleLedgerClick = async (vendor) => {
+        setSelectedVendorForLedger(vendor)
+        setShowLedgerModal(true)
+        setIsLoadingLedger(true)
+        setLedgerTransactions([]) // Reset
+        try {
+            const data = await getVendorLedger(vendor.uuid)
+            setLedgerTransactions(data)
+        } catch (error) {
+            console.error('Error fetching ledger:', error)
+        } finally {
+            setIsLoadingLedger(false)
+        }
+    }
+
+    const handlePaymentClick = (vendor) => {
+        navigate('/admin/payments', { state: { vendorUuid: vendor.uuid } })
     }
 
     return (
@@ -242,11 +269,11 @@ function Vendors() {
 
                                 <div className={styles.cardFooter}>
                                     <div className={styles.quickActions}>
-                                        <button className={styles.quickBtn}>
+                                        <button className={styles.quickBtn} onClick={() => handleLedgerClick(vendor)}>
                                             <FileText size={14} />
                                             <span>Ledger</span>
                                         </button>
-                                        <button className={styles.quickBtn}>
+                                        <button className={styles.quickBtn} onClick={() => handlePaymentClick(vendor)}>
                                             <Wallet size={14} />
                                             <span>Payment</span>
                                         </button>
@@ -334,8 +361,11 @@ function Vendors() {
                                             <button className={styles.actionBtn} onClick={() => handleEdit(vendor)} title="Edit">
                                                 <Edit size={14} />
                                             </button>
-                                            <button className={styles.actionBtn} title="Ledger">
+                                            <button className={styles.actionBtn} title="Ledger" onClick={() => handleLedgerClick(vendor)}>
                                                 <FileText size={14} />
+                                            </button>
+                                            <button className={styles.actionBtn} title="Payment" onClick={() => handlePaymentClick(vendor)}>
+                                                <Wallet size={14} />
                                             </button>
                                             <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDeleteClick(vendor)} title="Delete">
                                                 <Trash size={14} />
@@ -470,6 +500,92 @@ function Vendors() {
                             >
                                 Delete Vendor
                             </Button>
+                        </div>
+                    </GlassCard>
+                </div>
+            )}
+
+            {/* Vendor Ledger Modal */}
+            {showLedgerModal && selectedVendorForLedger && (
+                <div className={styles.modalOverlay} onClick={() => setShowLedgerModal(false)}>
+                    <GlassCard className={`${styles.modal} ${styles.ledgerModal}`} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>
+                                <FileText size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                                Vendor Ledger: {selectedVendorForLedger.name}
+                            </h3>
+                            <button className={styles.closeBtn} onClick={() => setShowLedgerModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className={styles.ledgerInfo}>
+                            <div className={styles.infoBox}>
+                                <span className={styles.infoLabel}>Opening Balance</span>
+                                <span className={styles.infoValue}>Rs {selectedVendorForLedger.openingBalance?.toLocaleString()}</span>
+                            </div>
+                            <div className={styles.infoBox}>
+                                <span className={styles.infoLabel}>Current Payable</span>
+                                <span className={`${styles.infoValue} ${styles.highlight}`}>Rs {selectedVendorForLedger.currentBalance?.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.ledgerTableContainer}>
+                            {isLoadingLedger ? (
+                                <div className={styles.ledgerLoading}>
+                                    <div className={styles.spinner}></div>
+                                    <p>Loading transaction history...</p>
+                                </div>
+                            ) : ledgerTransactions.length === 0 ? (
+                                <div className={styles.ledgerEmpty}>
+                                    <FileText size={48} />
+                                    <p>No transactions found for this vendor.</p>
+                                </div>
+                            ) : (
+                                <table className={styles.ledgerTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th className={styles.textRight}>Debit (Purchase)</th>
+                                            <th className={styles.textRight}>Credit (Payment)</th>
+                                            <th className={styles.textRight}>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className={styles.openingRow}>
+                                            <td>-</td>
+                                            <td>Opening Balance</td>
+                                            <td className={styles.textRight}>-</td>
+                                            <td className={styles.textRight}>-</td>
+                                            <td className={styles.textRight}>Rs {selectedVendorForLedger.openingBalance?.toLocaleString()}</td>
+                                        </tr>
+                                        {(() => {
+                                            let currentBal = selectedVendorForLedger.openingBalance || 0;
+                                            return ledgerTransactions.map((item, idx) => {
+                                                if (item.type === 'debit') currentBal += item.amount;
+                                                else if (item.type === 'credit') currentBal -= item.amount;
+
+                                                return (
+                                                    <tr key={idx}>
+                                                        <td>{new Date(item.date).toLocaleDateString()}</td>
+                                                        <td>{item.description}</td>
+                                                        <td className={`${styles.textRight} ${styles.debitCol}`}>
+                                                            {item.type === 'debit' ? `Rs ${item.amount.toLocaleString()}` : '-'}
+                                                        </td>
+                                                        <td className={`${styles.textRight} ${styles.creditCol}`}>
+                                                            {item.type === 'credit' ? `Rs ${item.amount.toLocaleString()}` : '-'}
+                                                        </td>
+                                                        <td className={`${styles.textRight} ${styles.balanceCol}`}>
+                                                            Rs {currentBal.toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            });
+                                        })()}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </GlassCard>
                 </div>

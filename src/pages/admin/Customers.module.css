@@ -599,6 +599,22 @@
     background: rgba(0, 0, 0, 0.5);
 }
 
+/* Fix for browser autofill background */
+.formGroup input:-webkit-autofill,
+.formGroup input:-webkit-autofill:hover,
+.formGroup input:-webkit-autofill:focus,
+.formGroup input:-webkit-autofill:active {
+    -webkit-text-fill-color: white !important;
+    -webkit-box-shadow: 0 0 0 30px rgba(0, 0, 0, 0.3) inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.inputWithIcon input:-webkit-autofill~.inputIcon,
+.inputWithIcon input:-webkit-autofill~.passwordToggle {
+    z-index: 10;
+    color: rgba(255, 255, 255, 0.4);
+}
+
 .inputHint {
     display: block;
     font-size: 0.75rem;

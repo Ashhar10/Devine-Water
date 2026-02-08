@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Plus, Search, Edit2, Trash2, X, Shield, UserCheck } from 'lucide-react'
+import { Users, Plus, Search, Edit2, Trash2, X, Shield, UserCheck, RotateCcw } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -25,6 +25,18 @@ const AVAILABLE_SECTIONS = [
     { label: 'Customer Panel', path: '/customer' },
 ]
 
+const CACHE_KEY = 'devine_user_form_cache'
+const getEmptyUserData = () => ({
+    name: '',
+    email: '',
+    password: '',
+    role: 'staff',
+    designation: '',
+    phone: '',
+    customerId: '',
+    permittedSections: []
+})
+
 function UserManagement() {
     const users = useDataStore(state => state.users)
     const customers = useDataStore(state => state.customers)
@@ -36,16 +48,7 @@ function UserManagement() {
     const [activeTab, setActiveTab] = useState('All')
     const [showModal, setShowModal] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        role: 'staff',
-        designation: '',
-        phone: '',
-        customerId: '',
-        permittedSections: []
-    })
+    const [formData, setFormData] = useState(getEmptyUserData())
 
     const filteredUsers = users.filter(user => {
         const matchesSearch =
@@ -57,6 +60,41 @@ function UserManagement() {
 
         return matchesSearch && matchesTab
     })
+
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.name || parsed.email) {
+                    setFormData(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showModal])
+
+    useEffect(() => {
+        if (showModal && !editingUser) {
+            const hasData = formData.name || formData.email || formData.phone
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showModal, editingUser])
+
+    const clearDraft = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setFormData(getEmptyUserData())
+    }
+
+    const resetForm = () => {
+        setFormData(getEmptyUserData())
+        setShowModal(false)
+        setEditingUser(null)
+    }
 
     const handleOpenModal = (user = null) => {
         if (user) {
@@ -73,16 +111,7 @@ function UserManagement() {
             })
         } else {
             setEditingUser(null)
-            setFormData({
-                name: '',
-                email: '',
-                password: '',
-                role: 'staff',
-                designation: '',
-                phone: '',
-                customerId: '',
-                permittedSections: []
-            })
+            // Draft will be loaded by useEffect if it exists and we're not editing
         }
         setShowModal(true)
     }
@@ -98,8 +127,8 @@ function UserManagement() {
             await addUser(formData)
         }
 
-        setShowModal(false)
-        setEditingUser(null)
+        localStorage.removeItem(CACHE_KEY)
+        resetForm()
     }
 
     const handleDelete = async (userId) => {
@@ -239,7 +268,7 @@ function UserManagement() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setShowModal(false)}
+                        onClick={resetForm}
                     >
                         <motion.div
                             className={styles.modal}
@@ -250,9 +279,22 @@ function UserManagement() {
                         >
                             <div className={styles.modalHeader}>
                                 <h2>{editingUser ? 'Edit User' : 'Add New User'}</h2>
-                                <button className={styles.closeBtn} onClick={() => setShowModal(false)}>
-                                    <X size={20} />
-                                </button>
+                                <div className={styles.headerActions} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {!editingUser && (
+                                        <button
+                                            type="button"
+                                            className={styles.clearBtn}
+                                            onClick={clearDraft}
+                                            title="Clear form"
+                                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            <RotateCcw size={18} />
+                                        </button>
+                                    )}
+                                    <button className={styles.closeBtn} onClick={resetForm}>
+                                        <X size={20} />
+                                    </button>
+                                </div>
                             </div>
 
                             <form onSubmit={handleSubmit} className={styles.form}>
@@ -362,7 +404,7 @@ function UserManagement() {
                                 </div>
 
                                 <div className={styles.formActions}>
-                                    <Button variant="ghost" type="button" onClick={() => setShowModal(false)}>
+                                    <Button variant="ghost" type="button" onClick={resetForm}>
                                         Cancel
                                     </Button>
                                     <Button variant="primary" type="submit">

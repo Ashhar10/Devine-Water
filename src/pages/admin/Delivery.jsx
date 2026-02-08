@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -17,7 +17,8 @@ import {
     Plus,
     ChevronDown,
     ChevronUp,
-    Download
+    Download,
+    RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
@@ -28,6 +29,14 @@ import ConfirmationModal from '../../components/common/ConfirmationModal'
 import styles from './Delivery.module.css'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+const CACHE_KEY = 'devine_delivery_form_cache'
+const getEmptyDeliveryData = () => ({
+    bottlesDelivered: '',
+    receiveBottles: '',
+    notes: '',
+    productId: ''
+})
 
 function Delivery() {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -47,12 +56,7 @@ function Delivery() {
     const [showDeliveryModal, setShowDeliveryModal] = useState(false)
     const [selectedCustomer, setSelectedCustomer] = useState(null)
     const [editingDelivery, setEditingDelivery] = useState(null)
-    const [deliveryForm, setDeliveryForm] = useState({
-        bottlesDelivered: '',
-        receiveBottles: '',
-        notes: '',
-        productId: ''
-    })
+    const [deliveryForm, setDeliveryForm] = useState(getEmptyDeliveryData())
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -81,6 +85,39 @@ function Delivery() {
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteOrder = useDataStore(state => state.deleteOrder)
     const deleteDelivery = useDataStore(state => state.deleteDelivery)
+
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showDeliveryModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.productId || parsed.notes) {
+                    setDeliveryForm(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showDeliveryModal])
+
+    useEffect(() => {
+        if (showDeliveryModal && !editingDelivery) {
+            const hasData = deliveryForm.productId || deliveryForm.notes || deliveryForm.bottlesDelivered
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(deliveryForm))
+            }
+        }
+    }, [deliveryForm, showDeliveryModal, editingDelivery])
+
+    const clearDraft = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setDeliveryForm(getEmptyDeliveryData())
+    }
+
+    const resetForm = () => {
+        setDeliveryForm(getEmptyDeliveryData())
+    }
 
     // State for expanded rows
     const [expandedCustomers, setExpandedCustomers] = useState(new Set())
@@ -403,12 +440,18 @@ function Delivery() {
             }
         }
 
-        await processSubmission()
+        try {
+            await processSubmission()
 
-        setShowDeliveryModal(false)
-        setSelectedCustomer(null)
-        setEditingDelivery(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '', deliveryDate: '' })
+            setShowDeliveryModal(false)
+            setSelectedCustomer(null)
+            setEditingDelivery(null)
+            localStorage.removeItem(CACHE_KEY)
+            resetForm()
+        } catch (error) {
+            console.error("Error submitting delivery:", error);
+            alert("Failed to submit delivery. Please try again.");
+        }
     }
 
     const handleSkipDelivery = (customer, deliveryToSkip = null) => {
@@ -539,7 +582,8 @@ function Delivery() {
     const handleCloseModal = () => {
         setShowDeliveryModal(false)
         setSelectedCustomer(null)
-        setDeliveryForm({ bottlesDelivered: '', receiveBottles: '', notes: '', productId: '', deliveryDate: '' })
+        setEditingDelivery(null)
+        resetForm()
     }
 
     const handlePrint = () => {
@@ -571,7 +615,7 @@ function Delivery() {
                         <Truck size={28} />
                         Delivery Routes
                     </h1>
-                    <span className={styles.date}>{today}</span>
+                    <span className={styles.date}>{todayDate}</span>
                 </div>
                 <div className={styles.headerActions}>
                     <Button variant="primary" icon={Plus} onClick={handleAddNewDelivery}>
@@ -920,10 +964,23 @@ function Delivery() {
                     <div className={styles.modalOverlay} onClick={handleCloseModal}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.modalHeader}>
-                                <h2>{editingDelivery ? 'Edit Delivery' : 'Mark Delivery'}</h2>
-                                <button className={styles.closeBtn} onClick={handleCloseModal}>
-                                    <XCircle size={24} />
-                                </button>
+                                <h2>{editingDelivery ? 'Edit Delivery' : `Delivery for ${selectedCustomer?.name}`}</h2>
+                                <div className={styles.headerActions} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {!editingDelivery && (
+                                        <button
+                                            type="button"
+                                            className={styles.clearBtn}
+                                            onClick={clearDraft}
+                                            title="Clear form"
+                                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            <RotateCcw size={18} />
+                                        </button>
+                                    )}
+                                    <button className={styles.closeBtn} onClick={handleCloseModal}>
+                                        <XCircle size={24} />
+                                    </button>
+                                </div>
                             </div>
 
                             {!selectedCustomer ? (

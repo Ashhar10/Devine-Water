@@ -23,6 +23,17 @@ import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './OrdersBilling.module.css'
+import { RotateCcw } from 'lucide-react'
+
+const CACHE_KEY = 'devine_order_form_cache'
+const getEmptyOrderData = () => ({
+    customerId: '',
+    items: [{ productId: '', quantity: 1, returnQuantity: 0 }],
+    salesmanId: '',
+    discount: 0,
+    notes: '',
+    orderDate: new Date().toISOString().split('T')[0]
+})
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -93,14 +104,7 @@ function OrdersBilling() {
     }, [filterMode, customRange])
 
     const selectedDate = useMemo(() => new Date().toISOString().split('T')[0], [])
-    const [newOrder, setNewOrder] = useState({
-        customerId: '',
-        items: [{ productId: '', quantity: 1, returnQuantity: 0 }],
-        salesmanId: '',
-        discount: 0,
-        notes: '',
-        orderDate: new Date().toISOString().split('T')[0]
-    })
+    const [newOrder, setNewOrder] = useState(getEmptyOrderData())
 
     const currentUser = useDataStore(state => state.currentUser) // Add this line
     const orders = useDataStore(state => state.orders)
@@ -129,6 +133,42 @@ function OrdersBilling() {
 
     // Get salesmen (staff/admin) - Memoized
     const salesmen = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users])
+
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showNewOrderModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.customerId || parsed.items?.some(i => i.productId)) {
+                    setNewOrder(parsed)
+                }
+            } catch (error) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showNewOrderModal])
+
+    useEffect(() => {
+        if (showNewOrderModal && !isEditing) {
+            const hasData = newOrder.customerId || newOrder.items?.some(i => i.productId) || newOrder.notes
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(newOrder))
+            }
+        }
+    }, [newOrder, showNewOrderModal, isEditing])
+
+    const clearDraft = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setNewOrder(getEmptyOrderData())
+    }
+
+    const resetForm = () => {
+        setShowNewOrderModal(false)
+        setIsEditing(false)
+        setEditingOrderId(null)
+        setNewOrder(getEmptyOrderData())
+    }
 
 
     // Get selected product for price calculation - Memoized
@@ -1156,23 +1196,25 @@ function OrdersBilling() {
 
             {/* New Order Modal */}
             {showNewOrderModal && (
-                <div className={styles.modalOverlay} onClick={() => {
-                    setShowNewOrderModal(false)
-                    setIsEditing(false)
-                    setEditingOrderId(null)
-                    setNewOrder({ customerId: '', items: [{ productId: '', quantity: 1, returnQuantity: 0 }], salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
-                }}>
+                <div className={styles.modalOverlay} onClick={resetForm}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{isEditing ? 'Edit Order' : 'Create New Order'}</h3>
-                            <button className={styles.closeBtn} onClick={() => {
-                                setShowNewOrderModal(false)
-                                setIsEditing(false)
-                                setEditingOrderId(null)
-                                setNewOrder({ customerId: '', items: [{ productId: '', quantity: 1, returnQuantity: 0 }], salesmanId: '', discount: 0, notes: '', orderDate: new Date().toISOString().split('T')[0] })
-                            }}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions}>
+                                {!isEditing && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearDraft}
+                                        title="Clear form"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleCreateOrder}>
                             <div className={styles.formGroup}>

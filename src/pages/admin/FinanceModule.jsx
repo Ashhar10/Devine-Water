@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     TrendingUp,
@@ -11,7 +11,8 @@ import {
     X,
     Tag,
     Edit,
-    Trash2
+    Trash2,
+    RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -34,6 +35,15 @@ const expenseColors = {
     'Fuel': '#ff6b6b',
 }
 
+const INCOME_CACHE_KEY = 'devine_income_form_cache'
+const EXPENSE_CACHE_KEY = 'devine_expense_form_cache'
+const getEmptyFinanceData = () => ({
+    category: '',
+    amount: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+})
+
 function FinanceModule() {
     const [showIncomeModal, setShowIncomeModal] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
@@ -49,12 +59,7 @@ function FinanceModule() {
         type: 'danger'
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [formData, setFormData] = useState({
-        category: '',
-        amount: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0]  // Default to today
-    })
+    const [formData, setFormData] = useState(getEmptyFinanceData())
     const [categoryFormData, setCategoryFormData] = useState({
         name: '',
         color: '#00d4ff'
@@ -117,6 +122,71 @@ function FinanceModule() {
         return { expenseCategories: categories, totalExpenses: total }
     }, [expenditures])
 
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(INCOME_CACHE_KEY)
+        if (cached && !showIncomeModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.category || parsed.amount) {
+                    setFormData(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(INCOME_CACHE_KEY)
+            }
+        }
+    }, [showIncomeModal])
+
+    useEffect(() => {
+        const cached = localStorage.getItem(EXPENSE_CACHE_KEY)
+        if (cached && !showExpenseModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.category || parsed.amount) {
+                    setFormData(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(EXPENSE_CACHE_KEY)
+            }
+        }
+    }, [showExpenseModal])
+
+    useEffect(() => {
+        if (showIncomeModal && !editingIncome) {
+            const hasData = formData.category || formData.amount || formData.description
+            if (hasData) {
+                localStorage.setItem(INCOME_CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showIncomeModal, editingIncome])
+
+    useEffect(() => {
+        if (showExpenseModal && !editingExpense) {
+            const hasData = formData.category || formData.amount || formData.description
+            if (hasData) {
+                localStorage.setItem(EXPENSE_CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showExpenseModal, editingExpense])
+
+    const clearIncomeDraft = () => {
+        localStorage.removeItem(INCOME_CACHE_KEY)
+        setFormData(getEmptyFinanceData())
+    }
+
+    const clearExpenseDraft = () => {
+        localStorage.removeItem(EXPENSE_CACHE_KEY)
+        setFormData(getEmptyFinanceData())
+    }
+
+    const resetForm = () => {
+        setFormData(getEmptyFinanceData())
+        setShowIncomeModal(false)
+        setShowExpenseModal(false)
+        setEditingIncome(null)
+        setEditingExpense(null)
+    }
+
     const handleAddIncome = async (e) => {
         e.preventDefault()
         setIsSubmitting(true)
@@ -136,9 +206,9 @@ function FinanceModule() {
                     amount: parseFloat(formData.amount),
                 })
             }
-            setShowIncomeModal(false)
             setEditingIncome(null)
-            setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
+            localStorage.removeItem(INCOME_CACHE_KEY)
+            setFormData(getEmptyFinanceData())
         } catch (error) {
             console.error('Error adding/updating income:', error)
             alert('Failed to save income. Please try again.')
@@ -166,9 +236,9 @@ function FinanceModule() {
                     amount: parseFloat(formData.amount),
                 })
             }
-            setShowExpenseModal(false)
             setEditingExpense(null)
-            setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
+            localStorage.removeItem(EXPENSE_CACHE_KEY)
+            setFormData(getEmptyFinanceData())
         } catch (error) {
             console.error('Error adding/updating expense:', error)
             alert('Failed to save expense. Please try again.')
@@ -454,13 +524,26 @@ function FinanceModule() {
 
             {/* Income Modal */}
             {showIncomeModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowIncomeModal(false)}>
+                <div className={styles.modalOverlay} onClick={resetForm}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingIncome ? 'Edit Income' : 'Add Income'}</h3>
-                            <button className={styles.closeBtn} onClick={() => setShowIncomeModal(false)}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {!editingIncome && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearIncomeDraft}
+                                        title="Clear form"
+                                        style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    >
+                                        <RotateCcw size={18} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleAddIncome}>
                             <div className={styles.formGroup}>
@@ -506,13 +589,26 @@ function FinanceModule() {
 
             {/* Expense Modal */}
             {showExpenseModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowExpenseModal(false)}>
+                <div className={styles.modalOverlay} onClick={resetForm}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingExpense ? 'Edit Expense' : 'Add Expense'}</h3>
-                            <button className={styles.closeBtn} onClick={() => setShowExpenseModal(false)}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {!editingExpense && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearExpenseDraft}
+                                        title="Clear form"
+                                        style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    >
+                                        <RotateCcw size={18} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleAddExpense}>
                             <div className={styles.formGroup}>

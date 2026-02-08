@@ -14,7 +14,8 @@ import {
     TrendingUp,
     Clock,
     Edit,
-    Trash2
+    Trash2,
+    RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -30,6 +31,18 @@ const PAYMENT_MODES = [
     { id: 'online', label: 'Online', icon: CreditCard }
 ]
 
+const CACHE_KEY = 'devine_payment_form_cache'
+const getEmptyPaymentData = () => ({
+    paymentType: 'customer',
+    referenceId: '',
+    amount: '',
+    paymentMode: 'cash',
+    bankId: '',
+    chequeNo: '',
+    remarks: '',
+    paymentDate: new Date().toISOString().split('T')[0]
+})
+
 function Payments() {
     const [searchTerm, setSearchTerm] = useState('')
     const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -44,16 +57,7 @@ function Payments() {
     const [filterType, setFilterType] = useState('all')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedBalance, setSelectedBalance] = useState(0)
-    const [formData, setFormData] = useState({
-        paymentType: 'customer',
-        referenceId: '',
-        amount: '',
-        paymentMode: 'cash',
-        bankId: '',
-        chequeNo: '',
-        remarks: '',
-        paymentDate: new Date().toISOString().split('T')[0]  // Default to today
-    })
+    const [formData, setFormData] = useState(getEmptyPaymentData())
 
     const customers = useDataStore(state => state.customers)
     const vendors = useDataStore(state => state.vendors)
@@ -111,6 +115,56 @@ function Payments() {
         todayCount: payments.filter(p => p.paymentDate === new Date().toISOString().split('T')[0]).length
     }), [payments])
 
+    // Draft persistence effects
+    useEffect(() => {
+        // Only load draft if there's no navigation state
+        if (location.state?.vendorUuid || location.state?.customerUuid) return
+
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showPaymentModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.referenceId || parsed.amount) {
+                    setFormData(parsed)
+                    // Also try to restore balance if reference is present
+                    if (parsed.referenceId) {
+                        const referenceList = parsed.paymentType === 'customer' ? customers : vendors
+                        const selected = referenceList.find(r => r.uuid === parsed.referenceId)
+                        setSelectedBalance(selected?.currentBalance || 0)
+                    }
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showPaymentModal, location.state, customers, vendors])
+
+    useEffect(() => {
+        if (showPaymentModal && !editingPayment) {
+            const hasData = formData.referenceId || formData.amount || formData.remarks
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showPaymentModal, editingPayment])
+
+    const clearDraft = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setFormData(getEmptyPaymentData())
+        setSelectedBalance(0)
+    }
+
+    const resetForm = () => {
+        setFormData(getEmptyPaymentData())
+        setSelectedBalance(0)
+        setShowPaymentModal(false)
+        setEditingPayment(null)
+    }
+
+    const handleCloseModal = () => {
+        resetForm()
+    }
+
     // Calculate change amount
     const changeAmount = useMemo(() => {
         const amount = parseFloat(formData.amount) || 0
@@ -148,8 +202,7 @@ function Payments() {
             } else {
                 await addPayment(formData)
             }
-            setShowPaymentModal(false)
-            setEditingPayment(null)
+            localStorage.removeItem(CACHE_KEY)
             resetForm()
         } catch (error) {
             console.error('Error recording payment:', error)
@@ -157,20 +210,6 @@ function Payments() {
         } finally {
             setIsSubmitting(false)
         }
-    }
-
-    const resetForm = () => {
-        setFormData({
-            paymentType: 'customer',
-            referenceId: '',
-            amount: '',
-            paymentMode: 'cash',
-            bankId: '',
-            chequeNo: '',
-            remarks: '',
-            paymentDate: new Date().toISOString().split('T')[0]
-        })
-        setSelectedBalance(0)
     }
 
     const handleEditPayment = (payment) => {
@@ -373,13 +412,26 @@ function Payments() {
 
             {/* Payment Modal */}
             {showPaymentModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowPaymentModal(false)}>
+                <div className={styles.modalOverlay} onClick={handleCloseModal}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3>{editingPayment ? 'Edit Payment' : 'Record Payment'}</h3>
-                            <button className={styles.closeBtn} onClick={() => setShowPaymentModal(false)}>
-                                <X size={20} />
-                            </button>
+                            <h3>{editingPayment ? 'Edit Payment' : 'New Payment'}</h3>
+                            <div className={styles.headerActions} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {!editingPayment && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearDraft}
+                                        title="Clear form"
+                                        style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    >
+                                        <RotateCcw size={18} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={handleCloseModal}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleSubmit}>
                             {/* Payment Type */}

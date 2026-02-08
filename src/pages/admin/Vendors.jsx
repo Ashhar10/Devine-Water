@@ -27,6 +27,17 @@ import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './Vendors.module.css'
 
+const CACHE_KEY = 'devine_vendor_form_cache'
+const getEmptyFormData = () => ({
+    name: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    address: '',
+    openingBalance: 0,
+    remarks: ''
+})
+
 function Vendors() {
     const navigate = useNavigate()
     const [searchTerm, setSearchTerm] = useState('')
@@ -40,15 +51,7 @@ function Vendors() {
         start: '',
         end: ''
     })
-    const [formData, setFormData] = useState({
-        name: '',
-        contactPerson: '',
-        phone: '',
-        email: '',
-        address: '',
-        openingBalance: 0,
-        remarks: ''
-    })
+    const [formData, setFormData] = useState(getEmptyFormData())
 
     const [showAddBillModal, setShowAddBillModal] = useState(false)
     const [selectedVendorForBill, setSelectedVendorForBill] = useState(null)
@@ -66,6 +69,41 @@ function Vendors() {
     const deleteVendor = useDataStore(state => state.deleteVendor)
     const addPurchase = useDataStore(state => state.addPurchase)
     const purchaseOrders = useDataStore(state => state.purchaseOrders)
+
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showAddModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.name || parsed.phone) {
+                    setFormData(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showAddModal])
+
+    useEffect(() => {
+        if (showAddModal && !editingVendor) {
+            const hasData = formData.name || formData.phone || formData.contactPerson
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showAddModal, editingVendor])
+
+    const clearCache = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setFormData(getEmptyFormData())
+    }
+
+    const resetForm = () => {
+        setShowAddModal(false)
+        setEditingVendor(null)
+        setFormData(getEmptyFormData())
+    }
 
     // Helper to check if date is in range
     const isDateInRange = (dateStr) => {
@@ -147,6 +185,7 @@ function Vendors() {
                 await addVendor(formData)
             }
             resetForm()
+            localStorage.removeItem(CACHE_KEY)
         } catch (error) {
             console.error('Error saving vendor:', error)
             alert('Failed to save vendor. Please try again.')
@@ -185,19 +224,6 @@ function Vendors() {
         setShowAddModal(true)
     }
 
-    const resetForm = () => {
-        setShowAddModal(false)
-        setEditingVendor(null)
-        setFormData({
-            name: '',
-            contactPerson: '',
-            phone: '',
-            email: '',
-            address: '',
-            openingBalance: 0,
-            remarks: ''
-        })
-    }
 
     const handleAddBillClick = (vendor) => {
         setSelectedVendorForBill(vendor)
@@ -514,9 +540,21 @@ function Vendors() {
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingVendor ? 'Edit Vendor' : 'Add New Vendor'}</h3>
-                            <button className={styles.closeBtn} onClick={resetForm}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions}>
+                                {!editingVendor && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearCache}
+                                        title="Clear form"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>

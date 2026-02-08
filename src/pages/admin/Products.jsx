@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     Search,
@@ -12,7 +12,8 @@ import {
     AlertTriangle,
     Droplets,
     LayoutGrid,
-    List
+    List,
+    RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -22,6 +23,16 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Products.module.css'
 
 const BOTTLE_TYPES = ['19L', '6L', '1.5L', '500ML', '330ML', 'Custom']
+
+const CACHE_KEY = 'devine_product_form_cache'
+const getEmptyProductData = () => ({
+    name: '',
+    bottleType: '19L',
+    price: '',
+    purchasePrice: '',
+    currentStock: 0,
+    minStockAlert: 10
+})
 
 function Products() {
     const [searchTerm, setSearchTerm] = useState('')
@@ -33,14 +44,7 @@ function Products() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [productToDelete, setProductToDelete] = useState(null)
     const [viewMode, setViewMode] = useState('grid')
-    const [formData, setFormData] = useState({
-        name: '',
-        bottleType: '19L',
-        price: '',
-        purchasePrice: '',
-        currentStock: 0,
-        minStockAlert: 10
-    })
+    const [formData, setFormData] = useState(getEmptyProductData())
 
     const currentUser = useDataStore(state => state.currentUser) // Add this
     const products = useDataStore(state => state.products)
@@ -60,6 +64,36 @@ function Products() {
         lowStock: products.filter(p => p.currentStock <= p.minStockAlert).length,
         totalValue: products.reduce((sum, p) => sum + (p.price * p.currentStock), 0)
     }
+
+    // Draft persistence effects
+    useEffect(() => {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached && !showAddModal) {
+            try {
+                const parsed = JSON.parse(cached)
+                if (parsed.name || parsed.price) {
+                    setFormData(parsed)
+                }
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY)
+            }
+        }
+    }, [showAddModal])
+
+    useEffect(() => {
+        if (showAddModal && !editingProduct) {
+            const hasData = formData.name || formData.price || formData.purchasePrice
+            if (hasData) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(formData))
+            }
+        }
+    }, [formData, showAddModal, editingProduct])
+
+    const clearDraft = () => {
+        localStorage.removeItem(CACHE_KEY)
+        setFormData(getEmptyProductData())
+    }
+
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -81,6 +115,7 @@ function Products() {
                 })
             }
             resetForm()
+            localStorage.removeItem(CACHE_KEY)
         } catch (error) {
             console.error('Failed to save product:', error)
         }
@@ -399,9 +434,21 @@ function Products() {
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
-                            <button className={styles.closeBtn} onClick={resetForm}>
-                                <X size={20} />
-                            </button>
+                            <div className={styles.headerActions}>
+                                {!editingProduct && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearDraft}
+                                        title="Clear form"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetForm}>
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formRow}>

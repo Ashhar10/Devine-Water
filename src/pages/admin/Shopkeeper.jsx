@@ -59,6 +59,10 @@ function Shopkeeper() {
         end: ''
     })
 
+    // Delete dialog state
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [entryToDelete, setEntryToDelete] = useState(null)
+
     const shopkeeperEntries = useDataStore(state => state.shopkeeperEntries) || []
     const products = useDataStore(state => state.products) || []
     const addShopkeeperEntry = useDataStore(state => state.addShopkeeperEntry)
@@ -360,9 +364,16 @@ function Shopkeeper() {
         }
     }
 
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this entry?')) {
-            deleteShopkeeperEntry(id)
+    const handleDelete = (entry) => {
+        setEntryToDelete(entry)
+        setShowDeleteDialog(true)
+    }
+
+    const confirmDelete = async () => {
+        if (entryToDelete) {
+            await deleteShopkeeperEntry(entryToDelete.id)
+            setShowDeleteDialog(false)
+            setEntryToDelete(null)
         }
     }
 
@@ -560,7 +571,7 @@ function Shopkeeper() {
                                         </button>
                                         <button
                                             className={`${styles.actionBtn} ${styles.danger}`}
-                                            onClick={() => handleDelete(entry.id)}
+                                            onClick={() => handleDelete(entry)}
                                         >
                                             <Trash size={14} />
                                         </button>
@@ -798,6 +809,17 @@ function Shopkeeper() {
                     </GlassCard>
                 </div>
             )}
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onConfirm={confirmDelete}
+                title="Delete Entry"
+                message={`Are you sure you want to delete this ${entryToDelete?.entryType === 'water_sale' ? 'water sale' : 'product entry'}? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
+            />
+
         </div>
     )
 }

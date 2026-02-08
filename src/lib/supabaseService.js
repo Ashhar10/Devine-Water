@@ -941,6 +941,7 @@ export const fetchVendors = async () => {
         address: v.address,
         openingBalance: parseFloat(v.opening_balance || 0),
         currentBalance: parseFloat(v.current_balance || 0),
+        totalSpent: parseFloat(v.total_spent || 0),
         remarks: v.remarks,
         status: v.status,
         createdAt: v.created_at?.split('T')[0]
@@ -963,6 +964,7 @@ export const addVendorToDb = async (vendorData) => {
             address: vendorData.address || null,
             opening_balance: vendorData.openingBalance || 0,
             current_balance: vendorData.openingBalance || 0,
+            total_spent: 0,
             remarks: vendorData.remarks || null,
             status: 'active'
         })
@@ -990,6 +992,7 @@ export const updateVendorInDb = async (vendorId, updates) => {
     if (updates.email !== undefined) dbUpdates.email = updates.email
     if (updates.address !== undefined) dbUpdates.address = updates.address
     if (updates.currentBalance !== undefined) dbUpdates.current_balance = updates.currentBalance
+    if (updates.totalSpent !== undefined) dbUpdates.total_spent = updates.totalSpent
     if (updates.remarks !== undefined) dbUpdates.remarks = updates.remarks
     if (updates.status) dbUpdates.status = updates.status
 
@@ -1018,9 +1021,12 @@ export const addPurchaseToDb = async (purchaseData) => {
     // Generate po_id if not provided
     const po_id = `PO-${Date.now()}`
 
+    // Generate auto invoice number if not provided
+    const autoInvoiceNo = purchaseData.invoiceNo || `V-INV-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}`
+
     const dbData = {
         po_id,
-        invoice_no: purchaseData.invoiceNo || `INV-${Date.now()}`,
+        invoice_no: autoInvoiceNo,
         bill_book_no: purchaseData.billBookNo || null,
         vendor_id: purchaseData.vendorUuid,
         order_date: purchaseData.date || new Date().toISOString().split('T')[0],

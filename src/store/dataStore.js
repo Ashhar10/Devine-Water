@@ -1652,7 +1652,11 @@ export const useDataStore = create(
                         const vendor = get().vendors.find(v => v.uuid === data.vendorUuid)
                         if (vendor) {
                             const newBalance = (vendor.currentBalance || 0) + parseFloat(data.amount)
-                            await get().updateVendor(vendor.id, { currentBalance: newBalance })
+                            const newTotalSpent = (vendor.totalSpent || 0) + parseFloat(data.amount)
+                            await get().updateVendor(vendor.id, {
+                                currentBalance: newBalance,
+                                totalSpent: newTotalSpent
+                            })
                         }
                         // Update purchaseOrders in store
                         set(state => ({

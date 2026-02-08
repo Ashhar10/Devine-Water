@@ -199,10 +199,12 @@ function Vendors() {
 
     const handleAddBillClick = (vendor) => {
         setSelectedVendorForBill(vendor)
+        // Auto-generate invoice number
+        const autoInv = `V-INV-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}`
         setBillForm({
             amount: '',
             date: new Date().toISOString().split('T')[0],
-            invoiceNo: '',
+            invoiceNo: autoInv,
             billBookNo: '',
             remarks: ''
         })
@@ -378,7 +380,11 @@ function Vendors() {
                                 <div className={styles.balanceSection}>
                                     <div className={styles.balanceItem}>
                                         <span className={styles.balanceLabel}>Total Spent ({dateFilter === 'all' ? 'Overall' : 'Selected Period'})</span>
-                                        <span className={styles.balanceValue}>Rs {vendorStatsMap[vendor.uuid]?.spent.toLocaleString() || 0}</span>
+                                        <span className={styles.balanceValue}>
+                                            Rs {dateFilter === 'all'
+                                                ? (vendor.totalSpent || 0).toLocaleString()
+                                                : (vendorStatsMap[vendor.uuid]?.spent || 0).toLocaleString()}
+                                        </span>
                                     </div>
                                     <div className={styles.balanceItem}>
                                         <span className={styles.balanceLabel}>Payable Balance</span>
@@ -468,7 +474,11 @@ function Vendors() {
                                         <div className={styles.tableBalanceInfo}>
                                             <div className={styles.tableBalanceItem}>
                                                 <span className={styles.tableLabel}>Spent:</span>
-                                                <span>Rs {vendorStatsMap[vendor.uuid]?.spent.toLocaleString() || 0}</span>
+                                                <span>
+                                                    Rs {dateFilter === 'all'
+                                                        ? (vendor.totalSpent || 0).toLocaleString()
+                                                        : (vendorStatsMap[vendor.uuid]?.spent || 0).toLocaleString()}
+                                                </span>
                                             </div>
                                             <div className={styles.tableBalanceItem}>
                                                 <span className={styles.tableLabel}>Payable:</span>

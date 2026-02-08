@@ -353,16 +353,30 @@ function Shopkeeper() {
 
     const handleEdit = (entry) => {
         setEditingEntry(entry)
+
         if (entry.entryType === 'water_sale') {
+            // Determine if it's a custom entry or a product-based one
+            // If productId exists, try to find it in waterProducts. If not found (maybe deleted), or no productId, treat as custom/manual if possible
+            // But for now, if productId exists, use it. If not, check if it matches a known product by name/liters or default to custom.
+
+            // Simple logic: if productId is set, use it. If null, it's likely custom.
+            const isCustom = !entry.productId
+
             setWaterForm({
+                productId: entry.productId || 'custom',
+                customLiters: isCustom ? entry.liters : '',
                 liters: entry.liters,
+                unitPrice: entry.unitPrice || (entry.liters > 0 ? entry.amount / entry.liters : 0),
                 amount: entry.amount,
                 remarks: entry.remarks || ''
             })
             setShowWaterModal(true)
         } else {
             setProductForm({
+                productId: entry.productId || '',
                 productName: entry.productName,
+                quantity: entry.quantity || 1,
+                unitPrice: entry.unitPrice || (entry.quantity > 0 ? entry.amount / entry.quantity : 0),
                 amount: entry.amount,
                 type: entry.entryType === 'product_in' ? 'in' : 'out',
                 remarks: entry.remarks || ''

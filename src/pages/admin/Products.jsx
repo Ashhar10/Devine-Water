@@ -51,22 +51,13 @@ function Products() {
 
     const currentUser = useDataStore(state => state.currentUser)
     const products = useDataStore(state => state.products)
-    const users = useDataStore(state => state.users) || []
     const addProduct = useDataStore(state => state.addProduct)
     const updateProduct = useDataStore(state => state.updateProduct)
     const deleteProduct = useDataStore(state => state.deleteProduct)
     const updateProductStock = useDataStore(state => state.updateProductStock)
 
-    // Get unique designations from users
-    const DESIGNATIONS = useMemo(() => {
-        const uniqueDesignations = new Set()
-        users.forEach(user => {
-            if (user.designation && user.designation.trim()) {
-                uniqueDesignations.add(user.designation.trim())
-            }
-        })
-        return Array.from(uniqueDesignations).sort()
-    }, [users])
+    // Product designations - simplified to only relevant ones
+    const DESIGNATIONS = ['Shopkeeper', 'Delivery Boy']
 
     // Advanced filtering with designation tabs and visibility
     const filteredProducts = useMemo(() => {

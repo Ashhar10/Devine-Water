@@ -476,7 +476,7 @@ function Shopkeeper() {
                                 <TrendingUp size={24} />
                             </div>
                             <div className={styles.statInfo}>
-                                <span className={styles.statValue}>Rs {stats.avgPrice.toFixed(2)}</span>
+                                <span className={styles.statValue}>Rs {(stats.avgPrice || 0).toFixed(2)}</span>
                                 <span className={styles.statLabel}>Avg Price/Liter</span>
                             </div>
                         </GlassCard>
@@ -668,13 +668,13 @@ function Shopkeeper() {
                                 <input
                                     type="number"
                                     step="0.01"
-                                    value={productForm.amount.toFixed(2)}
+                                    value={(productForm.amount || 0).toFixed(2)}
                                     readOnly
                                     className={styles.readOnlyInput}
                                     placeholder="0.00"
                                 />
                                 <small className={styles.helpText}>
-                                    Calculated: {productForm.quantity} × Rs {productForm.unitPrice.toFixed(2)}
+                                    Calculated: {productForm.quantity || 0} × Rs {(productForm.unitPrice || 0).toFixed(2)}
                                 </small>
                             </div>
                             <div className={styles.formGroup}>
@@ -750,7 +750,7 @@ function Shopkeeper() {
                                         required
                                     />
                                     <small className={styles.helpText}>
-                                        Avg price: Rs {waterForm.unitPrice.toFixed(2)}/liter
+                                        Avg price: Rs {(waterForm.unitPrice || 0).toFixed(2)}/liter
                                     </small>
                                 </div>
                             )}
@@ -761,7 +761,7 @@ function Shopkeeper() {
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={waterForm.liters.toFixed(2)}
+                                        value={(waterForm.liters || 0).toFixed(2)}
                                         readOnly
                                         className={styles.readOnlyInput}
                                         placeholder="0.00"
@@ -772,7 +772,7 @@ function Shopkeeper() {
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={waterForm.amount.toFixed(2)}
+                                        value={(waterForm.amount || 0).toFixed(2)}
                                         readOnly
                                         className={styles.readOnlyInput}
                                         placeholder="0.00"

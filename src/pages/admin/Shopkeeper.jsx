@@ -74,7 +74,7 @@ function Shopkeeper() {
 
     // Filter products - show ONLY products assigned to Shopkeeper
     const shopkeeperProducts = products.filter(p =>
-        p.designations && p.designations.includes('Shopkeeper')
+        p.designations && Array.isArray(p.designations) && p.designations.includes('Shopkeeper')
     )
 
     const waterProducts = shopkeeperProducts.filter(p =>

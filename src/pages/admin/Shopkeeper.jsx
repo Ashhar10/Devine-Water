@@ -223,7 +223,7 @@ function Shopkeeper() {
 
     // Product Sale handlers
     const handleProductSelect = (productId) => {
-        const product = otherProducts.find(p => p.id === productId)
+        const product = shopkeeperProducts.find(p => p.id === productId)
         if (product) {
             const amount = productForm.quantity * parseFloat(product.price || 0)
             setProductForm({
@@ -296,7 +296,7 @@ function Shopkeeper() {
     const handleProductSubmit = (e) => {
         e.preventDefault()
 
-        const selectedProduct = otherProducts.find(p => p.id === productForm.productId)
+        const selectedProduct = shopkeeperProducts.find(p => p.id === productForm.productId)
 
         const entry = {
             entryType: productForm.type === 'in' ? 'product_in' : 'product_out',

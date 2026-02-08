@@ -819,7 +819,7 @@ export const deleteProductFromDb = async (productId) => {
     const { error } = await supabase
         .from('products')
         .delete()
-        .eq('product_id', productId)
+        .eq('id', productId) // Use UUID column 'id'
 
     if (error) handleError(error, 'delete product')
 }

@@ -412,3 +412,33 @@
         grid-template-columns: 1fr;
     }
 }
+
+.passwordInputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.passwordInputWrapper input {
+    width: 100%;
+    padding-right: 40px;
+    /* Space for the eye icon */
+}
+
+.passwordToggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+    color: var(--primary);
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Plus, Search, Edit2, Trash2, X, Shield, UserCheck, RotateCcw } from 'lucide-react'
+import { Users, Plus, Search, Edit2, Trash2, X, Shield, UserCheck, RotateCcw, Eye, EyeOff } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -50,6 +50,7 @@ function UserManagement() {
     const [showModal, setShowModal] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
     const [formData, setFormData] = useState(getEmptyUserData())
+    const [showPassword, setShowPassword] = useState(false)
 
     const filteredUsers = users.filter(user => {
         const matchesSearch =
@@ -320,13 +321,22 @@ function UserManagement() {
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>{editingUser ? 'New Password (leave blank to keep)' : 'Password *'}</label>
-                                        <input
-                                            type="password"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            required={!editingUser}
-                                            minLength={6}
-                                        />
+                                        <div className={styles.passwordInputWrapper}>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                required={!editingUser}
+                                                minLength={6}
+                                            />
+                                            <button
+                                                type="button"
+                                                className={styles.passwordToggle}
+                                                onClick={() => setShowPassword(!showPassword)}
+                                            >
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>Phone</label>

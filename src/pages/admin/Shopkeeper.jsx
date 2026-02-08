@@ -21,6 +21,7 @@ import {
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Shopkeeper.module.css'
 
 const CACHE_KEY_PRODUCT = 'devine_shopkeeper_product_cache'

@@ -21,7 +21,7 @@ import {
     addVendorToDb,
     updateVendorInDb,
     deleteVendorFromDb,
-    fetchVendorTransactions,
+    addPurchaseToDb,
     addPaymentToDb,
     updatePaymentInDb,
     deletePaymentFromDb,
@@ -1641,14 +1641,22 @@ export const useDataStore = create(
                 }
             },
 
-            getVendorLedger: async (vendorUuid) => {
+            addPurchase: async (data) => {
                 set({ isLoading: true })
                 try {
-                    const transactions = await fetchVendorTransactions(vendorUuid)
-                    return transactions
+                    const dbPurchase = await addPurchaseToDb(data)
+                    if (dbPurchase) {
+                        // Update vendor balance in store
+                        const vendor = get().vendors.find(v => v.uuid === data.vendorUuid)
+                        if (vendor) {
+                            const newBalance = (vendor.currentBalance || 0) + parseFloat(data.amount)
+                            await get().updateVendor(vendor.id, { currentBalance: newBalance })
+                        }
+                        return dbPurchase
+                    }
                 } catch (error) {
-                    console.error('Failed to fetch vendor ledger:', error)
-                    return []
+                    console.error('Failed to add purchase:', error)
+                    throw error
                 } finally {
                     set({ isLoading: false })
                 }

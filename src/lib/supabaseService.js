@@ -1012,49 +1012,34 @@ export const deleteVendorFromDb = async (vendorId) => {
     if (error) handleError(error, 'delete vendor')
 }
 
-export const fetchVendorTransactions = async (vendorUuid) => {
-    if (!isSupabaseConfigured()) return []
+export const addPurchaseToDb = async (purchaseData) => {
+    if (!isSupabaseConfigured()) return null
 
-    // Fetch payments
-    const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('payment_type', 'vendor')
-        .eq('reference_id', vendorUuid)
-        .order('payment_date', { ascending: true })
+    // Generate po_id if not provided
+    const po_id = `PO-${Date.now()}`
 
-    if (paymentsError) handleError(paymentsError, 'fetch vendor payments')
+    const dbData = {
+        po_id,
+        invoice_no: purchaseData.invoiceNo || `INV-${Date.now()}`,
+        bill_book_no: purchaseData.billBookNo || null,
+        vendor_id: purchaseData.vendorUuid,
+        order_date: purchaseData.date || new Date().toISOString().split('T')[0],
+        total_amount: parseFloat(purchaseData.amount) || 0,
+        remarks: purchaseData.remarks || '',
+        status: 'received',
+        payment_status: 'unpaid'
+    }
 
-    // Fetch purchase orders (if any)
-    const { data: purchases, error: purchasesError } = await supabase
-        .from('purchase_orders')
-        .select('*')
-        .eq('vendor_id', vendorUuid)
-        .order('order_date', { ascending: true })
+    const { data, error } = await supabase.from('purchase_orders').insert(dbData).select().single()
+    if (error) {
+        handleError(error, 'add purchase order')
+        return null
+    }
 
-    // We use a try-catch for purchases in case the table is empty or has issues
-    // though the query should just return empty array.
+    // Update vendor balance via RPC if it exists, or handle manually
+    // Since we don't have update_vendor_balance RPC yet (from earlier check), we'll do it via updateVendorInDb in store
 
-    const transactions = [
-        ...(payments?.map(p => ({
-            id: p.id,
-            transactionId: p.payment_id,
-            date: p.payment_date,
-            description: `Payment via ${p.payment_mode}${p.remarks ? ': ' + p.remarks : ''}`,
-            type: 'credit', // Reduces payable balance
-            amount: parseFloat(p.amount)
-        })) || []),
-        ...(purchases?.map(p => ({
-            id: p.id,
-            transactionId: p.po_id,
-            date: p.order_date,
-            description: `Purchase Order: ${p.invoice_no}${p.remarks ? ': ' + p.remarks : ''}`,
-            type: 'debit', // Increases payable balance
-            amount: parseFloat(p.total_amount)
-        })) || [])
-    ]
-
-    return transactions.sort((a, b) => new Date(a.date) - new Date(b.date))
+    return data
 }
 
 // =====================================================

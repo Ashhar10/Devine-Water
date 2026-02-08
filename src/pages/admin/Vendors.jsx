@@ -24,6 +24,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './Vendors.module.css'
 
 function Vendors() {
+    const navigate = useNavigate()
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
     const [editingVendor, setEditingVendor] = useState(null)
@@ -40,17 +41,21 @@ function Vendors() {
         remarks: ''
     })
 
-    const navigate = useNavigate()
-    const [showLedgerModal, setShowLedgerModal] = useState(false)
-    const [selectedVendorForLedger, setSelectedVendorForLedger] = useState(null)
-    const [ledgerTransactions, setLedgerTransactions] = useState([])
-    const [isLoadingLedger, setIsLoadingLedger] = useState(false)
+    const [showAddBillModal, setShowAddBillModal] = useState(false)
+    const [selectedVendorForBill, setSelectedVendorForBill] = useState(null)
+    const [billForm, setBillForm] = useState({
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        invoiceNo: '',
+        billBookNo: '',
+        remarks: ''
+    })
 
     const vendors = useDataStore(state => state.vendors)
     const addVendor = useDataStore(state => state.addVendor)
     const updateVendor = useDataStore(state => state.updateVendor)
     const deleteVendor = useDataStore(state => state.deleteVendor)
-    const getVendorLedger = useDataStore(state => state.getVendorLedger)
+    const addPurchase = useDataStore(state => state.addPurchase)
 
     const filteredVendors = vendors.filter(v =>
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,18 +131,32 @@ function Vendors() {
         })
     }
 
-    const handleLedgerClick = async (vendor) => {
-        setSelectedVendorForLedger(vendor)
-        setShowLedgerModal(true)
-        setIsLoadingLedger(true)
-        setLedgerTransactions([]) // Reset
+    const handleAddBillClick = (vendor) => {
+        setSelectedVendorForBill(vendor)
+        setBillForm({
+            amount: '',
+            date: new Date().toISOString().split('T')[0],
+            invoiceNo: '',
+            billBookNo: '',
+            remarks: ''
+        })
+        setShowAddBillModal(true)
+    }
+
+    const handleBillSubmit = async (e) => {
+        e.preventDefault()
+        setIsSubmitting(true)
         try {
-            const data = await getVendorLedger(vendor.uuid)
-            setLedgerTransactions(data)
+            await addPurchase({
+                ...billForm,
+                vendorUuid: selectedVendorForBill.uuid
+            })
+            setShowAddBillModal(false)
         } catch (error) {
-            console.error('Error fetching ledger:', error)
+            console.error('Error adding bill:', error)
+            alert('Failed to add bill. Please try again.')
         } finally {
-            setIsLoadingLedger(false)
+            setIsSubmitting(false)
         }
     }
 
@@ -207,7 +226,7 @@ function Vendors() {
                 </GlassCard>
             </div>
 
-            {/* Vendors Grid */}
+            {/* Vendors Content */}
             {viewMode === 'grid' ? (
                 <div className={styles.vendorsGrid}>
                     {filteredVendors.map((vendor, index) => (
@@ -269,9 +288,9 @@ function Vendors() {
 
                                 <div className={styles.cardFooter}>
                                     <div className={styles.quickActions}>
-                                        <button className={styles.quickBtn} onClick={() => handleLedgerClick(vendor)}>
+                                        <button className={styles.quickBtn} onClick={() => handleAddBillClick(vendor)}>
                                             <FileText size={14} />
-                                            <span>Ledger</span>
+                                            <span>Add Bill</span>
                                         </button>
                                         <button className={styles.quickBtn} onClick={() => handlePaymentClick(vendor)}>
                                             <Wallet size={14} />
@@ -361,7 +380,7 @@ function Vendors() {
                                             <button className={styles.actionBtn} onClick={() => handleEdit(vendor)} title="Edit">
                                                 <Edit size={14} />
                                             </button>
-                                            <button className={styles.actionBtn} title="Ledger" onClick={() => handleLedgerClick(vendor)}>
+                                            <button className={styles.actionBtn} title="Add Bill" onClick={() => handleAddBillClick(vendor)}>
                                                 <FileText size={14} />
                                             </button>
                                             <button className={styles.actionBtn} title="Payment" onClick={() => handlePaymentClick(vendor)}>
@@ -379,7 +398,7 @@ function Vendors() {
                 </div>
             )}
 
-            {/* Add/Edit Modal */}
+            {/* Add/Edit Vendor Modal */}
             {showAddModal && (
                 <div className={styles.modalOverlay} onClick={resetForm}>
                     <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -468,6 +487,79 @@ function Vendors() {
                 </div>
             )}
 
+            {/* Add Bill Modal */}
+            {showAddBillModal && selectedVendorForBill && (
+                <div className={styles.modalOverlay} onClick={() => setShowAddBillModal(false)}>
+                    <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>Add Bill: {selectedVendorForBill.name}</h3>
+                            <button className={styles.closeBtn} onClick={() => setShowAddBillModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleBillSubmit}>
+                            <div className={styles.formGroup}>
+                                <label>Amount *</label>
+                                <input
+                                    type="number"
+                                    value={billForm.amount}
+                                    onChange={(e) => setBillForm({ ...billForm, amount: e.target.value })}
+                                    placeholder="Enter amount"
+                                    required
+                                />
+                            </div>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Invoice No</label>
+                                    <input
+                                        type="text"
+                                        value={billForm.invoiceNo}
+                                        onChange={(e) => setBillForm({ ...billForm, invoiceNo: e.target.value })}
+                                        placeholder="Optional"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Date *</label>
+                                    <input
+                                        type="date"
+                                        value={billForm.date}
+                                        onChange={(e) => setBillForm({ ...billForm, date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Remarks</label>
+                                <input
+                                    type="text"
+                                    value={billForm.remarks}
+                                    onChange={(e) => setBillForm({ ...billForm, remarks: e.target.value })}
+                                    placeholder="Any notes"
+                                />
+                            </div>
+                            <div className={styles.modalActions} style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowAddBillModal(false)}
+                                    disabled={isSubmitting}
+                                    fullWidth
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    fullWidth
+                                >
+                                    {isSubmitting ? 'Adding...' : 'Add Bill'}
+                                </Button>
+                            </div>
+                        </form>
+                    </GlassCard>
+                </div>
+            )}
+
             {/* Delete Confirmation Modal */}
             {vendorToDelete && (
                 <div className={styles.modalOverlay} onClick={() => setVendorToDelete(null)}>
@@ -487,105 +579,21 @@ function Vendors() {
                             <p className={styles.warningText}>This action cannot be undone.</p>
                         </div>
 
-                        <div className={styles.modalActions}>
+                        <div className={styles.modalActions} style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                             <Button
                                 variant="ghost"
                                 onClick={() => setVendorToDelete(null)}
+                                fullWidth
                             >
                                 Cancel
                             </Button>
                             <Button
                                 variant="danger"
                                 onClick={confirmDelete}
+                                fullWidth
                             >
                                 Delete Vendor
                             </Button>
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
-
-            {/* Vendor Ledger Modal */}
-            {showLedgerModal && selectedVendorForLedger && (
-                <div className={styles.modalOverlay} onClick={() => setShowLedgerModal(false)}>
-                    <GlassCard className={`${styles.modal} ${styles.ledgerModal}`} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h3>
-                                <FileText size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                                Vendor Ledger: {selectedVendorForLedger.name}
-                            </h3>
-                            <button className={styles.closeBtn} onClick={() => setShowLedgerModal(false)}>
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className={styles.ledgerInfo}>
-                            <div className={styles.infoBox}>
-                                <span className={styles.infoLabel}>Opening Balance</span>
-                                <span className={styles.infoValue}>Rs {selectedVendorForLedger.openingBalance?.toLocaleString()}</span>
-                            </div>
-                            <div className={styles.infoBox}>
-                                <span className={styles.infoLabel}>Current Payable</span>
-                                <span className={`${styles.infoValue} ${styles.highlight}`}>Rs {selectedVendorForLedger.currentBalance?.toLocaleString()}</span>
-                            </div>
-                        </div>
-
-                        <div className={styles.ledgerTableContainer}>
-                            {isLoadingLedger ? (
-                                <div className={styles.ledgerLoading}>
-                                    <div className={styles.spinner}></div>
-                                    <p>Loading transaction history...</p>
-                                </div>
-                            ) : ledgerTransactions.length === 0 ? (
-                                <div className={styles.ledgerEmpty}>
-                                    <FileText size={48} />
-                                    <p>No transactions found for this vendor.</p>
-                                </div>
-                            ) : (
-                                <table className={styles.ledgerTable}>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th className={styles.textRight}>Debit (Purchase)</th>
-                                            <th className={styles.textRight}>Credit (Payment)</th>
-                                            <th className={styles.textRight}>Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr className={styles.openingRow}>
-                                            <td>-</td>
-                                            <td>Opening Balance</td>
-                                            <td className={styles.textRight}>-</td>
-                                            <td className={styles.textRight}>-</td>
-                                            <td className={styles.textRight}>Rs {selectedVendorForLedger.openingBalance?.toLocaleString()}</td>
-                                        </tr>
-                                        {(() => {
-                                            let currentBal = selectedVendorForLedger.openingBalance || 0;
-                                            return ledgerTransactions.map((item, idx) => {
-                                                if (item.type === 'debit') currentBal += item.amount;
-                                                else if (item.type === 'credit') currentBal -= item.amount;
-
-                                                return (
-                                                    <tr key={idx}>
-                                                        <td>{new Date(item.date).toLocaleDateString()}</td>
-                                                        <td>{item.description}</td>
-                                                        <td className={`${styles.textRight} ${styles.debitCol}`}>
-                                                            {item.type === 'debit' ? `Rs ${item.amount.toLocaleString()}` : '-'}
-                                                        </td>
-                                                        <td className={`${styles.textRight} ${styles.creditCol}`}>
-                                                            {item.type === 'credit' ? `Rs ${item.amount.toLocaleString()}` : '-'}
-                                                        </td>
-                                                        <td className={`${styles.textRight} ${styles.balanceCol}`}>
-                                                            Rs {currentBal.toLocaleString()}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            });
-                                        })()}
-                                    </tbody>
-                                </table>
-                            )}
                         </div>
                     </GlassCard>
                 </div>

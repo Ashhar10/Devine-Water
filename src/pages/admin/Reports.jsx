@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Download, Calendar, Droplets, DollarSign, Users } from 'lucide-react'
+import { Download, Calendar, Droplets, DollarSign, Users, ChevronDown } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import {
+    downloadAsExcel,
+    downloadAsSQL,
+    downloadMultipleAsExcel,
+    downloadMultipleAsSQL
+} from '../../utils/exportUtils'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import DataChart from '../../components/charts/DataChart'
@@ -195,6 +201,65 @@ function Reports() {
         return num.toString()
     }
 
+    const vendors = useDataStore(state => state.vendors)
+    const purchaseOrders = useDataStore(state => state.purchaseOrders)
+
+    const handleExportData = (type, category) => {
+        const allData = {
+            orders: filteredOrders.map(o => ({
+                'Order ID': o.id,
+                'Date': o.orderDate || o.createdAt?.split('T')[0],
+                'Customer': o.customerName,
+                'Total': o.total,
+                'Status': o.status,
+                'Payment': o.paymentStatus
+            })),
+            customers: customers.map(c => ({
+                'ID': c.id,
+                'Name': c.name,
+                'Phone': c.phone,
+                'Balance': c.currentBalance || 0,
+                'Status': c.status
+            })),
+            vendors: vendors.map(v => ({
+                'ID': v.id,
+                'Name': v.name,
+                'Phone': v.phone,
+                'Payable': v.currentBalance || 0,
+                'Total Spent': v.totalSpent || 0
+            })),
+            purchases: purchaseOrders.map(p => ({
+                'ID': p.po_id,
+                'Invoice': p.invoice_no,
+                'Vendor': vendors.find(v => v.uuid === p.vendorUuid)?.name || 'Unknown',
+                'Amount': p.amount,
+                'Date': p.date
+            }))
+        }
+
+        if (category === 'all') {
+            if (type === 'excel') {
+                downloadMultipleAsExcel(allData, 'Full_Devine_Water_Report')
+            } else {
+                downloadMultipleAsSQL({
+                    orders: filteredOrders,
+                    customers: customers,
+                    vendors: vendors,
+                    purchase_orders: purchaseOrders
+                }, 'Full_Database_Dump')
+            }
+        } else {
+            const data = allData[category]
+            if (type === 'excel') {
+                downloadAsExcel(data, `${category}_Report`, category)
+            } else {
+                // Mapping back to SQL table names
+                const tableMap = { orders: 'orders', customers: 'customers', vendors: 'vendors', purchases: 'purchase_orders' }
+                const rawDataMap = { orders: filteredOrders, customers: customers, vendors: vendors, purchases: purchaseOrders }
+                downloadAsSQL(rawDataMap[category], tableMap[category], `${category}_Dump`)
+            }
+        }
+    }
     const summaryStats = [
         {
             label: 'Orders in Range',
@@ -256,12 +321,23 @@ function Reports() {
                     )}
                 </div>
                 <div className={styles.actions}>
-                    <Button variant="outline" icon={Download} size="sm" onClick={handleCustomerExport}>
-                        Customer Report
-                    </Button>
-                    <Button variant="primary" icon={Download} size="sm" onClick={handleExport}>
-                        Order Report
-                    </Button>
+                    <div className={styles.exportDropdown}>
+                        <Button variant="primary" icon={Download} size="sm">
+                            Download Data
+                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
+                        </Button>
+                        <div className={styles.dropdownMenu}>
+                            <div className={styles.menuLabel}>Excel (XLSX)</div>
+                            <button onClick={() => handleExportData('excel', 'all')}>All Reports (Multi-Sheet)</button>
+                            <button onClick={() => handleExportData('excel', 'orders')}>Orders Report</button>
+                            <button onClick={() => handleExportData('excel', 'customers')}>Customers List</button>
+                            <button onClick={() => handleExportData('excel', 'vendors')}>Vendors List</button>
+                            <div className={styles.menuLabel}>SQL Queries</div>
+                            <button onClick={() => handleExportData('sql', 'all')}>All Tables (Full Dump)</button>
+                            <button onClick={() => handleExportData('sql', 'orders')}>Orders Table</button>
+                            <button onClick={() => handleExportData('sql', 'customers')}>Customers Table</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

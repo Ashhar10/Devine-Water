@@ -17,9 +17,11 @@ import {
     LayoutGrid,
     List,
     Calendar,
-    ChevronDown
+    ChevronDown,
+    Download
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
@@ -232,6 +234,42 @@ function Vendors() {
         navigate('/admin/payments', { state: { vendorUuid: vendor.uuid } })
     }
 
+    const handleExportData = (type) => {
+        if (filteredVendors.length === 0) return alert('No data to export.')
+
+        const exportData = filteredVendors.map(v => ({
+            'ID': v.id,
+            'Name': v.name,
+            'Contact Person': v.contactPerson || '',
+            'Phone': v.phone,
+            'Email': v.email || '',
+            'Address': v.address || '',
+            'Current Balance': v.currentBalance || 0,
+            'Total Spent': v.totalSpent || 0,
+            'Status': v.status,
+            'Created At': v.createdAt
+        }))
+
+        if (type === 'excel') {
+            downloadAsExcel(exportData, 'Vendors_Report', 'Vendors')
+        } else {
+            // For SQL, we map the original DB keys if possible or use clean labels
+            const dbReadyData = filteredVendors.map(v => ({
+                vendor_id: v.id,
+                name: v.name,
+                contact_person: v.contactPerson,
+                phone: v.phone,
+                email: v.email,
+                address: v.address,
+                current_balance: v.currentBalance,
+                total_spent: v.totalSpent,
+                status: v.status,
+                created_at: v.createdAt
+            }))
+            downloadAsSQL(dbReadyData, 'vendors', 'Vendors_Dump')
+        }
+    }
+
     return (
         <div className={styles.vendors}>
             {/* Header */}
@@ -283,6 +321,17 @@ function Vendors() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div className={styles.exportDropdown}>
+                        <Button variant="outline" icon={Download} size="sm">
+                            Export
+                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
+                        </Button>
+                        <div className={styles.dropdownMenu}>
+                            <button onClick={() => handleExportData('excel')}>Excel File</button>
+                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
+                        </div>
+                    </div>
+
                     <div className={styles.viewToggle}>
                         <button
                             className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}

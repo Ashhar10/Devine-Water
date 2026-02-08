@@ -17,6 +17,7 @@ import {
     RefreshCw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
@@ -455,6 +456,27 @@ function OrdersBilling() {
 
     const { groups, sortedKeys } = getGroupedOrders()
 
+    const handleExportData = (type) => {
+        if (filteredOrders.length === 0) return alert('No data to export.')
+
+        const exportData = filteredOrders.map(o => ({
+            'Order ID': o.id,
+            'Date': o.orderDate || o.createdAt?.split('T')[0],
+            'Customer': o.customerName,
+            'Items': o.items.map(i => `${i.name} x ${i.qty}`).join(', '),
+            'Total Amount': o.total,
+            'Discount': o.discount || 0,
+            'Status': o.status,
+            'Payment': o.paymentStatus
+        }))
+
+        if (type === 'excel') {
+            downloadAsExcel(exportData, 'Orders_Report', 'Orders')
+        } else {
+            downloadAsSQL(filteredOrders, 'orders', 'Orders_Dump')
+        }
+    }
+
     return (
         <div className={styles.orders}>
             {/* Unified Filter Bar */}
@@ -518,6 +540,28 @@ function OrdersBilling() {
                         <RefreshCw size={16} />
                         <span>Reset</span>
                     </button>
+
+                    <div className={styles.exportDropdown}>
+                        <Button variant="outline" icon={Download} size="sm">
+                            Export
+                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
+                        </Button>
+                        <div className={styles.dropdownMenu}>
+                            <button onClick={() => handleExportData('excel')}>Excel File</button>
+                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
+                        </div>
+                    </div>
+
+                    <div className={styles.exportDropdown}>
+                        <Button variant="outline" icon={Download} size="sm">
+                            Export
+                            <ChevronDown size={14} style={{ marginLeft: '4px' }} />
+                        </Button>
+                        <div className={styles.dropdownMenu}>
+                            <button onClick={() => handleExportData('excel')}>Excel File</button>
+                            <button onClick={() => handleExportData('sql')}>SQL Query</button>
+                        </div>
+                    </div>
                     <Button variant="primary" icon={Plus} onClick={() => {
                         setIsEditing(false)
                         setEditingOrderId(null)

@@ -721,3 +721,46 @@
 .dateInput:focus {
     border-color: var(--primary-cyan);
 }
+
+/* Export Dropdown */
+.exportDropdown {
+    position: relative;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: var(--bg-deep-space);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    display: none;
+    flex-direction: column;
+    min-width: 140px;
+    z-index: 100;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.exportDropdown:hover .dropdownMenu {
+    display: flex;
+}
+
+.dropdownMenu button {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    text-align: left;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.dropdownMenu button:hover {
+    background: var(--glass-bg);
+    color: var(--primary-cyan);
+}

@@ -194,7 +194,9 @@ function Products() {
             price: product.price,
             purchasePrice: product.purchasePrice || '',
             currentStock: product.currentStock,
-            minStockAlert: product.minStockAlert
+            minStockAlert: product.minStockAlert,
+            designations: product.designations || [],
+            visibility: product.visibility || 'public'
         })
         setShowAddModal(true)
     }

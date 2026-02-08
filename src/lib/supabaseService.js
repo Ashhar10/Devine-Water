@@ -767,7 +767,9 @@ export const addProductToDb = async (productData) => {
             purchase_price: productData.purchasePrice || 0,
             current_stock: productData.currentStock || 0,
             min_stock_alert: productData.minStockAlert || 10,
-            status: 'active'
+            status: 'active',
+            designations: productData.designations || [],
+            is_private: productData.isPrivate || false
         })
         .select()
         .single()
@@ -798,6 +800,8 @@ export const updateProductInDb = async (productId, updates) => {
     if (updates.currentStock !== undefined) dbUpdates.current_stock = updates.currentStock
     if (updates.minStockAlert !== undefined) dbUpdates.min_stock_alert = updates.minStockAlert
     if (updates.status) dbUpdates.status = updates.status
+    if (updates.designations) dbUpdates.designations = updates.designations
+    if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate
 
     const { error } = await supabase
         .from('products')

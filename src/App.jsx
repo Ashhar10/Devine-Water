@@ -18,6 +18,7 @@ import Products from './pages/admin/Products'
 import Vendors from './pages/admin/Vendors'
 import Delivery from './pages/admin/Delivery'
 import Payments from './pages/admin/Payments'
+import Shopkeeper from './pages/admin/Shopkeeper'
 
 // Customer Pages
 import Overview from './pages/customer/Overview'
@@ -111,6 +112,7 @@ function App() {
                 <Route path="vendors" element={<Vendors />} />
                 <Route path="delivery" element={<Delivery />} />
                 <Route path="payments" element={<Payments />} />
+                <Route path="shopkeeper" element={<Shopkeeper />} />
                 <Route path="finance" element={<FinanceModule />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="users" element={<UserManagement />} />

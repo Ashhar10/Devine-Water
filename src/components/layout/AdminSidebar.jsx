@@ -29,6 +29,7 @@ export const navItems = [
     { path: '/admin/vendors', icon: Store, label: 'Vendors' },
     { path: '/admin/delivery', icon: Truck, label: 'Delivery' },
     { path: '/admin/payments', icon: Banknote, label: 'Payments' },
+    { path: '/admin/shopkeeper', icon: Store, label: 'Shopkeeper' },
     { path: '/admin/finance', icon: Wallet, label: 'Finance' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/users', icon: UserCog, label: 'Staff & Users' },

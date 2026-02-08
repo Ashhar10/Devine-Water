@@ -49,7 +49,10 @@ import {
     addExpenseCategoryToDb,
     deleteIncomeCategoryFromDb,
     deleteExpenseCategoryFromDb,
-    deleteDeliveryFromDb
+    deleteDeliveryFromDb,
+    addShopkeeperEntryToDb,
+    updateShopkeeperEntryInDb,
+    deleteShopkeeperEntryFromDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -87,6 +90,7 @@ export const useDataStore = create(
             expenseCategories: [],
             deliveries: [],
             purchaseOrders: [],
+            shopkeeperEntries: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -136,6 +140,7 @@ export const useDataStore = create(
                         expenditures: data?.expenditures || [],
                         deliveries: mergedDeliveries,
                         purchaseOrders: data?.purchaseOrders || [],
+                        shopkeeperEntries: data?.shopkeeperEntries || [],
                         incomeCategories: data?.incomeCategories || [],
                         expenseCategories: data?.expenseCategories || [],
                         isLoading: false,
@@ -1673,6 +1678,47 @@ export const useDataStore = create(
             },
 
             // ===== RESET =====
+            // ===== SHOPKEEPER ENTRIES =====
+            addShopkeeperEntry: async (entryData) => {
+                try {
+                    const newEntry = await addShopkeeperEntryToDb(entryData)
+                    if (newEntry) {
+                        set(state => ({
+                            shopkeeperEntries: [newEntry, ...state.shopkeeperEntries]
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Failed to add shopkeeper entry:', error)
+                }
+            },
+
+            updateShopkeeperEntry: async (id, updates) => {
+                try {
+                    const updated = await updateShopkeeperEntryInDb(id, updates)
+                    if (updated) {
+                        set(state => ({
+                            shopkeeperEntries: state.shopkeeperEntries.map(entry =>
+                                entry.id === id ? updated : entry
+                            )
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Failed to update shopkeeper entry:', error)
+                }
+            },
+
+            deleteShopkeeperEntry: async (id) => {
+                try {
+                    await deleteShopkeeperEntryFromDb(id)
+                    set(state => ({
+                        shopkeeperEntries: state.shopkeeperEntries.filter(entry => entry.id !== id)
+                    }))
+                } catch (error) {
+                    console.error('Failed to delete shopkeeper entry:', error)
+                }
+            },
+
+            // ===== UTILITY =====
             resetStore: () => set({
                 customers: [],
                 orders: [],

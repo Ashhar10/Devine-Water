@@ -1,0 +1,473 @@
+.shopkeeper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 30px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.searchWrapper {
+    position: relative;
+    flex: 1;
+    min-width: 300px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 10px 10px 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Tabs */
+.tabsContainer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+
+.tabBtn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tabBtn:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tabBtn.active {
+    color: white;
+}
+
+.tabBtn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
+    box-shadow: 0 -2px 10px rgba(6, 182, 212, 0.5);
+    border-radius: 3px 3px 0 0;
+}
+
+/* Stats Row */
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.statCard {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px !important;
+}
+
+.statIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: rgba(6, 182, 212, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #06b6d4;
+}
+
+.iconIn {
+    color: #10b981;
+}
+
+.iconOut {
+    color: #ef4444;
+}
+
+.statInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.statValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.statLabel {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.dateFilter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filterSelect {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: #06b6d4;
+}
+
+.customDateInputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dateInput {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.85rem;
+}
+
+.dateInput:focus {
+    outline: none;
+    border-color: #06b6d4;
+}
+
+.viewToggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.viewBtn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.viewBtn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.viewBtn.active {
+    color: white;
+    background: rgba(6, 182, 212, 0.2);
+}
+
+/* Entries Display */
+.entriesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 15px;
+}
+
+.entriesList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.entryCard {
+    position: relative;
+}
+
+.entryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.entryDate {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.actionBtns {
+    display: flex;
+    gap: 6px;
+}
+
+.actionBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.actionBtn.danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.entryContent {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.entryDetail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    color: white;
+}
+
+.entryDetail.amountIn {
+    color: #10b981;
+}
+
+.entryDetail.amountOut {
+    color: #ef4444;
+}
+
+.typeLabel {
+    margin-left: auto;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.entryRemarks {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    margin-top: 4px;
+}
+
+.emptyState {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.emptyState svg {
+    opacity: 0.3;
+    margin-bottom: 15px;
+}
+
+.emptyState h3 {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 10px 0;
+}
+
+.emptyState p {
+    font-size: 0.9rem;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal {
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modalHeader h3 {
+    color: white;
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.closeBtn,
+.clearBtn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.closeBtn:hover,
+.clearBtn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.formGroup {
+    margin-bottom: 15px;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.formGroup label {
+    display: block;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: #06b6d4;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.formGroup textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.modalActions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .statsRow {
+        grid-template-columns: 1fr;
+    }
+
+    .entriesGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dateFilter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

@@ -1686,6 +1686,113 @@ export const updateExpenditureInDb = async (id, updates) => {
     return data
 }
 
+// =====================================================
+// SHOPKEEPER ENTRIES
+// =====================================================
+
+export const fetchShopkeeperEntries = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('shopkeeper_entries')
+        .select('*')
+        .order('entry_date', { ascending: false })
+
+    if (error) handleError(error, 'fetch shopkeeper entries')
+
+    return data?.map(entry => ({
+        id: entry.id,
+        uuid: entry.uuid,
+        entryType: entry.entry_type,
+        productName: entry.product_name,
+        amount: parseFloat(entry.amount) || 0,
+        liters: parseFloat(entry.liters) || 0,
+        remarks: entry.remarks || '',
+        entryDate: entry.entry_date,
+        createdBy: entry.created_by,
+        createdAt: entry.created_at
+    })) || []
+}
+
+export const addShopkeeperEntryToDb = async (entryData) => {
+    if (!isSupabaseConfigured()) return null
+
+    const { data, error } = await supabase
+        .from('shopkeeper_entries')
+        .insert({
+            entry_type: entryData.entryType,
+            product_name: entryData.productName || null,
+            amount: entryData.amount,
+            liters: entryData.liters || null,
+            remarks: entryData.remarks || null,
+            entry_date: entryData.entryDate || new Date().toISOString().split('T')[0],
+            created_by: entryData.createdBy || 'admin'
+        })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'add shopkeeper entry')
+
+    return {
+        id: data.id,
+        uuid: data.uuid,
+        entryType: data.entry_type,
+        productName: data.product_name,
+        amount: parseFloat(data.amount) || 0,
+        liters: parseFloat(data.liters) || 0,
+        remarks: data.remarks || '',
+        entryDate: data.entry_date,
+        createdBy: data.created_by,
+        createdAt: data.created_at
+    }
+}
+
+export const updateShopkeeperEntryInDb = async (id, updates) => {
+    if (!isSupabaseConfigured()) return null
+
+    const dbUpdates = {}
+    if (updates.entryType) dbUpdates.entry_type = updates.entryType
+    if (updates.productName !== undefined) dbUpdates.product_name = updates.productName
+    if (updates.amount !== undefined) dbUpdates.amount = updates.amount
+    if (updates.liters !== undefined) dbUpdates.liters = updates.liters
+    if (updates.remarks !== undefined) dbUpdates.remarks = updates.remarks
+    if (updates.entryDate) dbUpdates.entry_date = updates.entryDate
+
+    const { data, error } = await supabase
+        .from('shopkeeper_entries')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) handleError(error, 'update shopkeeper entry')
+
+    return {
+        id: data.id,
+        uuid: data.uuid,
+        entryType: data.entry_type,
+        productName: data.product_name,
+        amount: parseFloat(data.amount) || 0,
+        liters: parseFloat(data.liters) || 0,
+        remarks: data.remarks || '',
+        entryDate: data.entry_date,
+        createdBy: data.created_by,
+        createdAt: data.created_at
+    }
+}
+
+export const deleteShopkeeperEntryFromDb = async (id) => {
+    if (!isSupabaseConfigured()) return null
+
+    const { error } = await supabase
+        .from('shopkeeper_entries')
+        .delete()
+        .eq('id', id)
+
+    if (error) handleError(error, 'delete shopkeeper entry')
+    return { success: true }
+}
+
 export const initializeAllData = async () => {
     if (!isSupabaseConfigured()) {
         console.log('Supabase not configured, using mock data')
@@ -1711,7 +1818,8 @@ export const initializeAllData = async () => {
             deliveries,
             incomeCategories,
             expenseCategories,
-            purchaseOrders
+            purchaseOrders,
+            shopkeeperEntries
         ] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),
@@ -1730,7 +1838,8 @@ export const initializeAllData = async () => {
             fetchDeliveries(),
             fetchIncomeCategories(),
             fetchExpenseCategories(),
-            fetchPurchaseOrders()
+            fetchPurchaseOrders(),
+            fetchShopkeeperEntries()
         ])
 
         return {
@@ -1751,7 +1860,8 @@ export const initializeAllData = async () => {
             deliveries,
             incomeCategories,
             expenseCategories,
-            purchaseOrders
+            purchaseOrders,
+            shopkeeperEntries
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

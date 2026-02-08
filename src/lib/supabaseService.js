@@ -808,7 +808,7 @@ export const updateProductInDb = async (productId, updates) => {
     const { error } = await supabase
         .from('products')
         .update(dbUpdates)
-        .eq('product_id', productId)
+        .eq('id', productId)
 
     if (error) handleError(error, 'update product')
 }

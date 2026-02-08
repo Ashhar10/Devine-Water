@@ -226,6 +226,12 @@ function Vendors() {
     }
 
 
+    const handlePaymentClick = (vendor) => {
+        navigate('/admin/payments', {
+            state: { vendorUuid: vendor.uuid }
+        })
+    }
+
     const handleAddBillClick = (vendor) => {
         setSelectedVendorForBill(vendor)
         // Auto-generate invoice number

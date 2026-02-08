@@ -313,12 +313,22 @@ export const useDataStore = create(
             },
 
             deleteCustomer: async (id) => {
+                const customer = get().customers.find(c => c.id === id)
+
                 set(state => ({
                     customers: state.customers.filter(c => c.id !== id)
                 }))
 
                 try {
                     await deleteCustomerFromDb(id)
+
+                    // Cascade delete payments
+                    if (customer?.uuid) {
+                        const customerPayments = get().payments.filter(p => p.referenceId === customer.uuid)
+                        for (const payment of customerPayments) {
+                            await get().deletePayment(payment.id)
+                        }
+                    }
                 } catch (error) {
                     console.error('Failed to delete customer from DB:', error)
                 }
@@ -1118,12 +1128,22 @@ export const useDataStore = create(
             },
 
             deleteVendor: async (id) => {
+                const vendor = get().vendors.find(v => v.id === id)
+
                 set(state => ({
                     vendors: state.vendors.filter(v => v.id !== id)
                 }))
 
                 try {
                     await deleteVendorFromDb(id)
+
+                    // Cascade delete payments
+                    if (vendor?.uuid) {
+                        const vendorPayments = get().payments.filter(p => p.referenceId === vendor.uuid)
+                        for (const payment of vendorPayments) {
+                            await get().deletePayment(payment.id)
+                        }
+                    }
                 } catch (error) {
                     console.error('Failed to delete vendor from DB:', error)
                 }
@@ -1178,6 +1198,15 @@ export const useDataStore = create(
                                     currentBalance: (customer.currentBalance || 0) - parseFloat(data.amount)
                                 })
                             }
+
+                            // Sync with Finance (Income)
+                            await get().addInvestment({
+                                investorName: 'Water Sales',
+                                investmentDetail: `Payment from ${referenceName}`,
+                                amount: parseFloat(data.amount),
+                                investmentDate: data.paymentDate || new Date().toISOString().split('T')[0]
+                            })
+
                         } else if (data.paymentType === 'vendor') {
                             const vendor = get().vendors.find(v => v.uuid === data.referenceId)
                             if (vendor) {
@@ -1185,6 +1214,14 @@ export const useDataStore = create(
                                     currentBalance: (vendor.currentBalance || 0) - parseFloat(data.amount)
                                 })
                             }
+
+                            // Sync with Finance (Expense)
+                            await get().addExpenditure({
+                                category: 'Vendor Payments',
+                                description: `Payment to ${referenceName}`,
+                                amount: parseFloat(data.amount),
+                                expenseDate: data.paymentDate || new Date().toISOString().split('T')[0]
+                            })
                         }
 
                         return fullPayment

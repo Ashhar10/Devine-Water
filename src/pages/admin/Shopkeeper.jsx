@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
     Search,
     Plus,
-    Store,
+    ShoppingBag,
     TrendingUp,
     TrendingDown,
     Droplets,
@@ -439,7 +439,7 @@ function Shopkeeper() {
                     className={`${styles.tabBtn} ${activeTab === 'product' ? styles.active : ''}`}
                     onClick={() => setActiveTab('product')}
                 >
-                    <Store size={18} />
+                    <ShoppingBag size={18} />
                     Product Entry
                 </button>
                 <button
@@ -568,7 +568,7 @@ function Shopkeeper() {
             <div className={viewMode === 'grid' ? styles.entriesGrid : styles.entriesList}>
                 {filteredEntries.length === 0 ? (
                     <div className={styles.emptyState}>
-                        {activeTab === 'product' ? <Store size={48} /> : <Droplets size={48} />}
+                        {activeTab === 'product' ? <ShoppingBag size={48} /> : <Droplets size={48} />}
                         <h3>No entries found</h3>
                         <p>Add your first {activeTab === 'product' ? 'product entry' : 'water sale'} to get started</p>
                     </div>
@@ -613,7 +613,7 @@ function Shopkeeper() {
                                     ) : (
                                         <>
                                             <div className={styles.entryDetail}>
-                                                <Store size={16} />
+                                                <ShoppingBag size={16} />
                                                 <span>{entry.productName}</span>
                                             </div>
                                             <div className={`${styles.entryDetail} ${entry.entryType === 'product_in' ? styles.amountIn : styles.amountOut}`}>

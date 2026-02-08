@@ -107,6 +107,161 @@
     gap: 20px;
 }
 
+/* View Toggle */
+.viewToggle {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.viewBtn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.viewBtn:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.viewBtn.active {
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    color: white;
+    filter: drop-shadow(0 2px 4px rgba(6, 182, 212, 0.3));
+}
+
+/* List/Table View */
+.listView {
+    width: 100%;
+    overflow-x: auto;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+    text-align: left;
+}
+
+.table th {
+    padding: 15px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tableRow {
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tableRow:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tableRow:last-child {
+    border-bottom: none;
+}
+
+.tableRow td {
+    padding: 15px 20px;
+    vertical-align: middle;
+}
+
+.tableCustomerInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tableAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+}
+
+.tableName {
+    font-weight: 600;
+    color: white;
+    font-size: 0.95rem;
+}
+
+.tableId {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.tablePhone {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.tableEmail {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.tableArea {
+    font-weight: 500;
+    color: #06b6d4;
+    font-size: 0.9rem;
+}
+
+.tableAddress {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tableStats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.8rem;
+}
+
+.tableStats span {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.tableBalance {
+    font-weight: 700;
+    color: white;
+}
+
+.tableBalance.pending {
+    color: #fbbf24;
+}
+
 /* Customer Card */
 .customerCard {
     display: flex;
@@ -301,6 +456,7 @@
     color: rgba(255, 255, 255, 0.5);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

@@ -21,7 +21,9 @@ import {
     Eye,
     FileText,
     TrendingUp,
-    User
+    User,
+    LayoutGrid,
+    List
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -61,6 +63,7 @@ function Customers() {
     const [hasCachedData, setHasCachedData] = useState(false)
     const [formData, setFormData] = useState(getEmptyFormData())
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
+    const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
 
     const customers = useDataStore(state => state.customers)
     const currentUser = useDataStore(state => state.currentUser)
@@ -380,7 +383,23 @@ function Customers() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div className={styles.viewToggle}>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}
+                            onClick={() => setViewMode('grid')}
+                            title="Grid View"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'list' ? styles.active : ''}`}
+                            onClick={() => setViewMode('list')}
+                            title="List View"
+                        >
+                            <List size={18} />
+                        </button>
+                    </div>
                     <Button variant="secondary" icon={Map} onClick={() => {
                         setEditingCustomer(null) // Reset edit state
                         setAreaForm({ name: '', description: '', priority: 0, deliveryDays: [] })
@@ -425,140 +444,267 @@ function Customers() {
 
             {/* Content Based on Tab */}
             {activeTab === 'customers' ? (
-                <div className={styles.customersGrid}>
-                    {filteredCustomers.map((customer, index) => (
-                        <motion.div
-                            key={customer.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            onClick={() => setSelectedCustomerDetails(customer)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <GlassCard className={styles.customerCard}>
-                                <div className={styles.cardHeader}>
-                                    <div className={styles.avatar}>
-                                        {customer.name.charAt(0)}
-                                    </div>
-                                    <div className={styles.headerInfo}>
-                                        <span className={styles.customerName}>{customer.name}</span>
-                                        <span className={styles.customerId}>{customer.id}</span>
-                                    </div>
-                                    <StatusBadge status={customer.status} size="sm" />
-                                </div>
-
-                                <div className={styles.cardBody}>
-                                    <div className={styles.infoRow}>
-                                        <Phone size={14} />
-                                        <span>{customer.phone}</span>
-                                    </div>
-                                    <div className={styles.infoRow}>
-                                        <MapPin size={14} />
-                                        <span>{customer.address}</span>
-                                    </div>
-                                    <div className={styles.infoRow}>
-                                        <Calendar size={14} />
-                                        <span>Joined {customer.createdAt}</span>
-                                    </div>
-                                </div>
-
-                                <div className={styles.cardStats}>
-                                    <div className={styles.stat}>
-                                        <Droplets size={16} className={styles.statIcon} />
-                                        <div>
-                                            <span className={styles.statNumber}>{customer.totalOrders}</span>
-                                            <span className={styles.statText}>Orders</span>
+                viewMode === 'grid' ? (
+                    <div className={styles.customersGrid}>
+                        {filteredCustomers.map((customer, index) => (
+                            <motion.div
+                                key={customer.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() => setSelectedCustomerDetails(customer)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <GlassCard className={styles.customerCard}>
+                                    <div className={styles.cardHeader}>
+                                        <div className={styles.avatar}>
+                                            {customer.name.charAt(0)}
                                         </div>
-                                    </div>
-                                    <div className={styles.stat}>
-                                        <span className={styles.statCurrency}>Rs</span>
-                                        <div>
-                                            <span className={styles.statNumber}>{customer.totalSpent?.toLocaleString() || 0}</span>
-                                            <span className={styles.statText}>Total Spent</span>
+                                        <div className={styles.headerInfo}>
+                                            <span className={styles.customerName}>{customer.name}</span>
+                                            <span className={styles.customerId}>{customer.id}</span>
                                         </div>
+                                        <StatusBadge status={customer.status} size="sm" />
                                     </div>
-                                    <div className={styles.stat}>
-                                        <Wallet size={16} className={styles.statIcon} />
-                                        <div>
-                                            <span className={`${styles.statNumber} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
-                                                {customer.currentBalance?.toLocaleString() || 0}
-                                            </span>
-                                            <span className={styles.statText}>Balance</span>
+
+                                    <div className={styles.cardBody}>
+                                        <div className={styles.infoRow}>
+                                            <Phone size={14} />
+                                            <span>{customer.phone}</span>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div className={styles.cardFooter}>
-                                    <button
-                                        className={styles.directionsBtn}
-                                        onClick={(e) => { e.stopPropagation(); openDirections(customer); }}
-                                        title="Get Directions"
-                                    >
-                                        <Navigation size={16} />
-                                        <span>Directions</span>
-                                    </button>
-                                    <div className={styles.actionBtns}>
-                                        <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
-                                            <Edit size={16} />
-                                        </button>
-                                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
-                                            <Trash size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    ))}
-                </div>
-            ) : (
-                <div className={styles.areasGrid}>
-                    {filteredAreas.map((area, index) => (
-                        <motion.div
-                            key={area.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <GlassCard className={styles.areaCard}>
-                                <div>
-                                    <div className={styles.areaHeader}>
-                                        <span className={styles.areaName}>{area.name}</span>
-                                        <span className={styles.customerId}>Priority: {area.priority}</span>
-                                    </div>
-                                    <p className={styles.areaDesc}>{area.description || 'No description provided'}</p>
-
-                                    <div className={styles.areaStats}>
-                                        <div className={styles.areaStat}>
-                                            <User size={16} />
-                                            <span>{customers.filter(c => c.areaId === area.uuid).length} Customers</span>
+                                        <div className={styles.infoRow}>
+                                            <MapPin size={14} />
+                                            <span>{customer.address}</span>
+                                        </div>
+                                        <div className={styles.infoRow}>
+                                            <Calendar size={14} />
+                                            <span>Joined {customer.createdAt}</span>
                                         </div>
                                     </div>
 
-                                    {area.deliveryDays && area.deliveryDays.length > 0 && (
-                                        <div className={styles.daysTags}>
-                                            {area.deliveryDays.map(day => (
-                                                <span key={day} className={styles.dayTag}>
-                                                    {day.slice(0, 3)}
+                                    <div className={styles.cardStats}>
+                                        <div className={styles.stat}>
+                                            <Droplets size={16} className={styles.statIcon} />
+                                            <div>
+                                                <span className={styles.statNumber}>{customer.totalOrders}</span>
+                                                <span className={styles.statText}>Orders</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.stat}>
+                                            <span className={styles.statCurrency}>Rs</span>
+                                            <div>
+                                                <span className={styles.statNumber}>{customer.totalSpent?.toLocaleString() || 0}</span>
+                                                <span className={styles.statText}>Total Spent</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.stat}>
+                                            <Wallet size={16} className={styles.statIcon} />
+                                            <div>
+                                                <span className={`${styles.statNumber} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
+                                                    {customer.currentBalance?.toLocaleString() || 0}
                                                 </span>
-                                            ))}
+                                                <span className={styles.statText}>Balance</span>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-
-                                <div className={styles.cardFooter}>
-                                    <div className={styles.actionBtns}>
-                                        <button className={styles.actionBtn} onClick={() => editArea(area)}>
-                                            <Edit size={16} />
-                                        </button>
-                                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => removeArea(area.id)}>
-                                            <Trash size={16} />
-                                        </button>
                                     </div>
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    ))}
-                </div>
+
+                                    <div className={styles.cardFooter}>
+                                        <button
+                                            className={styles.directionsBtn}
+                                            onClick={(e) => { e.stopPropagation(); openDirections(customer); }}
+                                            title="Get Directions"
+                                        >
+                                            <Navigation size={16} />
+                                            <span>Directions</span>
+                                        </button>
+                                        <div className={styles.actionBtns}>
+                                            <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
+                                                <Edit size={16} />
+                                            </button>
+                                            <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
+                                                <Trash size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className={styles.listView}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Contact</th>
+                                    <th>Area & Address</th>
+                                    <th>Stats</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredCustomers.map((customer, index) => (
+                                    <motion.tr
+                                        key={customer.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        onClick={() => setSelectedCustomerDetails(customer)}
+                                        className={styles.tableRow}
+                                    >
+                                        <td>
+                                            <div className={styles.tableCustomerInfo}>
+                                                <div className={styles.tableAvatar}>
+                                                    {customer.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className={styles.tableName}>{customer.name}</div>
+                                                    <div className={styles.tableId}>{customer.id}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.tablePhone}>{customer.phone}</div>
+                                            <div className={styles.tableEmail}>{customer.email}</div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.tableArea}>{areas.find(a => a.uuid === customer.areaId)?.name || 'N/A'}</div>
+                                            <div className={styles.tableAddress}>{customer.address}</div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.tableStats}>
+                                                <span>Orders: {customer.totalOrders}</span>
+                                                <span>Spent: Rs {customer.totalSpent?.toLocaleString() || 0}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className={`${styles.tableBalance} ${customer.currentBalance > 0 ? styles.pending : ''}`}>
+                                                Rs {customer.currentBalance?.toLocaleString() || 0}
+                                            </div>
+                                        </td>
+                                        <td><StatusBadge status={customer.status} size="sm" /></td>
+                                        <td>
+                                            <div className={styles.actionBtns}>
+                                                <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); openDirections(customer); }} title="Directions">
+                                                    <Navigation size={14} />
+                                                </button>
+                                                <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
+                                                    <Edit size={14} />
+                                                </button>
+                                                <button className={`${styles.actionBtn} ${styles.danger}`} onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }}>
+                                                    <Trash size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            ) : (
+                viewMode === 'grid' ? (
+                    <div className={styles.areasGrid}>
+                        {filteredAreas.map((area, index) => (
+                            <motion.div
+                                key={area.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <GlassCard className={styles.areaCard}>
+                                    <div>
+                                        <div className={styles.areaHeader}>
+                                            <span className={styles.areaName}>{area.name}</span>
+                                            <span className={styles.customerId}>Priority: {area.priority}</span>
+                                        </div>
+                                        <p className={styles.areaDesc}>{area.description || 'No description provided'}</p>
+
+                                        <div className={styles.areaStats}>
+                                            <div className={styles.areaStat}>
+                                                <User size={16} />
+                                                <span>{customers.filter(c => c.areaId === area.uuid).length} Customers</span>
+                                            </div>
+                                        </div>
+
+                                        {area.deliveryDays && area.deliveryDays.length > 0 && (
+                                            <div className={styles.daysTags}>
+                                                {area.deliveryDays.map(day => (
+                                                    <span key={day} className={styles.dayTag}>
+                                                        {day.slice(0, 3)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className={styles.cardFooter}>
+                                        <div className={styles.actionBtns}>
+                                            <button className={styles.actionBtn} onClick={() => editArea(area)}>
+                                                <Edit size={16} />
+                                            </button>
+                                            <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => removeArea(area.id)}>
+                                                <Trash size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className={styles.listView}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Area Name</th>
+                                    <th>Description</th>
+                                    <th>Priority</th>
+                                    <th>Customers</th>
+                                    <th>Delivery Days</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredAreas.map((area, index) => (
+                                    <motion.tr
+                                        key={area.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        className={styles.tableRow}
+                                    >
+                                        <td className={styles.tableName}>{area.name}</td>
+                                        <td className={styles.tableAddress}>{area.description || '---'}</td>
+                                        <td>{area.priority}</td>
+                                        <td>{customers.filter(c => c.areaId === area.uuid).length}</td>
+                                        <td>
+                                            <div className={styles.daysTags}>
+                                                {area.deliveryDays?.map(day => (
+                                                    <span key={day} className={styles.dayTag}>
+                                                        {day.slice(0, 3)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className={styles.actionBtns}>
+                                                <button className={styles.actionBtn} onClick={() => editArea(area)}>
+                                                    <Edit size={14} />
+                                                </button>
+                                                <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => removeArea(area.id)}>
+                                                    <Trash size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )
             )}
 
 

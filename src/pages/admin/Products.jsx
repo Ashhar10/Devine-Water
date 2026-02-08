@@ -10,7 +10,9 @@ import {
     TrendingUp,
     TrendingDown,
     AlertTriangle,
-    Droplets
+    Droplets,
+    LayoutGrid,
+    List
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -30,6 +32,7 @@ function Products() {
     const [stockMovement, setStockMovement] = useState({ type: 'in', quantity: 0, remarks: '' })
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [productToDelete, setProductToDelete] = useState(null)
+    const [viewMode, setViewMode] = useState('grid')
     const [formData, setFormData] = useState({
         name: '',
         bottleType: '19L',
@@ -161,9 +164,27 @@ function Products() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
-                    Add Product
-                </Button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div className={styles.viewToggle}>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}
+                            onClick={() => setViewMode('grid')}
+                            title="Grid View"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'list' ? styles.active : ''}`}
+                            onClick={() => setViewMode('list')}
+                            title="List View"
+                        >
+                            <List size={18} />
+                        </button>
+                    </div>
+                    <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
+                        Add Product
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -203,97 +224,174 @@ function Products() {
             </div>
 
             {/* Products Grid */}
-            <div className={styles.productsGrid}>
-                {filteredProducts.map((product, index) => (
-                    <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <GlassCard className={styles.productCard}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.productIcon}>
-                                    <Droplets size={24} />
+            {viewMode === 'grid' ? (
+                <div className={styles.productsGrid}>
+                    {filteredProducts.map((product, index) => (
+                        <motion.div
+                            key={product.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <GlassCard className={styles.productCard}>
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.productIcon}>
+                                        <Droplets size={24} />
+                                    </div>
+                                    <div className={styles.headerInfo}>
+                                        <span className={styles.productName}>{product.name}</span>
+                                        <span className={styles.productId}>{product.id}</span>
+                                    </div>
+                                    <StatusBadge status={product.status} size="sm" />
                                 </div>
-                                <div className={styles.headerInfo}>
-                                    <span className={styles.productName}>{product.name}</span>
-                                    <span className={styles.productId}>{product.id}</span>
-                                </div>
-                                <StatusBadge status={product.status} size="sm" />
-                            </div>
 
-                            <div className={styles.cardBody}>
-                                {currentUser?.designation === 'Administrator' && (
-                                    <div className={styles.priceRow}>
-                                        <div className={styles.priceItem}>
-                                            <span className={styles.priceLabel}>Sale Price</span>
-                                            <span className={styles.priceValue}>Rs {product.price}</span>
+                                <div className={styles.cardBody}>
+                                    {currentUser?.designation === 'Administrator' && (
+                                        <div className={styles.priceRow}>
+                                            <div className={styles.priceItem}>
+                                                <span className={styles.priceLabel}>Sale Price</span>
+                                                <span className={styles.priceValue}>Rs {product.price}</span>
+                                            </div>
+                                            <div className={styles.priceItem}>
+                                                <span className={styles.priceLabel}>Purchase</span>
+                                                <span className={styles.priceValueMuted}>Rs {product.purchasePrice || 0}</span>
+                                            </div>
                                         </div>
-                                        <div className={styles.priceItem}>
-                                            <span className={styles.priceLabel}>Purchase</span>
-                                            <span className={styles.priceValueMuted}>Rs {product.purchasePrice || 0}</span>
+                                    )}
+
+                                    <div className={styles.stockSection}>
+                                        <div className={styles.stockInfo}>
+                                            <span className={styles.stockLabel}>Current Stock</span>
+                                            <span className={`${styles.stockValue} ${product.currentStock <= product.minStockAlert ? styles.lowStock : ''}`}>
+                                                {product.currentStock} units
+                                            </span>
+                                        </div>
+                                        <div className={styles.bottleType}>
+                                            <span className={styles.typeLabel}>{product.bottleType}</span>
                                         </div>
                                     </div>
-                                )}
 
-                                <div className={styles.stockSection}>
-                                    <div className={styles.stockInfo}>
-                                        <span className={styles.stockLabel}>Current Stock</span>
-                                        <span className={`${styles.stockValue} ${product.currentStock <= product.minStockAlert ? styles.lowStock : ''}`}>
-                                            {product.currentStock} units
-                                        </span>
-                                    </div>
-                                    <div className={styles.bottleType}>
-                                        <span className={styles.typeLabel}>{product.bottleType}</span>
-                                    </div>
+                                    {product.currentStock <= product.minStockAlert && (
+                                        <div className={styles.lowStockAlert}>
+                                            <AlertTriangle size={14} />
+                                            <span>Low stock! Min: {product.minStockAlert}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {product.currentStock <= product.minStockAlert && (
-                                    <div className={styles.lowStockAlert}>
-                                        <AlertTriangle size={14} />
-                                        <span>Low stock! Min: {product.minStockAlert}</span>
+                                <div className={styles.cardFooter}>
+                                    <div className={styles.stockActions}>
+                                        <button
+                                            className={`${styles.stockBtn} ${styles.stockIn}`}
+                                            onClick={() => openStockModal(product)}
+                                        >
+                                            <TrendingUp size={14} />
+                                            <span>Stock</span>
+                                        </button>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className={styles.cardFooter}>
-                                <div className={styles.stockActions}>
-                                    <button
-                                        className={`${styles.stockBtn} ${styles.stockIn}`}
-                                        onClick={() => openStockModal(product)}
-                                    >
-                                        <TrendingUp size={14} />
-                                        <span>Stock</span>
-                                    </button>
+                                    <div className={styles.actionBtns}>
+                                        <button className={styles.actionBtn} onClick={() => handleEdit(product)}>
+                                            <Edit size={16} />
+                                        </button>
+                                        <button
+                                            className={`${styles.actionBtn} ${styles.danger}`}
+                                            onClick={() => handleDelete(product)}
+                                        >
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className={styles.actionBtns}>
-                                    <button className={styles.actionBtn} onClick={() => handleEdit(product)}>
-                                        <Edit size={16} />
-                                    </button>
-                                    <button
-                                        className={`${styles.actionBtn} ${styles.danger}`}
-                                        onClick={() => handleDelete(product)}
-                                    >
-                                        <Trash size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        </GlassCard>
-                    </motion.div>
-                ))}
+                            </GlassCard>
+                        </motion.div>
+                    ))}
 
-                {filteredProducts.length === 0 && (
-                    <div className={styles.emptyState}>
-                        <Package size={48} />
-                        <h3>No products found</h3>
-                        <p>Add your first product to get started</p>
-                        <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
-                            Add Product
-                        </Button>
-                    </div>
-                )}
-            </div>
+                    {filteredProducts.length === 0 && (
+                        <div className={styles.emptyState}>
+                            <Package size={48} />
+                            <h3>No products found</h3>
+                            <p>Add your first product to get started</p>
+                            <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
+                                Add Product
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className={styles.listView}>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th>Pricing</th>
+                                <th>Stock Level</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredProducts.map((product, index) => (
+                                <motion.tr
+                                    key={product.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.03 }}
+                                    className={styles.tableRow}
+                                >
+                                    <td>
+                                        <div className={styles.tableProductInfo}>
+                                            <div className={styles.tableProductIcon}>
+                                                <Droplets size={18} />
+                                            </div>
+                                            <div>
+                                                <div className={styles.tableName}>{product.name}</div>
+                                                <div className={styles.tableId}>{product.id}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={styles.tableTypeBadge}>{product.bottleType}</span>
+                                    </td>
+                                    <td>
+                                        {currentUser?.designation === 'Administrator' ? (
+                                            <div className={styles.tablePricing}>
+                                                <div className={styles.salePrice}>Sale: Rs {product.price}</div>
+                                                <div className={styles.purchasePrice}>Cost: Rs {product.purchasePrice || 0}</div>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.salePrice}>Rs {product.price}</div>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <div className={styles.tableStockInfo}>
+                                            <div className={`${styles.tableStockValue} ${product.currentStock <= product.minStockAlert ? styles.lowStock : ''}`}>
+                                                {product.currentStock} units
+                                            </div>
+                                            {product.currentStock <= product.minStockAlert && (
+                                                <div className={styles.lowStockChip}>Low Stock</div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td><StatusBadge status={product.status} size="sm" /></td>
+                                    <td>
+                                        <div className={styles.actionBtns}>
+                                            <button className={styles.actionBtn} onClick={() => openStockModal(product)} title="Update Stock">
+                                                <TrendingUp size={14} />
+                                            </button>
+                                            <button className={styles.actionBtn} onClick={() => handleEdit(product)} title="Edit">
+                                                <Edit size={14} />
+                                            </button>
+                                            <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(product)} title="Delete">
+                                                <Trash size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Add/Edit Product Modal */}
             {showAddModal && (

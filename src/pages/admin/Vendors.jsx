@@ -12,7 +12,9 @@ import {
     X,
     Wallet,
     FileText,
-    AlertTriangle
+    AlertTriangle,
+    LayoutGrid,
+    List
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -26,6 +28,7 @@ function Vendors() {
     const [editingVendor, setEditingVendor] = useState(null)
     const [vendorToDelete, setVendorToDelete] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [viewMode, setViewMode] = useState('grid')
     const [formData, setFormData] = useState({
         name: '',
         contactPerson: '',
@@ -129,9 +132,27 @@ function Vendors() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
-                    Add Vendor
-                </Button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div className={styles.viewToggle}>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}
+                            onClick={() => setViewMode('grid')}
+                            title="Grid View"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button
+                            className={`${styles.viewBtn} ${viewMode === 'list' ? styles.active : ''}`}
+                            onClick={() => setViewMode('list')}
+                            title="List View"
+                        >
+                            <List size={18} />
+                        </button>
+                    </div>
+                    <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
+                        Add Vendor
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -160,99 +181,173 @@ function Vendors() {
             </div>
 
             {/* Vendors Grid */}
-            <div className={styles.vendorsGrid}>
-                {filteredVendors.map((vendor, index) => (
-                    <motion.div
-                        key={vendor.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <GlassCard className={styles.vendorCard}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.vendorIcon}>
-                                    <Store size={24} />
-                                </div>
-                                <div className={styles.headerInfo}>
-                                    <span className={styles.vendorName}>{vendor.name}</span>
-                                    <span className={styles.vendorId}>{vendor.id}</span>
-                                </div>
-                                <StatusBadge status={vendor.status} size="sm" />
-                            </div>
-
-                            <div className={styles.cardBody}>
-                                {vendor.contactPerson && (
-                                    <div className={styles.infoRow}>
-                                        <span className={styles.infoLabel}>Contact Person</span>
-                                        <span className={styles.infoValue}>{vendor.contactPerson}</span>
+            {viewMode === 'grid' ? (
+                <div className={styles.vendorsGrid}>
+                    {filteredVendors.map((vendor, index) => (
+                        <motion.div
+                            key={vendor.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <GlassCard className={styles.vendorCard}>
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.vendorIcon}>
+                                        <Store size={24} />
                                     </div>
-                                )}
-                                <div className={styles.infoRow}>
-                                    <Phone size={14} />
-                                    <span>{vendor.phone}</span>
-                                </div>
-                                {vendor.email && (
-                                    <div className={styles.infoRow}>
-                                        <Mail size={14} />
-                                        <span>{vendor.email}</span>
+                                    <div className={styles.headerInfo}>
+                                        <span className={styles.vendorName}>{vendor.name}</span>
+                                        <span className={styles.vendorId}>{vendor.id}</span>
                                     </div>
-                                )}
-                                {vendor.address && (
+                                    <StatusBadge status={vendor.status} size="sm" />
+                                </div>
+
+                                <div className={styles.cardBody}>
+                                    {vendor.contactPerson && (
+                                        <div className={styles.infoRow}>
+                                            <span className={styles.infoLabel}>Contact Person</span>
+                                            <span className={styles.infoValue}>{vendor.contactPerson}</span>
+                                        </div>
+                                    )}
                                     <div className={styles.infoRow}>
-                                        <MapPin size={14} />
-                                        <span>{vendor.address}</span>
+                                        <Phone size={14} />
+                                        <span>{vendor.phone}</span>
                                     </div>
-                                )}
-                            </div>
+                                    {vendor.email && (
+                                        <div className={styles.infoRow}>
+                                            <Mail size={14} />
+                                            <span>{vendor.email}</span>
+                                        </div>
+                                    )}
+                                    {vendor.address && (
+                                        <div className={styles.infoRow}>
+                                            <MapPin size={14} />
+                                            <span>{vendor.address}</span>
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className={styles.balanceSection}>
-                                <div className={styles.balanceItem}>
-                                    <span className={styles.balanceLabel}>Opening Balance</span>
-                                    <span className={styles.balanceValue}>Rs {vendor.openingBalance?.toLocaleString() || 0}</span>
+                                <div className={styles.balanceSection}>
+                                    <div className={styles.balanceItem}>
+                                        <span className={styles.balanceLabel}>Opening Balance</span>
+                                        <span className={styles.balanceValue}>Rs {vendor.openingBalance?.toLocaleString() || 0}</span>
+                                    </div>
+                                    <div className={styles.balanceItem}>
+                                        <span className={styles.balanceLabel}>Current Balance</span>
+                                        <span className={`${styles.balanceValue} ${styles.highlight}`}>
+                                            Rs {vendor.currentBalance?.toLocaleString() || 0}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className={styles.balanceItem}>
-                                    <span className={styles.balanceLabel}>Current Balance</span>
-                                    <span className={`${styles.balanceValue} ${styles.highlight}`}>
-                                        Rs {vendor.currentBalance?.toLocaleString() || 0}
-                                    </span>
-                                </div>
-                            </div>
 
-                            <div className={styles.cardFooter}>
-                                <div className={styles.quickActions}>
-                                    <button className={styles.quickBtn}>
-                                        <FileText size={14} />
-                                        <span>Ledger</span>
-                                    </button>
-                                    <button className={styles.quickBtn}>
-                                        <Wallet size={14} />
-                                        <span>Payment</span>
-                                    </button>
+                                <div className={styles.cardFooter}>
+                                    <div className={styles.quickActions}>
+                                        <button className={styles.quickBtn}>
+                                            <FileText size={14} />
+                                            <span>Ledger</span>
+                                        </button>
+                                        <button className={styles.quickBtn}>
+                                            <Wallet size={14} />
+                                            <span>Payment</span>
+                                        </button>
+                                    </div>
+                                    <div className={styles.actionBtns}>
+                                        <button className={styles.actionBtn} onClick={() => handleEdit(vendor)}>
+                                            <Edit size={16} />
+                                        </button>
+                                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDeleteClick(vendor)}>
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className={styles.actionBtns}>
-                                    <button className={styles.actionBtn} onClick={() => handleEdit(vendor)}>
-                                        <Edit size={16} />
-                                    </button>
-                                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDeleteClick(vendor)}>
-                                        <Trash size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        </GlassCard>
-                    </motion.div>
-                ))}
+                            </GlassCard>
+                        </motion.div>
+                    ))}
 
-                {filteredVendors.length === 0 && (
-                    <div className={styles.emptyState}>
-                        <Store size={48} />
-                        <h3>No vendors found</h3>
-                        <p>Add your first vendor/supplier to get started</p>
-                        <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
-                            Add Vendor
-                        </Button>
-                    </div>
-                )}
-            </div>
+                    {filteredVendors.length === 0 && (
+                        <div className={styles.emptyState}>
+                            <Store size={48} />
+                            <h3>No vendors found</h3>
+                            <p>Add your first vendor/supplier to get started</p>
+                            <Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
+                                Add Vendor
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className={styles.listView}>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Contact Information</th>
+                                <th>Address</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredVendors.map((vendor, index) => (
+                                <motion.tr
+                                    key={vendor.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.03 }}
+                                    className={styles.tableRow}
+                                >
+                                    <td>
+                                        <div className={styles.tableVendorInfo}>
+                                            <div className={styles.tableVendorIcon}>
+                                                <Store size={18} />
+                                            </div>
+                                            <div>
+                                                <div className={styles.tableName}>{vendor.name}</div>
+                                                <div className={styles.tableId}>{vendor.id}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className={styles.tableContactPerson}>{vendor.contactPerson || '---'}</div>
+                                        <div className={styles.tablePhone}>{vendor.phone}</div>
+                                        <div className={styles.tableEmail}>{vendor.email}</div>
+                                    </td>
+                                    <td>
+                                        <div className={styles.tableAddress}>{vendor.address || '---'}</div>
+                                    </td>
+                                    <td>
+                                        <div className={styles.tableBalanceInfo}>
+                                            <div className={styles.tableBalanceItem}>
+                                                <span className={styles.tableLabel}>Opening:</span>
+                                                <span>Rs {vendor.openingBalance?.toLocaleString() || 0}</span>
+                                            </div>
+                                            <div className={styles.tableBalanceItem}>
+                                                <span className={styles.tableLabel}>Current:</span>
+                                                <span className={styles.highlight}>Rs {vendor.currentBalance?.toLocaleString() || 0}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><StatusBadge status={vendor.status} size="sm" /></td>
+                                    <td>
+                                        <div className={styles.actionBtns}>
+                                            <button className={styles.actionBtn} onClick={() => handleEdit(vendor)} title="Edit">
+                                                <Edit size={14} />
+                                            </button>
+                                            <button className={styles.actionBtn} title="Ledger">
+                                                <FileText size={14} />
+                                            </button>
+                                            <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDeleteClick(vendor)} title="Delete">
+                                                <Trash size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Add/Edit Modal */}
             {showAddModal && (

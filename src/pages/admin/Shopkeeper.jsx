@@ -32,7 +32,6 @@ const getEmptyProductForm = () => ({
     unitPrice: 0,
     amount: 0,
     type: 'in', // 'in' or 'out'
-    isPrivate: false,
     remarks: ''
 })
 
@@ -295,7 +294,6 @@ function Shopkeeper() {
             quantity: parseFloat(productForm.quantity),
             unitPrice: productForm.unitPrice,
             amount: productForm.amount,
-            isPrivate: productForm.isPrivate,
             remarks: productForm.remarks,
             entryDate: new Date().toISOString().split('T')[0]
         }
@@ -678,16 +676,6 @@ function Shopkeeper() {
                                 <small className={styles.helpText}>
                                     Calculated: {productForm.quantity} × Rs {productForm.unitPrice.toFixed(2)}
                                 </small>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label className={styles.checkboxLabel}>
-                                    <input
-                                        type="checkbox"
-                                        checked={productForm.isPrivate}
-                                        onChange={(e) => setProductForm({ ...productForm, isPrivate: e.target.checked })}
-                                    />
-                                    <span>Private Sale (hide price from non-admin users)</span>
-                                </label>
                             </div>
                             <div className={styles.formGroup}>
                                 <label>Remarks</label>

@@ -8,7 +8,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import styles from './UserManagement.module.css'
 
 const ROLES = ['admin', 'staff', 'customer']
-const DESIGNATIONS = ['Administrator', 'Manager', 'Supervisor', 'Accountant', 'Delivery Boy', 'Receptionist', 'Customer']
+const DESIGNATIONS = ['Administrator', 'Manager', 'Supervisor', 'Accountant', 'Delivery Boy', 'Receptionist', 'Shopkeeper', 'Customer']
 
 // Map labels to paths as defined in AdminSidebar.jsx
 const AVAILABLE_SECTIONS = [

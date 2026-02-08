@@ -440,6 +440,37 @@
     font-family: inherit;
 }
 
+.readOnlyInput {
+    background: rgba(255, 255, 255, 0.03) !important;
+    cursor: not-allowed;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.helpText {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.checkboxLabel span {
+    color: rgba(255, 255, 255, 0.8);
+}
+
 .modalActions {
     display: flex;
     gap: 10px;

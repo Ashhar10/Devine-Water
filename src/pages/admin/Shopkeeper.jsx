@@ -27,15 +27,21 @@ const CACHE_KEY_PRODUCT = 'devine_shopkeeper_product_cache'
 const CACHE_KEY_WATER = 'devine_shopkeeper_water_cache'
 
 const getEmptyProductForm = () => ({
-    productName: '',
-    amount: '',
+    productId: '',
+    quantity: 1,
+    unitPrice: 0,
+    amount: 0,
     type: 'in', // 'in' or 'out'
+    isPrivate: false,
     remarks: ''
 })
 
 const getEmptyWaterForm = () => ({
-    liters: '',
-    amount: '',
+    productId: '', // For preset water products
+    customLiters: '', // For custom liter entry
+    liters: 0,
+    unitPrice: 0,
+    amount: 0,
     remarks: ''
 })
 
@@ -55,9 +61,18 @@ function Shopkeeper() {
     })
 
     const shopkeeperEntries = useDataStore(state => state.shopkeeperEntries) || []
+    const products = useDataStore(state => state.products) || []
     const addShopkeeperEntry = useDataStore(state => state.addShopkeeperEntry)
     const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
+
+    // Filter products
+    const waterProducts = products.filter(p =>
+        p.bottleType === '19L' || p.bottleType === '6L' ||
+        p.name.toLowerCase().includes('water') ||
+        p.name.toLowerCase().includes('aqua')
+    )
+    const otherProducts = products.filter(p => !waterProducts.includes(p))
 
     // Draft persistence for Product Entry
     useEffect(() => {
@@ -65,7 +80,7 @@ function Shopkeeper() {
         if (cached && !showProductModal) {
             try {
                 const parsed = JSON.parse(cached)
-                if (parsed.productName || parsed.amount) {
+                if (parsed.productId || parsed.quantity) {
                     setProductForm(parsed)
                 }
             } catch (e) {
@@ -76,20 +91,19 @@ function Shopkeeper() {
 
     useEffect(() => {
         if (showProductModal && !editingEntry) {
-            const hasData = productForm.productName || productForm.amount
+            const hasData = productForm.productId || productForm.quantity > 1
             if (hasData) {
                 localStorage.setItem(CACHE_KEY_PRODUCT, JSON.stringify(productForm))
             }
         }
     }, [productForm, showProductModal, editingEntry])
 
-    // Draft persistence for Water Sale
     useEffect(() => {
         const cached = localStorage.getItem(CACHE_KEY_WATER)
         if (cached && !showWaterModal) {
             try {
                 const parsed = JSON.parse(cached)
-                if (parsed.liters || parsed.amount) {
+                if (parsed.productId || parsed.customLiters) {
                     setWaterForm(parsed)
                 }
             } catch (e) {
@@ -100,7 +114,7 @@ function Shopkeeper() {
 
     useEffect(() => {
         if (showWaterModal && !editingEntry) {
-            const hasData = waterForm.liters || waterForm.amount
+            const hasData = waterForm.productId || waterForm.customLiters
             if (hasData) {
                 localStorage.setItem(CACHE_KEY_WATER, JSON.stringify(waterForm))
             }
@@ -197,12 +211,91 @@ function Shopkeeper() {
         }
     }, [filteredEntries, activeTab])
 
+    // Product Sale handlers
+    const handleProductSelect = (productId) => {
+        const product = otherProducts.find(p => p.id === productId)
+        if (product) {
+            const amount = productForm.quantity * parseFloat(product.price || 0)
+            setProductForm({
+                ...productForm,
+                productId,
+                unitPrice: parseFloat(product.price || 0),
+                amount
+            })
+        }
+    }
+
+    const handleQuantityChange = (quantity) => {
+        const qty = parseFloat(quantity) || 0
+        const amount = qty * productForm.unitPrice
+        setProductForm({
+            ...productForm,
+            quantity: qty,
+            amount
+        })
+    }
+
+    // Water Sale handlers
+    const handleWaterProductSelect = (productId) => {
+        if (productId === 'custom') {
+            // Switch to custom liter input
+            setWaterForm({
+                ...waterForm,
+                productId: 'custom',
+                liters: 0,
+                unitPrice: 0,
+                amount: 0
+            })
+        } else {
+            const product = waterProducts.find(p => p.id === productId)
+            if (product) {
+                // Extract liters from bottle type (e.g., "19L" -> 19)
+                const liters = parseFloat(product.bottleType) || 0
+                const amount = parseFloat(product.price || 0)
+                setWaterForm({
+                    ...waterForm,
+                    productId,
+                    customLiters: '',
+                    liters,
+                    unitPrice: amount / (liters || 1),
+                    amount
+                })
+            }
+        }
+    }
+
+    const handleCustomLitersChange = (liters) => {
+        const literValue = parseFloat(liters) || 0
+        // Calculate average water price per liter from existing water products
+        const avgPricePerLiter = waterProducts.length > 0
+            ? waterProducts.reduce((sum, p) => {
+                const pLiters = parseFloat(p.bottleType) || 1
+                return sum + (parseFloat(p.price || 0) / pLiters)
+            }, 0) / waterProducts.length
+            : 0
+
+        setWaterForm({
+            ...waterForm,
+            customLiters: liters,
+            liters: literValue,
+            unitPrice: avgPricePerLiter,
+            amount: literValue * avgPricePerLiter
+        })
+    }
+
     const handleProductSubmit = (e) => {
         e.preventDefault()
+
+        const selectedProduct = otherProducts.find(p => p.id === productForm.productId)
+
         const entry = {
             entryType: productForm.type === 'in' ? 'product_in' : 'product_out',
-            productName: productForm.productName,
-            amount: parseFloat(productForm.amount),
+            productId: productForm.productId,
+            productName: selectedProduct?.name || '',
+            quantity: parseFloat(productForm.quantity),
+            unitPrice: productForm.unitPrice,
+            amount: productForm.amount,
+            isPrivate: productForm.isPrivate,
             remarks: productForm.remarks,
             entryDate: new Date().toISOString().split('T')[0]
         }
@@ -221,10 +314,18 @@ function Shopkeeper() {
 
     const handleWaterSubmit = (e) => {
         e.preventDefault()
+
+        const selectedProduct = waterForm.productId !== 'custom'
+            ? waterProducts.find(p => p.id === waterForm.productId)
+            : null
+
         const entry = {
             entryType: 'water_sale',
-            liters: parseFloat(waterForm.liters),
-            amount: parseFloat(waterForm.amount),
+            productId: waterForm.productId !== 'custom' ? waterForm.productId : null,
+            productName: selectedProduct?.name || `Custom ${waterForm.liters}L`,
+            liters: waterForm.liters,
+            unitPrice: waterForm.unitPrice,
+            amount: waterForm.amount,
             remarks: waterForm.remarks,
             entryDate: new Date().toISOString().split('T')[0]
         }
@@ -526,24 +627,30 @@ function Shopkeeper() {
                         </div>
                         <form onSubmit={handleProductSubmit}>
                             <div className={styles.formGroup}>
-                                <label>Product Name *</label>
-                                <input
-                                    type="text"
-                                    value={productForm.productName}
-                                    onChange={(e) => setProductForm({ ...productForm, productName: e.target.value })}
-                                    placeholder="Enter product name"
+                                <label>Select Product *</label>
+                                <select
+                                    value={productForm.productId}
+                                    onChange={(e) => handleProductSelect(e.target.value)}
                                     required
-                                />
+                                >
+                                    <option value="">Choose a product...</option>
+                                    {otherProducts.map(product => (
+                                        <option key={product.id} value={product.id}>
+                                            {product.name} - Rs {product.price} / {product.bottleType}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
-                                    <label>Amount (Rs) *</label>
+                                    <label>Quantity *</label>
                                     <input
                                         type="number"
-                                        step="0.01"
-                                        value={productForm.amount}
-                                        onChange={(e) => setProductForm({ ...productForm, amount: e.target.value })}
-                                        placeholder="0.00"
+                                        step="1"
+                                        min="1"
+                                        value={productForm.quantity}
+                                        onChange={(e) => handleQuantityChange(e.target.value)}
+                                        placeholder="1"
                                         required
                                     />
                                 </div>
@@ -557,6 +664,30 @@ function Shopkeeper() {
                                         <option value="out">Amount Out</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Total Amount (Rs)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={productForm.amount.toFixed(2)}
+                                    readOnly
+                                    className={styles.readOnlyInput}
+                                    placeholder="0.00"
+                                />
+                                <small className={styles.helpText}>
+                                    Calculated: {productForm.quantity} × Rs {productForm.unitPrice.toFixed(2)}
+                                </small>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label className={styles.checkboxLabel}>
+                                    <input
+                                        type="checkbox"
+                                        checked={productForm.isPrivate}
+                                        onChange={(e) => setProductForm({ ...productForm, isPrivate: e.target.checked })}
+                                    />
+                                    <span>Private Sale (hide price from non-admin users)</span>
+                                </label>
                             </div>
                             <div className={styles.formGroup}>
                                 <label>Remarks</label>
@@ -601,27 +732,62 @@ function Shopkeeper() {
                             </div>
                         </div>
                         <form onSubmit={handleWaterSubmit}>
-                            <div className={styles.formRow}>
+                            <div className={styles.formGroup}>
+                                <label>Water Product *</label>
+                                <select
+                                    value={waterForm.productId}
+                                    onChange={(e) => handleWaterProductSelect(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Choose water product...</option>
+                                    {waterProducts.map(product => (
+                                        <option key={product.id} value={product.id}>
+                                            {product.name} - {product.bottleType} - Rs {product.price}
+                                        </option>
+                                    ))}
+                                    <option value="custom">Custom Liters</option>
+                                </select>
+                            </div>
+
+                            {waterForm.productId === 'custom' && (
                                 <div className={styles.formGroup}>
-                                    <label>Liters *</label>
+                                    <label>Custom Liters *</label>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={waterForm.liters}
-                                        onChange={(e) => setWaterForm({ ...waterForm, liters: e.target.value })}
-                                        placeholder="0.00"
+                                        min="0.01"
+                                        value={waterForm.customLiters}
+                                        onChange={(e) => handleCustomLitersChange(e.target.value)}
+                                        placeholder="Enter liters..."
                                         required
+                                    />
+                                    <small className={styles.helpText}>
+                                        Avg price: Rs {waterForm.unitPrice.toFixed(2)}/liter
+                                    </small>
+                                </div>
+                            )}
+
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Liters</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={waterForm.liters.toFixed(2)}
+                                        readOnly
+                                        className={styles.readOnlyInput}
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>Amount (Rs) *</label>
+                                    <label>Amount (Rs)</label>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={waterForm.amount}
-                                        onChange={(e) => setWaterForm({ ...waterForm, amount: e.target.value })}
+                                        value={waterForm.amount.toFixed(2)}
+                                        readOnly
+                                        className={styles.readOnlyInput}
                                         placeholder="0.00"
-                                        required
                                     />
                                 </div>
                             </div>

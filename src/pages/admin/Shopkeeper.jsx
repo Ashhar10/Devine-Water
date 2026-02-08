@@ -25,6 +25,7 @@ import styles from './Shopkeeper.module.css'
 
 const CACHE_KEY_PRODUCT = 'devine_shopkeeper_product_cache'
 const CACHE_KEY_WATER = 'devine_shopkeeper_water_cache'
+const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'General']
 
 const getEmptyProductForm = () => ({
     productId: '',
@@ -46,7 +47,7 @@ const getEmptyWaterForm = () => ({
 })
 
 function Shopkeeper() {
-    const [activeTab, setActiveTab] = useState('product') // 'product' or 'water'
+    const [activeTab, setActiveTab] = useState('Wholesale') // Changed to designation
     const [searchTerm, setSearchTerm] = useState('')
     const [viewMode, setViewMode] = useState('grid')
     const [showProductModal, setShowProductModal] = useState(false)
@@ -66,13 +67,18 @@ function Shopkeeper() {
     const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
 
-    // Filter products
+    // Filter products by designation
     const waterProducts = products.filter(p =>
+        p.designation === 'Water' ||
         p.bottleType === '19L' || p.bottleType === '6L' ||
         p.name.toLowerCase().includes('water') ||
         p.name.toLowerCase().includes('aqua')
     )
-    const otherProducts = products.filter(p => !waterProducts.includes(p))
+
+    // Filter products for current active tab
+    const tabProducts = activeTab === 'Water'
+        ? waterProducts
+        : products.filter(p => p.designation === activeTab)
 
     // Draft persistence for Product Entry
     useEffect(() => {
@@ -135,11 +141,17 @@ function Shopkeeper() {
     const filteredEntries = useMemo(() => {
         let entries = [...shopkeeperEntries]
 
-        // Filter by tab
-        if (activeTab === 'product') {
-            entries = entries.filter(e => e.entryType === 'product_in' || e.entryType === 'product_out')
-        } else {
+        // Filter by tab (designation)
+        if (activeTab === 'Water') {
             entries = entries.filter(e => e.entryType === 'water_sale')
+        } else {
+            // Filter product entries by designation
+            entries = entries.filter(e => {
+                if (e.entryType === 'water_sale') return false
+                // Check if the entry's product matches the active designation
+                const product = products.find(p => p.id === e.productId)
+                return product?.designation === activeTab
+            })
         }
 
         // Filter by date
@@ -188,7 +200,17 @@ function Shopkeeper() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        if (activeTab === 'product') {
+        if (activeTab === 'Water') {
+            // Water sale stats
+            const totalLiters = filteredEntries.reduce((sum, e) => sum + parseFloat(e.liters || 0), 0)
+            const totalRevenue = filteredEntries.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
+            return {
+                totalLiters,
+                totalRevenue,
+                avgPrice: totalLiters > 0 ? totalRevenue / totalLiters : 0
+            }
+        } else {
+            // Product entry stats (for any designation)
             const amountIn = filteredEntries
                 .filter(e => e.entryType === 'product_in')
                 .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
@@ -200,20 +222,12 @@ function Shopkeeper() {
                 amountOut,
                 netAmount: amountIn - amountOut
             }
-        } else {
-            const totalLiters = filteredEntries.reduce((sum, e) => sum + parseFloat(e.liters || 0), 0)
-            const totalRevenue = filteredEntries.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
-            return {
-                totalLiters,
-                totalRevenue,
-                avgPrice: totalLiters > 0 ? totalRevenue / totalLiters : 0
-            }
         }
     }, [filteredEntries, activeTab])
 
     // Product Sale handlers
     const handleProductSelect = (productId) => {
-        const product = otherProducts.find(p => p.id === productId)
+        const product = tabProducts.find(p => p.id === productId)
         if (product) {
             const amount = productForm.quantity * parseFloat(product.price || 0)
             setProductForm({
@@ -286,7 +300,7 @@ function Shopkeeper() {
     const handleProductSubmit = (e) => {
         e.preventDefault()
 
-        const selectedProduct = otherProducts.find(p => p.id === productForm.productId)
+        const selectedProduct = tabProducts.find(p => p.id === productForm.productId)
 
         const entry = {
             entryType: productForm.type === 'in' ? 'product_in' : 'product_out',
@@ -397,24 +411,27 @@ function Shopkeeper() {
                 <Button
                     variant="primary"
                     icon={Plus}
-                    onClick={() => activeTab === 'product' ? setShowProductModal(true) : setShowWaterModal(true)}
+                    onClick={() => activeTab === 'Water' ? setShowWaterModal(true) : setShowProductModal(true)}
                 >
-                    Add {activeTab === 'product' ? 'Product Entry' : 'Water Sale'}
+                    Add {activeTab === 'Water' ? 'Water Sale' : 'Product Entry'}
                 </Button>
             </div>
 
             {/* Tabs */}
             <div className={styles.tabsContainer}>
+                {DESIGNATIONS.map(designation => (
+                    <button
+                        key={designation}
+                        className={`${styles.tabBtn} ${activeTab === designation ? styles.active : ''}`}
+                        onClick={() => setActiveTab(designation)}
+                    >
+                        <Store size={18} />
+                        {designation}
+                    </button>
+                ))}
                 <button
-                    className={`${styles.tabBtn} ${activeTab === 'product' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('product')}
-                >
-                    <Store size={18} />
-                    Product Entry
-                </button>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'water' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('water')}
+                    className={`${styles.tabBtn} ${activeTab === 'Water' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('Water')}
                 >
                     <Droplets size={18} />
                     Water Sale
@@ -540,7 +557,7 @@ function Shopkeeper() {
                     <div className={styles.emptyState}>
                         {activeTab === 'product' ? <Store size={48} /> : <Droplets size={48} />}
                         <h3>No entries found</h3>
-                        <p>Add your first {activeTab === 'product' ? 'product entry' : 'water sale'} to get started</p>
+                        <p>Add your first {activeTab === 'Water' ? 'water sale' : `${activeTab} product entry`} to get started</p>
                     </div>
                 ) : (
                     filteredEntries.map((entry, index) => (
@@ -634,7 +651,7 @@ function Shopkeeper() {
                                     required
                                 >
                                     <option value="">Choose a product...</option>
-                                    {otherProducts.map(product => (
+                                    {tabProducts.map(product => (
                                         <option key={product.id} value={product.id}>
                                             {product.name} - Rs {product.price} / {product.bottleType}
                                         </option>

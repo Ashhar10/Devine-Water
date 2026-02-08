@@ -23,6 +23,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import styles from './Products.module.css'
 
 const BOTTLE_TYPES = ['19L', '6L', '1.5L', '500ML', '330ML', 'Custom']
+const DESIGNATIONS = ['Wholesale', 'Retail', 'VIP', 'General', 'Water']
 
 const CACHE_KEY = 'devine_product_form_cache'
 const getEmptyProductData = () => ({
@@ -31,7 +32,9 @@ const getEmptyProductData = () => ({
     price: '',
     purchasePrice: '',
     currentStock: 0,
-    minStockAlert: 10
+    minStockAlert: 10,
+    designation: 'General',
+    visibility: 'public'
 })
 
 function Products() {
@@ -145,9 +148,11 @@ function Products() {
             name: product.name,
             bottleType: product.bottleType,
             price: product.price,
-            purchasePrice: product.purchasePrice || '',
+            purchasePrice: product.purchasePrice || 0,
             currentStock: product.currentStock,
-            minStockAlert: product.minStockAlert
+            minStockAlert: product.minStockAlert,
+            designation: product.designation || 'General',
+            visibility: product.visibility || 'public'
         })
         setShowAddModal(true)
     }
@@ -518,6 +523,47 @@ function Products() {
                                         placeholder="10"
                                         min="0"
                                     />
+                                </div>
+                            </div>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label>Designation *</label>
+                                    <select
+                                        value={formData.designation}
+                                        onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                                        required
+                                    >
+                                        {DESIGNATIONS.map(designation => (
+                                            <option key={designation} value={designation}>{designation}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Price Visibility *</label>
+                                    <div className={styles.radioGroup}>
+                                        <label className={styles.radioLabel}>
+                                            <input
+                                                type="radio"
+                                                name="visibility"
+                                                value="public"
+                                                checked={formData.visibility === 'public'}
+                                                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                                            />
+                                            <span>Public</span>
+                                            <small>Visible to {formData.designation} users</small>
+                                        </label>
+                                        <label className={styles.radioLabel}>
+                                            <input
+                                                type="radio"
+                                                name="visibility"
+                                                value="private"
+                                                checked={formData.visibility === 'private'}
+                                                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                                            />
+                                            <span>Private</span>
+                                            <small>Admin only</small>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             <Button type="submit" variant="primary" fullWidth>

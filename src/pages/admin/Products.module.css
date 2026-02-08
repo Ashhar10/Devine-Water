@@ -563,6 +563,51 @@
     margin-bottom: var(--space-sm);
 }
 
+.formRow .formGroup input[type="checkbox"] {
+    width: auto;
+}
+
+.radioGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radioLabel {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radioLabel:hover {
+    border-color: rgba(96, 165, 250, 0.5);
+    background: rgba(96, 165, 250, 0.05);
+}
+
+.radioLabel input[type="radio"] {
+    width: auto;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.radioLabel span {
+    flex: 1;
+    font-weight: 500;
+}
+
+.radioLabel small {
+    display: block;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    margin-top: 2px;
+}
+
+/* Stats Grid */
 .formGroup input,
 .formGroup select {
     width: 100%;

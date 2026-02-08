@@ -86,6 +86,7 @@ export const useDataStore = create(
             incomeCategories: [],
             expenseCategories: [],
             deliveries: [],
+            purchaseOrders: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -134,6 +135,7 @@ export const useDataStore = create(
                         investments: data?.investments || [],
                         expenditures: data?.expenditures || [],
                         deliveries: mergedDeliveries,
+                        purchaseOrders: data?.purchaseOrders || [],
                         incomeCategories: data?.incomeCategories || [],
                         expenseCategories: data?.expenseCategories || [],
                         isLoading: false,
@@ -1652,6 +1654,10 @@ export const useDataStore = create(
                             const newBalance = (vendor.currentBalance || 0) + parseFloat(data.amount)
                             await get().updateVendor(vendor.id, { currentBalance: newBalance })
                         }
+                        // Update purchaseOrders in store
+                        set(state => ({
+                            purchaseOrders: [dbPurchase, ...state.purchaseOrders]
+                        }))
                         return dbPurchase
                     }
                 } catch (error) {

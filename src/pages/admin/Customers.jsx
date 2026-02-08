@@ -64,6 +64,11 @@ function Customers() {
     const [formData, setFormData] = useState(getEmptyFormData())
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null) // For details modal
     const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+    const [dateFilter, setDateFilter] = useState('all') // all, current_month, last_month, week, custom
+    const [customDates, setCustomDates] = useState({
+        start: '',
+        end: ''
+    })
 
     const customers = useDataStore(state => state.customers)
     const currentUser = useDataStore(state => state.currentUser)
@@ -190,12 +195,54 @@ function Customers() {
                 : [...prev.deliveryDays, day]
         }))
     }
+    // Filter logic
+    const isDateInRange = (dateStr) => {
+        if (dateFilter === 'all') return true
+        if (!dateStr) return false
 
-    const filteredCustomers = customers.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.phone.includes(searchTerm) ||
-        c.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+        const date = new Date(dateStr)
+        const now = new Date()
+
+        if (dateFilter === 'current_month') {
+            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        }
+
+        if (dateFilter === 'last_month') {
+            const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+            const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+            return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear
+        }
+
+        if (dateFilter === 'week') {
+            const oneWeekAgo = new Date()
+            oneWeekAgo.setDate(now.getDate() - 7)
+            return date >= oneWeekAgo && date <= now
+        }
+
+        if (dateFilter === 'custom') {
+            const start = customDates.start ? new Date(customDates.start) : null
+            const end = customDates.end ? new Date(customDates.end) : null
+            if (start && end) {
+                return date >= start && date <= end
+            }
+            if (start) return date >= start
+            if (end) return date <= end
+            return true
+        }
+
+        return true
+    }
+
+    const filteredCustomers = useMemo(() => {
+        return customers.filter(customer => {
+            const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                customer.phone.includes(searchTerm) ||
+                (customer.address && customer.address.toLowerCase().includes(searchTerm.toLowerCase()))
+
+            const matchesDate = isDateInRange(customer.createdAt)
+            return matchesSearch && matchesDate
+        })
+    }, [customers, searchTerm, dateFilter, customDates])
 
     const filteredAreas = areas.filter(a =>
         a.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -383,6 +430,42 @@ function Customers() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+
+                <div className={styles.filterControls}>
+                    <div className={styles.dateSelector}>
+                        <Calendar size={18} className={styles.filterIcon} />
+                        <select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className={styles.filterSelect}
+                        >
+                            <option value="all">All Time</option>
+                            <option value="week">This Week</option>
+                            <option value="current_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    {dateFilter === 'custom' && (
+                        <div className={styles.customDateRange}>
+                            <input
+                                type="date"
+                                value={customDates.start}
+                                onChange={(e) => setCustomDates({ ...customDates, start: e.target.value })}
+                                className={styles.dateInput}
+                            />
+                            <span>to</span>
+                            <input
+                                type="date"
+                                value={customDates.end}
+                                onChange={(e) => setCustomDates({ ...customDates, end: e.target.value })}
+                                className={styles.dateInput}
+                            />
+                        </div>
+                    )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <div className={styles.viewToggle}>
                         <button

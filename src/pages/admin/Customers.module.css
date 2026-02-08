@@ -797,9 +797,70 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.orderItem:last-child,
 .deliveryItem:last-child {
     border-bottom: none;
+}
+
+/* Filter Controls */
+.filterControls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.dateSelector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 38px;
+}
+
+.filterIcon {
+    color: rgba(255, 255, 255, 0.4);
+    margin-right: 8px;
+}
+
+.filterSelect {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 0.85rem;
+    outline: none;
+    height: 100%;
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+.filterSelect option {
+    background: #1a1a1a;
+    color: white;
+}
+
+.customDateRange {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+}
+
+.dateInput {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: white;
+    font-size: 0.8rem;
+    outline: none;
+}
+
+.dateInput:focus {
+    border-color: #06b6d4;
 }
 
 .emptyText {

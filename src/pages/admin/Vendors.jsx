@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -15,7 +15,9 @@ import {
     FileText,
     AlertTriangle,
     LayoutGrid,
-    List
+    List,
+    Calendar,
+    ChevronDown
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -31,6 +33,11 @@ function Vendors() {
     const [vendorToDelete, setVendorToDelete] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState('grid')
+    const [dateFilter, setDateFilter] = useState('all') // all, current_month, last_month, week, custom
+    const [customDates, setCustomDates] = useState({
+        start: '',
+        end: ''
+    })
     const [formData, setFormData] = useState({
         name: '',
         contactPerson: '',
@@ -56,17 +63,76 @@ function Vendors() {
     const updateVendor = useDataStore(state => state.updateVendor)
     const deleteVendor = useDataStore(state => state.deleteVendor)
     const addPurchase = useDataStore(state => state.addPurchase)
+    const purchaseOrders = useDataStore(state => state.purchaseOrders)
 
-    const filteredVendors = vendors.filter(v =>
-        v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.phone.includes(searchTerm)
-    )
+    // Helper to check if date is in range
+    const isDateInRange = (dateStr) => {
+        if (dateFilter === 'all') return true
+        if (!dateStr) return false
 
-    const stats = {
-        total: vendors.length,
-        active: vendors.filter(v => v.status === 'active').length,
-        totalBalance: vendors.reduce((sum, v) => sum + (v.currentBalance || 0), 0)
+        const date = new Date(dateStr)
+        const now = new Date()
+
+        if (dateFilter === 'current_month') {
+            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        }
+
+        if (dateFilter === 'last_month') {
+            const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+            const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+            return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear
+        }
+
+        if (dateFilter === 'week') {
+            const oneWeekAgo = new Date()
+            oneWeekAgo.setDate(now.getDate() - 7)
+            return date >= oneWeekAgo && date <= now
+        }
+
+        if (dateFilter === 'custom') {
+            const start = customDates.start ? new Date(customDates.start) : null
+            const end = customDates.end ? new Date(customDates.end) : null
+            if (start && end) {
+                return date >= start && date <= end
+            }
+            if (start) return date >= start
+            if (end) return date <= end
+            return true
+        }
+
+        return true
     }
+
+    const filteredVendors = useMemo(() => {
+        return vendors.filter(v => {
+            const matchesSearch = v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                v.phone.includes(searchTerm)
+            const matchesDate = isDateInRange(v.createdAt)
+            return matchesSearch && matchesDate
+        })
+    }, [vendors, searchTerm, dateFilter, customDates])
+
+    // Calculate dynamic stats for each vendor based on filtered purchases
+    const vendorStatsMap = useMemo(() => {
+        const stats = {}
+        vendors.forEach(v => {
+            // Find all purchases for this vendor in the filtered range
+            const vendorPurchases = purchaseOrders.filter(p =>
+                p.vendorUuid === v.uuid && isDateInRange(p.date)
+            )
+            const spent = vendorPurchases.reduce((sum, p) => sum + p.amount, 0)
+            stats[v.uuid] = { spent }
+        })
+        return stats
+    }, [vendors, purchaseOrders, dateFilter, customDates])
+
+    const stats = useMemo(() => {
+        return {
+            total: vendors.length,
+            active: vendors.filter(v => v.status === 'active').length,
+            totalBalance: vendors.reduce((sum, v) => sum + (v.currentBalance || 0), 0)
+        }
+    }, [vendors])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -178,6 +244,42 @@ function Vendors() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+
+                <div className={styles.filterControls}>
+                    <div className={styles.dateSelector}>
+                        <Calendar size={18} className={styles.filterIcon} />
+                        <select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className={styles.filterSelect}
+                        >
+                            <option value="all">All Time</option>
+                            <option value="week">This Week</option>
+                            <option value="current_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    {dateFilter === 'custom' && (
+                        <div className={styles.customDateRange}>
+                            <input
+                                type="date"
+                                value={customDates.start}
+                                onChange={(e) => setCustomDates({ ...customDates, start: e.target.value })}
+                                className={styles.dateInput}
+                            />
+                            <span>to</span>
+                            <input
+                                type="date"
+                                value={customDates.end}
+                                onChange={(e) => setCustomDates({ ...customDates, end: e.target.value })}
+                                className={styles.dateInput}
+                            />
+                        </div>
+                    )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <div className={styles.viewToggle}>
                         <button
@@ -275,11 +377,11 @@ function Vendors() {
 
                                 <div className={styles.balanceSection}>
                                     <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Opening Balance</span>
-                                        <span className={styles.balanceValue}>Rs {vendor.openingBalance?.toLocaleString() || 0}</span>
+                                        <span className={styles.balanceLabel}>Total Spent ({dateFilter === 'all' ? 'Overall' : 'Selected Period'})</span>
+                                        <span className={styles.balanceValue}>Rs {vendorStatsMap[vendor.uuid]?.spent.toLocaleString() || 0}</span>
                                     </div>
                                     <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Current Balance</span>
+                                        <span className={styles.balanceLabel}>Payable Balance</span>
                                         <span className={`${styles.balanceValue} ${styles.highlight}`}>
                                             Rs {vendor.currentBalance?.toLocaleString() || 0}
                                         </span>
@@ -365,11 +467,11 @@ function Vendors() {
                                     <td>
                                         <div className={styles.tableBalanceInfo}>
                                             <div className={styles.tableBalanceItem}>
-                                                <span className={styles.tableLabel}>Opening:</span>
-                                                <span>Rs {vendor.openingBalance?.toLocaleString() || 0}</span>
+                                                <span className={styles.tableLabel}>Spent:</span>
+                                                <span>Rs {vendorStatsMap[vendor.uuid]?.spent.toLocaleString() || 0}</span>
                                             </div>
                                             <div className={styles.tableBalanceItem}>
-                                                <span className={styles.tableLabel}>Current:</span>
+                                                <span className={styles.tableLabel}>Payable:</span>
                                                 <span className={styles.highlight}>Rs {vendor.currentBalance?.toLocaleString() || 0}</span>
                                             </div>
                                         </div>

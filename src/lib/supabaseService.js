@@ -1042,6 +1042,31 @@ export const addPurchaseToDb = async (purchaseData) => {
     return data
 }
 
+export const fetchPurchaseOrders = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .order('order_date', { ascending: false })
+
+    if (error) handleError(error, 'fetch purchase orders')
+
+    return data?.map(p => ({
+        id: p.po_id,
+        uuid: p.id,
+        invoiceNo: p.invoice_no,
+        billBookNo: p.bill_book_no,
+        vendorUuid: p.vendor_id,
+        date: p.order_date,
+        amount: parseFloat(p.total_amount || 0),
+        remarks: p.remarks,
+        status: p.status,
+        paymentStatus: p.payment_status,
+        createdAt: p.created_at
+    })) || []
+}
+
 // =====================================================
 // BANKS
 // =====================================================
@@ -1679,7 +1704,8 @@ export const initializeAllData = async () => {
             expenditures,
             deliveries,
             incomeCategories,
-            expenseCategories
+            expenseCategories,
+            purchaseOrders
         ] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),
@@ -1697,7 +1723,8 @@ export const initializeAllData = async () => {
             fetchExpenditures(),
             fetchDeliveries(),
             fetchIncomeCategories(),
-            fetchExpenseCategories()
+            fetchExpenseCategories(),
+            fetchPurchaseOrders()
         ])
 
         return {
@@ -1717,7 +1744,8 @@ export const initializeAllData = async () => {
             expenditures,
             deliveries,
             incomeCategories,
-            expenseCategories
+            expenseCategories,
+            purchaseOrders
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

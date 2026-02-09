@@ -190,6 +190,9 @@ export const fetchOrders = async () => {
             customer_id,
             salesman_id,
             order_date,
+            delivery_date,
+            delivery_notes,
+            discount,
             status,
             payment_status,
             created_at,
@@ -233,9 +236,12 @@ export const fetchOrders = async () => {
                 price: parseFloat(item.unit_price)
             })) || [],
             total: total,  // Calculated from items
+            discount: parseFloat(o.discount || 0),
             status: o.status,
             paymentStatus: o.payment_status,
             orderDate: orderDate,  // Ensure we always have a date
+            deliveryDate: o.delivery_date,
+            notes: o.delivery_notes,
             createdAt: o.created_at
         }
     }) || []

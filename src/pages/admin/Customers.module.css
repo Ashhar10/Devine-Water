@@ -47,9 +47,9 @@
 /* Stats Row */
 .statsRow {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 15px;
-    height: 140px;
+    margin-bottom: 20px;
 }
 
 /* Tabs */
@@ -517,13 +517,14 @@
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
 .detailsModal {
     max-width: 600px;
+    height: 85vh;
+    /* Fixed height to force overflow in content */
 }
 
 .modalHeader {
@@ -770,6 +771,28 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 5px;
+    /* Space for scrollbar */
+}
+
+.detailsContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detailsContent::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.detailsContent::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.detailsContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .detailsSection h4 {

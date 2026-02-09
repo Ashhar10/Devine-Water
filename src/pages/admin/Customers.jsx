@@ -1180,7 +1180,8 @@ function Customers() {
             {/* Customer Details Modal */}
             {selectedCustomerDetails && (() => {
                 // Filter customer's orders and deliveries
-                const customerOrders = orders.filter(o => o.customerId === selectedCustomerDetails.id)
+                const customerUuid = selectedCustomerDetails.uuid
+                const customerOrders = orders.filter(o => o.customerId === customerUuid)
                 const customerDeliveries = deliveries.filter(d => d.customerId === selectedCustomerDetails.id)
 
                 return (
@@ -1314,7 +1315,7 @@ function Customers() {
                                             <div className={styles.detailsGrid}>
                                                 <div className={styles.detailItem}>
                                                     <span className={styles.detailLabel}>Total Orders:</span>
-                                                    <span className={styles.detailValue}>{selectedCustomerDetails.totalOrders || 0}</span>
+                                                    <span className={styles.detailValue}>{customerOrders.length || 0}</span>
                                                 </div>
                                                 <div className={styles.detailItem}>
                                                     <span className={styles.detailLabel}>Required Bottles:</span>

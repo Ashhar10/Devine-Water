@@ -235,7 +235,7 @@ export const fetchOrders = async () => {
                 returnQty: item.return_quantity || 0,
                 price: parseFloat(item.unit_price)
             })) || [],
-            total: total,  // Calculated from items
+            total: total - parseFloat(o.discount || 0),  // Subtract discount from sum of items
             discount: parseFloat(o.discount || 0),
             status: o.status,
             paymentStatus: o.payment_status,
@@ -264,6 +264,8 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             delivery_date: orderData.deliveryDate || null,
             delivery_notes: orderData.notes || null,
             discount: parseFloat(orderData.discount || 0),
+            subtotal: parseFloat(orderData.subtotal || orderData.total || 0),
+            total_amount: parseFloat(orderData.total || 0),
             status: 'pending',
             payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })
@@ -346,6 +348,8 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.deliveryDate) dbUpdates.delivery_date = updates.deliveryDate
     if (updates.notes) dbUpdates.delivery_notes = updates.notes
     if (updates.discount !== undefined) dbUpdates.discount = parseFloat(updates.discount)
+    if (updates.total !== undefined) dbUpdates.total_amount = parseFloat(updates.total)
+    if (updates.subtotal !== undefined) dbUpdates.subtotal = parseFloat(updates.subtotal)
 
     // Customer and salesman updates (using UUIDs)
     if (updates.customerUuid) dbUpdates.customer_id = updates.customerUuid

@@ -257,6 +257,7 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             order_date: orderData.orderDate || new Date().toISOString().split('T')[0],
             delivery_date: orderData.deliveryDate || null,
             delivery_notes: orderData.notes || null,
+            discount: parseFloat(orderData.discount || 0),
             status: 'pending',
             payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })
@@ -338,6 +339,7 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
     if (updates.deliveryDate) dbUpdates.delivery_date = updates.deliveryDate
     if (updates.notes) dbUpdates.delivery_notes = updates.notes
+    if (updates.discount !== undefined) dbUpdates.discount = parseFloat(updates.discount)
 
     // Customer and salesman updates (using UUIDs)
     if (updates.customerUuid) dbUpdates.customer_id = updates.customerUuid

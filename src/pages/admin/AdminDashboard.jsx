@@ -15,7 +15,7 @@ import {
     User,
     Calendar,
     Filter,
-    RefreshCw
+    RefreshCw as RotateCw,
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'
@@ -342,7 +342,7 @@ function AdminDashboard() {
                         }}
                         title="Reset to current month"
                     >
-                        <RefreshCw size={16} />
+                        <RotateCw size={16} />
                         <span>Reset</span>
                     </button>
                 </div>

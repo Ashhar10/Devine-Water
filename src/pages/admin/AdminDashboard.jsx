@@ -15,7 +15,7 @@ import {
     User,
     Calendar,
     Filter,
-    RefreshCw as RotateCw,
+    RotateCw,
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import GlassCard from '../../components/ui/GlassCard'

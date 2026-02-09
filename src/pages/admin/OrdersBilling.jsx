@@ -2,11 +2,29 @@ import { useState, useEffect, useMemo, useTransition } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Search, Filter, Plus, MoreHorizontal, FileText, Download,
-    Trash2, Edit, CheckCircle, Clock, AlertCircle, Calendar,
-    User, Printer, ChevronLeft, ChevronRight, Share2, X, MessageCircle, RotateCw,
-    RotateCcw
+    Search,
+    Plus,
+    AlertTriangle,
+    ChevronDown,
+    FileText,
+    Download,
+    X,
+    Check,
+    Trash2,
+    Edit,
+    Calendar,
+    Filter,
+    RefreshCw,
+    Share2
 } from 'lucide-react'
+import { useDataStore } from '../../store/dataStore'
+import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
+import GlassCard from '../../components/ui/GlassCard'
+import Button from '../../components/ui/Button'
+import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import styles from './OrdersBilling.module.css'
+import { RotateCcw } from 'lucide-react'
 
 const CACHE_KEY = 'devine_order_form_cache'
 const getEmptyOrderData = () => ({
@@ -364,12 +382,8 @@ function OrdersBilling() {
     }
 
     const handleShareInvoice = async (order) => {
-        const shareText = `Devine Water Invoice\n` +
-            `Order ID: ${order.id}\n` +
-            `Customer: ${order.customerName}\n` +
-            `Date: ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\n` +
-            `Total: Rs ${order.total.toLocaleString()}\n\n` +
-            `Items:\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`
+        // Construct share data immediately
+        const shareText = `Devine Water Invoice\nOrder ID: ${order.id}\nCustomer: ${order.customerName}\nDate: ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\nTotal: Rs ${order.total.toLocaleString()}\n\nItems:\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`
 
         const shareData = {
             title: `Invoice #${order.id}`,
@@ -379,32 +393,15 @@ function OrdersBilling() {
 
         try {
             if (navigator.share) {
-                // Call share without awaiting to avoid UI block
-                navigator.share(shareData).catch(err => {
-                    if (err.name !== 'AbortError') console.error('Share failed:', err)
-                })
+                // Call share immediately without await to reduce perceived latency if the browser is slow
+                navigator.share(shareData).catch(err => console.error('Share dialog error:', err))
             } else {
                 await navigator.clipboard.writeText(shareText)
-                alert('Invoice details copied to clipboard (Native share not supported)')
+                alert('Invoice details copied to clipboard (Share not supported in this browser)')
             }
         } catch (err) {
             console.error('Share initialization failed:', err)
         }
-    }
-
-    const handleWhatsAppShare = (order) => {
-        const shareText = encodeURIComponent(
-            `*Devine Water Invoice*\n` +
-            `*Order ID:* ${order.id}\n` +
-            `*Customer:* ${order.customerName}\n` +
-            `*Date:* ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\n` +
-            `*Total:* Rs ${order.total.toLocaleString()}\n\n` +
-            `*Items:*\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`
-        )
-
-        // Universal WhatsApp link
-        const whatsappUrl = `https://wa.me/?text=${shareText}`
-        window.open(whatsappUrl, '_blank')
     }
 
     const handleDownloadPDF = () => {
@@ -535,7 +532,7 @@ function OrdersBilling() {
                             setFilterStatus('all')
                         }}
                     >
-                        <RotateCw size={16} />
+                        <RefreshCw size={16} />
                         <span>Reset</span>
                     </button>
 
@@ -1441,19 +1438,8 @@ function OrdersBilling() {
                                         size="sm"
                                         icon={Share2}
                                         onClick={() => handleShareInvoice(selectedInvoiceOrder)}
-                                        title="Share via device"
                                     >
                                         Share
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        icon={MessageCircle}
-                                        className={styles.whatsappBtn}
-                                        onClick={() => handleWhatsAppShare(selectedInvoiceOrder)}
-                                        title="Share on WhatsApp"
-                                    >
-                                        WhatsApp
                                     </Button>
                                     <Button
                                         variant="ghost"

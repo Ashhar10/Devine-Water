@@ -418,7 +418,18 @@ function OrdersBilling() {
                                 </tr>
                             `).join('')}
                         </tbody>
+                        </tbody>
                         <tfoot>
+                             <tr>
+                                <td colspan="3" style="text-align:right"><strong>Subtotal:</strong></td>
+                                <td><strong>Rs ${(order.total + (order.discount || 0)).toLocaleString()}</strong></td>
+                            </tr>
+                            ${order.discount > 0 ? `
+                            <tr>
+                                <td colspan="3" style="text-align:right"><strong>Discount:</strong></td>
+                                <td><strong>- Rs ${order.discount.toLocaleString()}</strong></td>
+                            </tr>
+                            ` : ''}
                              <tr>
                                 <td colspan="3" style="text-align:right"><strong>Total:</strong></td>
                                 <td><strong>Rs ${order.total.toLocaleString()}</strong></td>

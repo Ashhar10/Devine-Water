@@ -618,3 +618,240 @@
     background: var(--primary-cyan);
     border-radius: var(--radius-full);
 }
+
+/* Invoice Modal Specific Styles */
+.invoiceOverlay {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.invoiceModal {
+    max-width: 800px !important;
+    padding: 0 !important;
+    border-radius: var(--radius-xl) !important;
+    overflow: hidden !important;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.invoiceContent {
+    background: white;
+    color: #1a1a1a;
+    padding: 60px;
+    min-height: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.invoiceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 30px;
+}
+
+.brandName {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #06b6d4;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.brandTagline {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+.invoiceMeta {
+    text-align: right;
+}
+
+.invoiceMeta h2 {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin: 0 0 10px 0;
+}
+
+.invoiceMeta p {
+    margin: 2px 0;
+    color: #666;
+}
+
+.invoiceBillTo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.billToSection h4 {
+    font-size: 0.8rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 15px 0;
+}
+
+.customerName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.customerId {
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+.invoiceTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.invoiceTable th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 15px;
+    border-top: 2px solid #f1f5f9;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.invoiceTable td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+}
+
+.totalLabel {
+    text-align: right;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.totalValue {
+    text-align: right;
+    font-weight: 600;
+}
+
+.discountText {
+    color: #10b981 !important;
+}
+
+.grandTotal {
+    background: #f8fafc;
+}
+
+.grandTotal .totalLabel {
+    font-size: 1.1rem;
+    color: #1a1a1a;
+}
+
+.grandTotal .totalValue {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #06b6d4;
+}
+
+.invoiceFooter {
+    margin-top: auto;
+    padding-top: 40px;
+    border-top: 2px solid #f0f0f0;
+    text-align: center;
+}
+
+.invoiceFooter p {
+    margin: 5px 0;
+    color: #666;
+    font-weight: 500;
+}
+
+.footerNote {
+    font-size: 0.8rem;
+    color: #999 !important;
+    font-weight: 400 !important;
+}
+
+/* Print Media Queries */
+@media print {
+    :global(body) * {
+        visibility: hidden;
+    }
+
+    .invoiceOverlay,
+    .invoiceOverlay * {
+        visibility: visible;
+    }
+
+    .invoiceOverlay {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 9999999;
+    }
+
+    .modal {
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .noPrint {
+        display: none !important;
+    }
+
+    .invoiceContent {
+        padding: 40px !important;
+        min-height: auto !important;
+    }
+
+    .printableWrapper {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .invoiceContent {
+        padding: 30px 20px;
+    }
+
+    .brandName {
+        font-size: 1.75rem;
+    }
+
+    .invoiceHeader {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .invoiceMeta {
+        text-align: left;
+    }
+
+    .invoiceBillTo {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .invoiceBillTo div {
+        text-align: left !important;
+    }
+}

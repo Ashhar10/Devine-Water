@@ -14,7 +14,8 @@ import {
     Edit,
     Calendar,
     Filter,
-    RefreshCw
+    RefreshCw,
+    Share2
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
 import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
@@ -71,6 +72,8 @@ function OrdersBilling() {
     const [editingOrderId, setEditingOrderId] = useState(null)
     const [orderToDelete, setOrderToDelete] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+    const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null)
 
     // Date Filter State
     const [filterMode, setFilterMode] = useState(FILTER_MODES.MONTH)
@@ -374,73 +377,32 @@ function OrdersBilling() {
 
     const handleViewInvoice = (e, order) => {
         e.stopPropagation()
-        // Simple print window for now
-        const printWindow = window.open('', '_blank')
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Invoice #${order.id}</title>
-                    <style>
-                        body { font-family: sans-serif; padding: 20px; }
-                        .header { text-align: center; margin-bottom: 30px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        th { background-color: #f2f2f2; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Devine Water</h1>
-                        <h2>Invoice</h2>
-                        <p>Order ID: ${order.id}</p>
-                        <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                        <p><strong>Customer:</strong> ${order.customerName}</p>
-                        <p><strong>Status:</strong> ${order.status} / ${order.paymentStatus}</p>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.items.map(item => `
-                                <tr>
-                                    <td>${item.name}</td>
-                                    <td>${item.qty}</td>
-                                    <td>Rs ${item.price}</td>
-                                    <td>Rs ${(item.price * item.qty).toLocaleString()}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                        </tbody>
-                        <tfoot>
-                             <tr>
-                                <td colspan="3" style="text-align:right"><strong>Subtotal:</strong></td>
-                                <td><strong>Rs ${(order.total + (order.discount || 0)).toLocaleString()}</strong></td>
-                            </tr>
-                            ${order.discount > 0 ? `
-                            <tr>
-                                <td colspan="3" style="text-align:right"><strong>Discount:</strong></td>
-                                <td><strong>- Rs ${order.discount.toLocaleString()}</strong></td>
-                            </tr>
-                            ` : ''}
-                             <tr>
-                                <td colspan="3" style="text-align:right"><strong>Total:</strong></td>
-                                <td><strong>Rs ${order.total.toLocaleString()}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </body>
-            </html>
-        `)
-        printWindow.document.close()
-        printWindow.print()
+        setSelectedInvoiceOrder(order)
+        setShowInvoiceModal(true)
+    }
+
+    const handleShareInvoice = async (order) => {
+        const shareData = {
+            title: `Invoice #${order.id}`,
+            text: `Devine Water Invoice\nOrder ID: ${order.id}\nCustomer: ${order.customerName}\nDate: ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\nTotal: Rs ${order.total.toLocaleString()}\n\nItems:\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`,
+            url: window.location.href
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData)
+            } else {
+                // Fallback: Copy to clipboard
+                await navigator.clipboard.writeText(shareData.text)
+                alert('Invoice details copied to clipboard (Share not supported in this browser)')
+            }
+        } catch (err) {
+            console.error('Share failed:', err)
+        }
+    }
+
+    const handleDownloadPDF = () => {
+        window.print()
     }
 
     const handleStatusChange = (orderId, newStatus) => {
@@ -1458,6 +1420,107 @@ function OrdersBilling() {
                             </Button>
                         </div>
                     </GlassCard>
+                </div>
+            )}
+            {/* Order Invoice Modal */}
+            {showInvoiceModal && selectedInvoiceOrder && (
+                <div className={`${styles.modalOverlay} ${styles.invoiceOverlay}`}>
+                    <div className={styles.printableWrapper}>
+                        <GlassCard className={`${styles.modal} ${styles.invoiceModal}`}>
+                            <div className={`${styles.modalHeader} ${styles.noPrint}`}>
+                                <h3>Invoice Request</h3>
+                                <div className={styles.headerActions}>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon={Share2}
+                                        onClick={() => handleShareInvoice(selectedInvoiceOrder)}
+                                    >
+                                        Share
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon={Download}
+                                        onClick={handleDownloadPDF}
+                                    >
+                                        Download PDF
+                                    </Button>
+                                    <button className={styles.closeBtn} onClick={() => setShowInvoiceModal(false)}>
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className={styles.invoiceContent} id="printable-invoice">
+                                <div className={styles.invoiceHeader}>
+                                    <div className={styles.brandInfo}>
+                                        <h1 className={styles.brandName}>DEVINE WATER</h1>
+                                        <p className={styles.brandTagline}>Premium Purification Service</p>
+                                    </div>
+                                    <div className={styles.invoiceMeta}>
+                                        <h2>INVOICE</h2>
+                                        <p><strong># {selectedInvoiceOrder.id}</strong></p>
+                                        <p>{new Date(selectedInvoiceOrder.orderDate || selectedInvoiceOrder.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+
+                                <div className={styles.invoiceBillTo}>
+                                    <div className={styles.billToSection}>
+                                        <h4>BILL TO</h4>
+                                        <p className={styles.customerName}>{selectedInvoiceOrder.customerName}</p>
+                                        <p className={styles.customerId}>ID: {selectedInvoiceOrder.customerId}</p>
+                                    </div>
+                                    <div className={styles.billToSection} style={{ textAlign: 'right' }}>
+                                        <h4>PAYMENT STATUS</h4>
+                                        <StatusBadge status={selectedInvoiceOrder.paymentStatus} size="sm" />
+                                    </div>
+                                </div>
+
+                                <table className={styles.invoiceTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>ITEM DESCRIPTION</th>
+                                            <th style={{ textAlign: 'center' }}>QTY</th>
+                                            <th style={{ textAlign: 'right' }}>UNIT PRICE</th>
+                                            <th style={{ textAlign: 'right' }}>AMOUNT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedInvoiceOrder.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>{item.name}</td>
+                                                <td style={{ textAlign: 'center' }}>{item.qty}</td>
+                                                <td style={{ textAlign: 'right' }}>Rs {item.price.toLocaleString()}</td>
+                                                <td style={{ textAlign: 'right' }}>Rs {(item.price * item.qty).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan="3" className={styles.totalLabel}>Subtotal</td>
+                                            <td className={styles.totalValue}>Rs {(selectedInvoiceOrder.total + (selectedInvoiceOrder.discount || 0)).toLocaleString()}</td>
+                                        </tr>
+                                        {selectedInvoiceOrder.discount > 0 && (
+                                            <tr>
+                                                <td colSpan="3" className={`${styles.totalLabel} ${styles.discountText}`}>Discount</td>
+                                                <td className={`${styles.totalValue} ${styles.discountText}`}>- Rs {selectedInvoiceOrder.discount.toLocaleString()}</td>
+                                            </tr>
+                                        )}
+                                        <tr className={styles.grandTotal}>
+                                            <td colSpan="3" className={styles.totalLabel}>Grand Total</td>
+                                            <td className={styles.totalValue}>Rs {selectedInvoiceOrder.total.toLocaleString()}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+
+                                <div className={styles.invoiceFooter}>
+                                    <p>Thank you for choosing Devine Water!</p>
+                                    <p className={styles.footerNote}>This is a computer-generated invoice and doesn't require a signature.</p>
+                                </div>
+                            </div>
+                        </GlassCard>
+                    </div>
                 </div>
             )}
         </div>

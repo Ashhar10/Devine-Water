@@ -77,6 +77,8 @@ function Customers() {
         start: '',
         end: ''
     })
+    const [detailsView, setDetailsView] = useState('info') // 'info' or 'calendar'
+    const [currentMonth, setCurrentMonth] = useState(new Date())
 
     const customers = useDataStore(state => state.customers)
     const currentUser = useDataStore(state => state.currentUser)
@@ -1191,142 +1193,231 @@ function Customers() {
                                     </div>
                                     <div>
                                         <h3>{selectedCustomerDetails.name}</h3>
-                                        <span className={styles.detailsSubtitle}>{selectedCustomerDetails.id}</span>
+                                        <span className={styles.detailsSubtitle}>
+                                            {selectedCustomerDetails.id} • {selectedCustomerDetails.areaId ? areas.find(a => a.uuid === selectedCustomerDetails.areaId)?.name : 'No Area'}
+                                        </span>
                                     </div>
                                 </div>
-                                <button className={styles.closeBtn} onClick={() => setSelectedCustomerDetails(null)}>
-                                    <X size={20} />
-                                </button>
+                                <div className={styles.headerActions}>
+                                    <div className={styles.viewToggle} style={{ marginRight: '10px' }}>
+                                        <button
+                                            className={`${styles.viewBtn} ${detailsView === 'info' ? styles.active : ''}`}
+                                            onClick={() => setDetailsView('info')}
+                                            title="Information"
+                                        >
+                                            <FileText size={18} />
+                                        </button>
+                                        <button
+                                            className={`${styles.viewBtn} ${detailsView === 'calendar' ? styles.active : ''}`}
+                                            onClick={() => setDetailsView('calendar')}
+                                            title="Calendar View"
+                                        >
+                                            <Calendar size={18} />
+                                        </button>
+                                    </div>
+                                    <button className={styles.closeBtn} onClick={() => {
+                                        setSelectedCustomerDetails(null)
+                                        setDetailsView('info')
+                                    }}>
+                                        <X size={20} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className={styles.detailsContent}>
-                                {/* Biography Section */}
-                                <div className={styles.detailsSection}>
-                                    <h4><User size={18} /> Personal Information</h4>
-                                    <div className={styles.detailsGrid}>
-                                        <div className={styles.detailItem}>
-                                            <Phone size={14} />
-                                            <span className={styles.detailLabel}>Phone:</span>
-                                            <span className={styles.detailValue}>{selectedCustomerDetails.phone}</span>
+                                {detailsView === 'info' ? (
+                                    <>
+                                        {/* Biography Section */}
+                                        <div className={styles.detailsSection}>
+                                            <h4><User size={18} /> Personal Information</h4>
+                                            <div className={styles.detailsGrid}>
+                                                <div className={styles.detailItem}>
+                                                    <Phone size={14} />
+                                                    <span className={styles.detailLabel}>Phone:</span>
+                                                    <span className={styles.detailValue}>{selectedCustomerDetails.phone}</span>
+                                                </div>
+                                                <div className={styles.detailItem}>
+                                                    <MapPin size={14} />
+                                                    <span className={styles.detailLabel}>Address:</span>
+                                                    <span className={styles.detailValue}>{selectedCustomerDetails.address}</span>
+                                                </div>
+                                                <div className={styles.detailItem}>
+                                                    <Calendar size={14} />
+                                                    <span className={styles.detailLabel}>Joined:</span>
+                                                    <span className={styles.detailValue}>
+                                                        {selectedCustomerDetails.createdAt ? new Date(selectedCustomerDetails.createdAt).toLocaleDateString() : 'N/A'}
+                                                    </span>
+                                                </div>
+                                                <div className={styles.detailItem}>
+                                                    <Droplets size={14} />
+                                                    <span className={styles.detailLabel}>Delivery Days:</span>
+                                                    <span className={styles.detailValue}>
+                                                        {selectedCustomerDetails.deliveryDays?.length > 0
+                                                            ? selectedCustomerDetails.deliveryDays.map(d => d.slice(0, 3)).join(', ')
+                                                            : 'Not set'}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className={styles.detailItem}>
-                                            <MapPin size={14} />
-                                            <span className={styles.detailLabel}>Address:</span>
-                                            <span className={styles.detailValue}>{selectedCustomerDetails.address}</span>
-                                        </div>
-                                        <div className={styles.detailItem}>
-                                            <Calendar size={14} />
-                                            <span className={styles.detailLabel}>Joined:</span>
-                                            <span className={styles.detailValue}>{selectedCustomerDetails.createdAt}</span>
-                                        </div>
-                                        <div className={styles.detailItem}>
-                                            <Droplets size={14} />
-                                            <span className={styles.detailLabel}>Delivery Days:</span>
-                                            <span className={styles.detailValue}>
-                                                {selectedCustomerDetails.deliveryDays?.length > 0
-                                                    ? selectedCustomerDetails.deliveryDays.map(d => d.slice(0, 3)).join(', ')
-                                                    : 'Not set'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {currentUser?.designation === 'Administrator' && (
-                                    /* Financial Summary */
-                                    <div className={styles.detailsSection}>
-                                        <h4><Wallet size={18} /> Financial Summary</h4>
-                                        <div className={styles.statsRow}>
-                                            <div className={styles.statBox}>
-                                                <span className={styles.statValue}>Rs {selectedCustomerDetails.totalSpent?.toLocaleString() || 0}</span>
-                                                <span className={styles.statLabel}>Total Spent</span>
+                                        {currentUser?.designation === 'Administrator' && (
+                                            /* Financial Summary */
+                                            <div className={styles.detailsSection}>
+                                                <h4><Wallet size={18} /> Financial Summary</h4>
+                                                <div className={styles.statsRow}>
+                                                    <div className={styles.statBox}>
+                                                        <span className={styles.statValue}>Rs {selectedCustomerDetails.totalSpent?.toLocaleString() || 0}</span>
+                                                        <span className={styles.statLabel}>Total Spent</span>
+                                                    </div>
+                                                    <div className={styles.statBox}>
+                                                        <span className={`${styles.statValue} ${selectedCustomerDetails.currentBalance > 0 ? styles.warning : ''}`}>
+                                                            Rs {selectedCustomerDetails.currentBalance?.toLocaleString() || 0}
+                                                        </span>
+                                                        <span className={styles.statLabel}>Current Balance</span>
+                                                    </div>
+                                                    <div className={styles.statBox}>
+                                                        <span className={styles.statValue}>Rs {selectedCustomerDetails.securityDeposit?.toLocaleString() || 0}</span>
+                                                        <span className={styles.statLabel}>Security Deposit</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className={styles.statBox}>
-                                                <span className={`${styles.statValue} ${selectedCustomerDetails.currentBalance > 0 ? styles.warning : ''}`}>
-                                                    Rs {selectedCustomerDetails.currentBalance?.toLocaleString() || 0}
-                                                </span>
-                                                <span className={styles.statLabel}>Current Balance</span>
+                                        )}
+
+                                        {/* Order History */}
+                                        <div className={styles.detailsSection}>
+                                            <h4><FileText size={18} /> Recent Orders</h4>
+                                            {customerOrders.length > 0 ? (
+                                                <div className={styles.ordersList}>
+                                                    {customerOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)).slice(0, 5).map(order => (
+                                                        <div key={order.id} className={styles.orderItem}>
+                                                            <div>
+                                                                <span className={styles.orderId}>{order.id}</span>
+                                                                <span className={styles.orderDate}>{new Date(order.orderDate).toLocaleDateString()}</span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                <StatusBadge status={order.status} size="sm" />
+                                                                {currentUser?.designation === 'Administrator' && (
+                                                                    <span className={styles.orderTotal}>Rs {order.total}</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className={styles.emptyText}>No orders yet</p>
+                                            )}
+                                        </div>
+
+                                        {/* Stats */}
+                                        <div className={styles.detailsSection}>
+                                            <h4><TrendingUp size={18} /> Statistics</h4>
+                                            <div className={styles.detailsGrid}>
+                                                <div className={styles.detailItem}>
+                                                    <span className={styles.detailLabel}>Total Orders:</span>
+                                                    <span className={styles.detailValue}>{selectedCustomerDetails.totalOrders || 0}</span>
+                                                </div>
+                                                <div className={styles.detailItem}>
+                                                    <span className={styles.detailLabel}>Required Bottles:</span>
+                                                    <span className={styles.detailValue}>{selectedCustomerDetails.requiredBottles || 1}/delivery</span>
+                                                </div>
+                                                <div className={styles.detailItem}>
+                                                    <span className={styles.detailLabel}>Status:</span>
+                                                    <StatusBadge status={selectedCustomerDetails.status} size="sm" />
+                                                </div>
                                             </div>
-                                            <div className={styles.statBox}>
-                                                <span className={styles.statValue}>Rs {selectedCustomerDetails.securityDeposit?.toLocaleString() || 0}</span>
-                                                <span className={styles.statLabel}>Security Deposit</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className={styles.calendarContainer}>
+                                        <div className={styles.calendarHeader}>
+                                            <button
+                                                className={styles.calendarNav}
+                                                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                                            >
+                                                &larr;
+                                            </button>
+                                            <h3>{currentMonth.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</h3>
+                                            <button
+                                                className={styles.calendarNav}
+                                                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                                            >
+                                                &rarr;
+                                            </button>
+                                        </div>
+
+                                        <div className={styles.calendarGrid}>
+                                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                                <div key={day} className={styles.calendarWeekday}>{day}</div>
+                                            ))}
+
+                                            {(() => {
+                                                const year = currentMonth.getFullYear()
+                                                const month = currentMonth.getMonth()
+                                                const firstDay = new Date(year, month, 1).getDay()
+                                                const daysInMonth = new Date(year, month + 1, 0).getDate()
+                                                const today = new Date()
+                                                today.setHours(0, 0, 0, 0)
+
+                                                const cells = []
+                                                for (let i = 0; i < firstDay; i++) {
+                                                    cells.push(<div key={`empty-${i}`} className={styles.calendarDayEmpty}></div>)
+                                                }
+
+                                                for (let d = 1; d <= daysInMonth; d++) {
+                                                    const date = new Date(year, month, d)
+                                                    const dateStr = date.toISOString().split('T')[0]
+                                                    const isToday = date.getTime() === today.getTime()
+
+                                                    // Find events for this day
+                                                    const dayDeliveries = customerDeliveries.filter(del =>
+                                                        del.deliveryDate?.split('T')[0] === dateStr
+                                                    )
+                                                    const dayOrders = customerOrders.filter(ord =>
+                                                        ord.orderDate?.split('T')[0] === dateStr
+                                                    )
+
+                                                    cells.push(
+                                                        <div key={d} className={`${styles.calendarDay} ${isToday ? styles.calendarToday : ''}`}>
+                                                            <span className={styles.dayNumber}>{d}</span>
+                                                            <div className={styles.dayEvents}>
+                                                                {dayDeliveries.map((del, idx) => (
+                                                                    <div
+                                                                        key={`del-${idx}`}
+                                                                        className={`${styles.eventDot} ${styles[del.status]}`}
+                                                                        title={`Delivery: ${del.status}`}
+                                                                    ></div>
+                                                                ))}
+                                                                {dayOrders.map((ord, idx) => (
+                                                                    <div
+                                                                        key={`ord-${idx}`}
+                                                                        className={`${styles.eventDot} ${styles.order}`}
+                                                                        title={`Order: ${ord.id}`}
+                                                                    ></div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                                return cells
+                                            })()}
+                                        </div>
+
+                                        <div className={styles.calendarLegend}>
+                                            <div className={styles.legendItem}>
+                                                <div className={`${styles.eventDot} ${styles.delivered}`}></div>
+                                                <span>Delivered</span>
+                                            </div>
+                                            <div className={styles.legendItem}>
+                                                <div className={`${styles.eventDot} ${styles.skipped}`}></div>
+                                                <span>Skipped</span>
+                                            </div>
+                                            <div className={styles.legendItem}>
+                                                <div className={`${styles.eventDot} ${styles.order}`}></div>
+                                                <span>Order</span>
                                             </div>
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Order History */}
-                                <div className={styles.detailsSection}>
-                                    <h4><FileText size={18} /> Order History ({customerOrders.length})</h4>
-                                    {customerOrders.length > 0 ? (
-                                        <div className={styles.ordersList}>
-                                            {customerOrders.slice(0, 5).map(order => (
-                                                <div key={order.id} className={styles.orderItem}>
-                                                    <div>
-                                                        <span className={styles.orderId}>{order.id}</span>
-                                                        <span className={styles.orderDate}>{order.orderDate}</span>
-                                                    </div>
-                                                    <div>
-                                                        <StatusBadge status={order.status} size="sm" />
-                                                        {currentUser?.designation === 'Administrator' && (
-                                                            <span className={styles.orderTotal}>Rs {order.total}</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {customerOrders.length > 5 && (
-                                                <p className={styles.moreText}>+ {customerOrders.length - 5} more orders</p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <p className={styles.emptyText}>No orders yet</p>
-                                    )}
-                                </div>
-
-                                {/* Delivery History */}
-                                <div className={styles.detailsSection}>
-                                    <h4><Package size={18} /> Delivery History ({customerDeliveries.length})</h4>
-                                    {customerDeliveries.length > 0 ? (
-                                        <div className={styles.deliveriesList}>
-                                            {customerDeliveries.slice(0, 5).map((delivery, idx) => (
-                                                <div key={idx} className={styles.deliveryItem}>
-                                                    <span className={styles.deliveryDate}>{delivery.deliveryDate}</span>
-                                                    <span className={styles.deliveryBottles}>{delivery.bottlesDelivered} bottles</span>
-                                                    <StatusBadge status={delivery.status} size="sm" />
-                                                </div>
-                                            ))}
-                                            {customerDeliveries.length > 5 && (
-                                                <p className={styles.moreText}>+ {customerDeliveries.length - 5} more deliveries</p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <p className={styles.emptyText}>No deliveries yet</p>
-                                    )}
-                                </div>
-
-                                {/* Stats */}
-                                <div className={styles.detailsSection}>
-                                    <h4><TrendingUp size={18} /> Statistics</h4>
-                                    <div className={styles.detailsGrid}>
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Total Orders:</span>
-                                            <span className={styles.detailValue}>{selectedCustomerDetails.totalOrders || 0}</span>
-                                        </div>
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Required Bottles:</span>
-                                            <span className={styles.detailValue}>{selectedCustomerDetails.requiredBottles || 1}/delivery</span>
-                                        </div>
-                                        {currentUser?.designation === 'Administrator' && (
-                                            <div className={styles.detailItem}>
-                                                <span className={styles.detailLabel}>Opening Balance:</span>
-                                                <span className={styles.detailValue}>Rs {selectedCustomerDetails.openingBalance || 0}</span>
-                                            </div>
-                                        )}
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Status:</span>
-                                            <StatusBadge status={selectedCustomerDetails.status} size="sm" />
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </GlassCard>
                     </div>

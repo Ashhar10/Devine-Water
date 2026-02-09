@@ -599,7 +599,15 @@ export const useDataStore = create(
 
                                 if (Object.keys(deliveryUpdates).length > 0) {
                                     console.log('Syncing linked delivery:', { deliveryId: linkedDelivery.id, updates: deliveryUpdates })
-                                    await get().updateDelivery(linkedDelivery.id, deliveryUpdates)
+                                    // Use updateDelivery without creating a loop
+                                    // Update local state first
+                                    set(state => ({
+                                        deliveries: state.deliveries.map(d =>
+                                            d.id === linkedDelivery.id ? { ...d, ...deliveryUpdates } : d
+                                        )
+                                    }))
+                                    // Then update DB
+                                    await updateDeliveryInDb(linkedDelivery.id, deliveryUpdates)
                                 }
                             }
                         } catch (err) {

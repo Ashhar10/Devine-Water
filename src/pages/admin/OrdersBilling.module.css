@@ -630,6 +630,16 @@
     border-radius: var(--radius-xl) !important;
     max-height: 90vh !important;
     overflow-y: auto !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.whatsappBtn {
+    color: #25D366 !important;
+}
+
+.whatsappBtn:hover {
+    background: rgba(37, 211, 102, 0.1) !important;
 }
 
 .headerActions {

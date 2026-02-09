@@ -471,6 +471,14 @@ export const useDataStore = create(
                 if (order.uuid) {
                     try {
                         await updateOrderStatusInDb(order.uuid, newStatus)
+
+                        // SYNC WITH LINKED DELIVERY
+                        // When order status changes, also update the status of the linked delivery
+                        const linkedDelivery = get().deliveries.find(d => d.orderId === orderId)
+                        if (linkedDelivery) {
+                            console.log('Syncing linked delivery status:', { deliveryId: linkedDelivery.id, newStatus })
+                            await get().updateDelivery(linkedDelivery.id, { status: newStatus })
+                        }
                     } catch (error) {
                         console.error('Failed to update order status:', error)
                     }

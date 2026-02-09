@@ -382,22 +382,25 @@ function OrdersBilling() {
     }
 
     const handleShareInvoice = async (order) => {
+        // Construct share data immediately
+        const shareText = `Devine Water Invoice\nOrder ID: ${order.id}\nCustomer: ${order.customerName}\nDate: ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\nTotal: Rs ${order.total.toLocaleString()}\n\nItems:\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`
+
         const shareData = {
             title: `Invoice #${order.id}`,
-            text: `Devine Water Invoice\nOrder ID: ${order.id}\nCustomer: ${order.customerName}\nDate: ${new Date(order.orderDate || order.createdAt).toLocaleDateString()}\nTotal: Rs ${order.total.toLocaleString()}\n\nItems:\n${order.items.map(i => `- ${i.name} (${i.qty})`).join('\n')}`,
+            text: shareText,
             url: window.location.href
         }
 
         try {
             if (navigator.share) {
-                await navigator.share(shareData)
+                // Call share immediately without await to reduce perceived latency if the browser is slow
+                navigator.share(shareData).catch(err => console.error('Share dialog error:', err))
             } else {
-                // Fallback: Copy to clipboard
-                await navigator.clipboard.writeText(shareData.text)
+                await navigator.clipboard.writeText(shareText)
                 alert('Invoice details copied to clipboard (Share not supported in this browser)')
             }
         } catch (err) {
-            console.error('Share failed:', err)
+            console.error('Share initialization failed:', err)
         }
     }
 

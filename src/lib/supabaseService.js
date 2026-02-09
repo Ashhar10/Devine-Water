@@ -196,7 +196,7 @@ export const fetchOrders = async () => {
             status,
             payment_status,
             created_at,
-            customers (name),
+            customers (customer_id, name),
             order_items (
                 id,
                 product_id,
@@ -226,7 +226,8 @@ export const fetchOrders = async () => {
         return {
             id: o.order_id,
             uuid: o.id,
-            customerId: o.customer_id,
+            customerId: o.customers?.customer_id || 'Unknown',
+            customerUuid: o.customer_id,
             customerName: o.customers?.name || 'Unknown',
             items: o.order_items?.map(item => ({
                 productId: item.product_id,

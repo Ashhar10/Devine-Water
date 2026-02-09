@@ -1180,8 +1180,7 @@ function Customers() {
             {/* Customer Details Modal */}
             {selectedCustomerDetails && (() => {
                 // Filter customer's orders and deliveries
-                const customerUuid = selectedCustomerDetails.uuid
-                const customerOrders = orders.filter(o => o.customerId === customerUuid)
+                const customerOrders = orders.filter(o => o.customerId === selectedCustomerDetails.id)
                 const customerDeliveries = deliveries.filter(d => d.customerId === selectedCustomerDetails.id)
 
                 return (

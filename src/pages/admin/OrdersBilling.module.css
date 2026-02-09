@@ -628,7 +628,8 @@
     max-width: 800px !important;
     padding: 0 !important;
     border-radius: var(--radius-xl) !important;
-    overflow: hidden !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
 }
 
 .headerActions {
@@ -641,7 +642,6 @@
     background: white;
     color: #1a1a1a;
     padding: 60px;
-    min-height: 800px;
     display: flex;
     flex-direction: column;
     gap: 40px;

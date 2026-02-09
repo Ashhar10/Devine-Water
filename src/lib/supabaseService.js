@@ -255,6 +255,8 @@ export const addOrderToDb = async (orderData, customerName, customerUuid) => {
             invoice_no: invoiceNo,  // Required field
             customer_id: customerUuid,
             order_date: orderData.orderDate || new Date().toISOString().split('T')[0],
+            delivery_date: orderData.deliveryDate || null,
+            delivery_notes: orderData.notes || null,
             status: 'pending',
             payment_status: 'unpaid'  // Must be 'paid' or 'unpaid' per schema constraint
         })
@@ -334,15 +336,14 @@ export const updateOrderInDb = async (orderUuid, updates) => {
     if (updates.status) dbUpdates.status = updates.status
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus
     if (updates.orderDate) dbUpdates.order_date = updates.orderDate
+    if (updates.deliveryDate) dbUpdates.delivery_date = updates.deliveryDate
+    if (updates.notes) dbUpdates.delivery_notes = updates.notes
 
     // Customer and salesman updates (using UUIDs)
     if (updates.customerUuid) dbUpdates.customer_id = updates.customerUuid
     if (updates.salesmanId) dbUpdates.salesman_id = updates.salesmanId
 
-    // Note: discount and notes columns don't exist in the orders table schema
-
     // Update the order record
-
     const { error: orderError } = await supabase
         .from('orders')
         .update(dbUpdates)

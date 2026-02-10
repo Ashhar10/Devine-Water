@@ -66,6 +66,8 @@ function Shopkeeper() {
 
     const shopkeeperEntries = useDataStore(state => state.shopkeeperEntries) || []
     const products = useDataStore(state => state.products) || []
+    const addShopkeeperEntry = useDataStore(state => state.addShopkeeperEntry)
+    const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
     const getAppSetting = useDataStore(state => state.getAppSetting)
     const updateAppSetting = useDataStore(state => state.updateAppSetting)

@@ -785,7 +785,7 @@ export const addProductToDb = async (productData) => {
             min_stock_alert: productData.minStockAlert || 10,
             status: 'active',
             designations: productData.designations || [],
-            is_private: productData.isPrivate || false
+            visibility: productData.visibility || 'public'
         })
         .select()
         .single()
@@ -801,7 +801,9 @@ export const addProductToDb = async (productData) => {
         purchasePrice: parseFloat(data.purchase_price),
         currentStock: data.current_stock,
         minStockAlert: data.min_stock_alert,
-        status: data.status
+        status: data.status,
+        designations: data.designations || [],
+        visibility: data.visibility || 'public'
     }
 }
 
@@ -817,7 +819,7 @@ export const updateProductInDb = async (productId, updates) => {
     if (updates.minStockAlert !== undefined) dbUpdates.min_stock_alert = updates.minStockAlert
     if (updates.status) dbUpdates.status = updates.status
     if (updates.designations) dbUpdates.designations = updates.designations
-    if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate
+    if (updates.visibility) dbUpdates.visibility = updates.visibility
 
     const { error } = await supabase
         .from('products')
@@ -1813,6 +1815,35 @@ export const deleteShopkeeperEntryFromDb = async (id) => {
     return { success: true }
 }
 
+// =====================================================
+// APP SETTINGS
+// =====================================================
+
+export const fetchSettings = async () => {
+    if (!isSupabaseConfigured()) return []
+
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+
+    if (error) handleError(error, 'fetch settings')
+
+    return data || []
+}
+
+export const updateSetting = async (key, value) => {
+    if (!isSupabaseConfigured()) return null
+
+    const { data, error } = await supabase
+        .from('app_settings')
+        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+        .select()
+        .single()
+
+    if (error) handleError(error, 'update setting')
+    return data
+}
+
 export const initializeAllData = async () => {
     if (!isSupabaseConfigured()) {
         console.log('Supabase not configured, using mock data')
@@ -1859,7 +1890,8 @@ export const initializeAllData = async () => {
             fetchIncomeCategories(),
             fetchExpenseCategories(),
             fetchPurchaseOrders(),
-            fetchShopkeeperEntries()
+            fetchShopkeeperEntries(),
+            fetchSettings()
         ])
 
         return {
@@ -1881,7 +1913,8 @@ export const initializeAllData = async () => {
             incomeCategories,
             expenseCategories,
             purchaseOrders,
-            shopkeeperEntries
+            shopkeeperEntries,
+            settings
         }
     } catch (error) {
         console.error('Failed to initialize data from Supabase:', error)

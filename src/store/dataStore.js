@@ -52,7 +52,8 @@ import {
     deleteDeliveryFromDb,
     addShopkeeperEntryToDb,
     updateShopkeeperEntryInDb,
-    deleteShopkeeperEntryFromDb
+    deleteShopkeeperEntryFromDb,
+    updateSetting as updateAppSettingInDb
 } from '../lib/supabaseService'
 
 // Generate unique IDs
@@ -91,6 +92,7 @@ export const useDataStore = create(
             deliveries: [],
             purchaseOrders: [],
             shopkeeperEntries: [],
+            settings: [],
             isLoading: false,
             isInitialized: false,
             error: null,
@@ -143,6 +145,7 @@ export const useDataStore = create(
                         shopkeeperEntries: data?.shopkeeperEntries || [],
                         incomeCategories: data?.incomeCategories || [],
                         expenseCategories: data?.expenseCategories || [],
+                        settings: data?.settings || [],
                         isLoading: false,
                         isInitialized: true
                     })
@@ -1776,8 +1779,30 @@ export const useDataStore = create(
                 expenditures: [],
                 incomeCategories: [],
                 expenseCategories: [],
+                settings: [],
                 isInitialized: false
             }),
+
+            // ===== APP SETTINGS ACTIONS =====
+            getAppSetting: (key, defaultValue) => {
+                const setting = get().settings?.find(s => s.key === key)
+                return setting ? setting.value : defaultValue
+            },
+
+            updateAppSetting: async (key, value) => {
+                // Optimistic update
+                set(state => ({
+                    settings: state.settings?.some(s => s.key === key)
+                        ? state.settings.map(s => s.key === key ? { ...s, value } : s)
+                        : [...(state.settings || []), { key, value }]
+                }))
+
+                try {
+                    await updateAppSettingInDb(key, value)
+                } catch (error) {
+                    console.error('Failed to update setting in DB:', error)
+                }
+            },
         }),
         {
             name: 'devine-water-storage',

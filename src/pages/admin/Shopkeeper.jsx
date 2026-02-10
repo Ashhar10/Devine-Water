@@ -36,11 +36,11 @@ const getEmptyProductForm = () => ({
     remarks: ''
 })
 
-const getEmptyWaterForm = () => ({
+const getEmptyWaterForm = (defaultRate = 0) => ({
     productId: '', // For preset water products
     customLiters: '', // For custom liter entry
     liters: 0,
-    unitPrice: 0,
+    unitPrice: defaultRate,
     amount: 0,
     remarks: ''
 })
@@ -53,7 +53,7 @@ function Shopkeeper() {
     const [showWaterModal, setShowWaterModal] = useState(false)
     const [editingEntry, setEditingEntry] = useState(null)
     const [productForm, setProductForm] = useState(getEmptyProductForm())
-    const [waterForm, setWaterForm] = useState(getEmptyWaterForm())
+    const [waterForm, setWaterForm] = useState(getEmptyWaterForm(10)) // Initial fallback
     const [dateFilter, setDateFilter] = useState('all')
     const [customDates, setCustomDates] = useState({
         start: '',
@@ -66,9 +66,21 @@ function Shopkeeper() {
 
     const shopkeeperEntries = useDataStore(state => state.shopkeeperEntries) || []
     const products = useDataStore(state => state.products) || []
-    const addShopkeeperEntry = useDataStore(state => state.addShopkeeperEntry)
-    const updateShopkeeperEntry = useDataStore(state => state.updateShopkeeperEntry)
     const deleteShopkeeperEntry = useDataStore(state => state.deleteShopkeeperEntry)
+    const getAppSetting = useDataStore(state => state.getAppSetting)
+    const updateAppSetting = useDataStore(state => state.updateAppSetting)
+
+    // Default rate for water sales
+    const defaultWaterRate = parseFloat(getAppSetting('shopkeeper_water_rate', '10'))
+    const [tempDefaultRate, setTempDefaultRate] = useState(defaultWaterRate.toString())
+
+    useEffect(() => {
+        setTempDefaultRate(defaultWaterRate.toString())
+    }, [defaultWaterRate])
+
+    const handleUpdateDefaultRate = () => {
+        updateAppSetting('shopkeeper_water_rate', tempDefaultRate)
+    }
 
 
 
@@ -138,7 +150,7 @@ function Shopkeeper() {
 
     const clearWaterDraft = () => {
         localStorage.removeItem(CACHE_KEY_WATER)
-        setWaterForm(getEmptyWaterForm())
+        setWaterForm(getEmptyWaterForm(defaultWaterRate))
     }
 
     // Filter entries by date
@@ -253,7 +265,7 @@ function Shopkeeper() {
                 ...waterForm,
                 productId: 'custom',
                 liters: 0,
-                unitPrice: 0,
+                unitPrice: defaultWaterRate,
                 amount: 0
             })
         } else {
@@ -427,13 +439,43 @@ function Shopkeeper() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button
-                    variant="primary"
-                    icon={Plus}
-                    onClick={() => activeTab === 'product' ? setShowProductModal(true) : setShowWaterModal(true)}
-                >
-                    Add {activeTab === 'product' ? 'Product Entry' : 'Water Sale'}
-                </Button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {activeTab === 'water' && (
+                        <div className={styles.defaultRateConfig}>
+                            <label>Default Rate (Rs):</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={tempDefaultRate}
+                                onChange={(e) => setTempDefaultRate(e.target.value)}
+                                className={styles.rateInput}
+                                placeholder="10.00"
+                            />
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleUpdateDefaultRate}
+                                disabled={tempDefaultRate === defaultWaterRate.toString()}
+                            >
+                                Update
+                            </Button>
+                        </div>
+                    )}
+                    <Button
+                        variant="primary"
+                        icon={Plus}
+                        onClick={() => {
+                            if (activeTab === 'product') {
+                                setShowProductModal(true)
+                            } else {
+                                setWaterForm(getEmptyWaterForm(defaultWaterRate))
+                                setShowWaterModal(true)
+                            }
+                        }}
+                    >
+                        Add {activeTab === 'product' ? 'Product Entry' : 'Water Sale'}
+                    </Button>
+                </div>
             </div>
 
             {/* Tabs */}

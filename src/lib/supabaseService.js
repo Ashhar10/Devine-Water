@@ -1870,7 +1870,8 @@ export const initializeAllData = async () => {
             incomeCategories,
             expenseCategories,
             purchaseOrders,
-            shopkeeperEntries
+            shopkeeperEntries,
+            settings
         ] = await Promise.all([
             fetchCustomers(),
             fetchOrders(),

@@ -1674,7 +1674,16 @@ export const useDataStore = create(
                         remainingPending.push(delivery)
                     } catch (error) {
                         console.error('Sync failed for delivery:', delivery.id, error)
-                        remainingPending.push(delivery)
+                        // If it's a constraint violation (missing required fields), discard it permanently
+                        if (error?.code === '23502' || error?.code === '23503') {
+                            console.warn(`Discarding permanently broken delivery ${delivery.id} (constraint violation)`)
+                            // Remove from local state too
+                            set(state => ({
+                                deliveries: state.deliveries.filter(d => d.id !== delivery.id)
+                            }))
+                        } else {
+                            remainingPending.push(delivery)
+                        }
                     }
                 }
 

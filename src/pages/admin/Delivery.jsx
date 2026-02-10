@@ -659,7 +659,7 @@ function Delivery() {
                         >
                             <option value="">All Areas</option>
                             {areas.map(area => (
-                                <option key={area.id} value={area.id}>{area.name}</option>
+                                <option key={area.uuid} value={area.uuid}>{area.name}</option>
                             ))}
                         </select>
                     </div>

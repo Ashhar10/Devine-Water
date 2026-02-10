@@ -267,7 +267,7 @@ function Shopkeeper() {
                     productId,
                     customLiters: '',
                     liters,
-                    unitPrice: amount / (liters || 1),
+                    unitPrice: liters > 0 ? (amount / liters) : 0,
                     amount
                 })
             }
@@ -276,20 +276,23 @@ function Shopkeeper() {
 
     const handleCustomLitersChange = (liters) => {
         const literValue = parseFloat(liters) || 0
-        // Calculate average water price per liter from existing water products
-        const avgPricePerLiter = waterProducts.length > 0
-            ? waterProducts.reduce((sum, p) => {
-                const pLiters = parseFloat(p.bottleType) || 1
-                return sum + (parseFloat(p.price || 0) / pLiters)
-            }, 0) / waterProducts.length
-            : 0
+        const amount = literValue * waterForm.unitPrice
 
         setWaterForm({
             ...waterForm,
             customLiters: liters,
             liters: literValue,
-            unitPrice: avgPricePerLiter,
-            amount: literValue * avgPricePerLiter
+            amount
+        })
+    }
+
+    const handleUnitPriceChange = (price) => {
+        const unitPrice = parseFloat(price) || 0
+        const amount = waterForm.liters * unitPrice
+        setWaterForm({
+            ...waterForm,
+            unitPrice,
+            amount
         })
     }
 
@@ -789,6 +792,17 @@ function Shopkeeper() {
 
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
+                                    <label>Per Liter Amount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={waterForm.unitPrice}
+                                        onChange={(e) => handleUnitPriceChange(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
                                     <label>Liters</label>
                                     <input
                                         type="number"
@@ -799,17 +813,20 @@ function Shopkeeper() {
                                         placeholder="0.00"
                                     />
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>Amount (Rs)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={(waterForm.amount || 0).toFixed(2)}
-                                        readOnly
-                                        className={styles.readOnlyInput}
-                                        placeholder="0.00"
-                                    />
-                                </div>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Total Amount (Rs)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={(waterForm.amount || 0).toFixed(2)}
+                                    readOnly
+                                    className={styles.readOnlyInput}
+                                    placeholder="0.00"
+                                />
+                                <small className={styles.helpText}>
+                                    Calculated: {(waterForm.liters || 0).toFixed(2)}L × Rs {(waterForm.unitPrice || 0).toFixed(2)}
+                                </small>
                             </div>
                             <div className={styles.formGroup}>
                                 <label>Remarks</label>

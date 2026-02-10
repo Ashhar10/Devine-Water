@@ -1653,31 +1653,45 @@ export const useDataStore = create(
                 const pendingDeliveries = JSON.parse(localStorage.getItem('deliveries_temp') || '[]')
                 if (pendingDeliveries.length === 0) return
 
-                console.log(`Attempting to sync ${pendingDeliveries.length} pending deliveries...`)
+                // Pre-validate: silently discard deliveries missing required fields
+                const validDeliveries = []
+                for (const delivery of pendingDeliveries) {
+                    if (!delivery.deliveryDay || !delivery.deliveryDate || !delivery.customerId) {
+                        console.warn(`Removing invalid pending delivery ${delivery.id} (missing required fields)`)
+                        set(state => ({
+                            deliveries: state.deliveries.filter(d => d.id !== delivery.id)
+                        }))
+                    } else {
+                        validDeliveries.push(delivery)
+                    }
+                }
+
+                if (validDeliveries.length === 0) {
+                    localStorage.removeItem('deliveries_temp')
+                    return
+                }
+
+                console.log(`Syncing ${validDeliveries.length} pending deliveries...`)
                 const remainingPending = []
 
-                for (const delivery of pendingDeliveries) {
+                for (const delivery of validDeliveries) {
                     try {
                         const customer = get().customers.find(c => c.id === delivery.customerId)
                         if (customer?.uuid) {
                             const dbDelivery = await addDeliveryToDb(delivery, customer.uuid)
                             if (dbDelivery) {
-                                // Update state: Replace temp ID with real DB ID if needed, or just update
                                 set(state => ({
                                     deliveries: state.deliveries.map(d =>
                                         d.id === delivery.id ? dbDelivery : d
                                     )
                                 }))
-                                continue // Success, don't add to remaining
+                                continue
                             }
                         }
                         remainingPending.push(delivery)
                     } catch (error) {
                         console.error('Sync failed for delivery:', delivery.id, error)
-                        // If it's a constraint violation (missing required fields), discard it permanently
                         if (error?.code === '23502' || error?.code === '23503') {
-                            console.warn(`Discarding permanently broken delivery ${delivery.id} (constraint violation)`)
-                            // Remove from local state too
                             set(state => ({
                                 deliveries: state.deliveries.filter(d => d.id !== delivery.id)
                             }))
@@ -1687,7 +1701,6 @@ export const useDataStore = create(
                     }
                 }
 
-                // Update temp storage with what's left
                 if (remainingPending.length === 0) {
                     localStorage.removeItem('deliveries_temp')
                 } else {

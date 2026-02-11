@@ -73,6 +73,7 @@ export const useDataStore = create(
         (set, get) => ({
             // Initial state - null user requires login
             currentUser: null,
+            sessionExpiry: null,
             customers: [],
             orders: [],
             transactions: [],
@@ -99,6 +100,14 @@ export const useDataStore = create(
 
             // ===== INITIALIZATION =====
             initialize: async () => {
+                // Check for session expiry
+                const { currentUser, sessionExpiry, logout } = get()
+                if (currentUser && sessionExpiry && Date.now() > sessionExpiry) {
+                    console.log('Session expired, logging out...')
+                    logout()
+                    return // Stop initialization as user needs to log in again
+                }
+
                 // Don't re-initialize if already done
                 if (get().isInitialized) return
 
@@ -236,8 +245,11 @@ export const useDataStore = create(
 
 
             // ===== AUTH ACTIONS =====
-            setCurrentUser: (user) => set({ currentUser: user }),
-            logout: () => set({ currentUser: null }),
+            setCurrentUser: (user) => {
+                const expiry = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+                set({ currentUser: user, sessionExpiry: expiry })
+            },
+            logout: () => set({ currentUser: null, sessionExpiry: null }),
 
             // ===== CUSTOMER ACTIONS =====
             getCustomers: () => get().customers,
@@ -1828,7 +1840,10 @@ export const useDataStore = create(
         }),
         {
             name: 'devine-water-storage',
-            partialize: () => ({}), // Don't persist anything - always load from Supabase
+            partialize: (state) => ({
+                currentUser: state.currentUser,
+                sessionExpiry: state.sessionExpiry
+            }),
         }
     )
 )

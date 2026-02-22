@@ -394,34 +394,33 @@ function Customers() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Submitting customer form...', formData)
 
         try {
             if (editingCustomer) {
-                console.log('Updating customer:', editingCustomer.id)
                 await updateCustomer(editingCustomer.id, formData)
             } else {
-                console.log('Adding new customer')
                 // Add customer
                 const newCustomer = await addCustomer(formData)
-                console.log('New customer added:', newCustomer)
 
                 // Also create user account for customer login
                 if (formData.password) {
-                    console.log('Creating user account for customer')
-                    await addUser({
-                        name: formData.name,
-                        email: formData.email || `${formData.phone.replace(/\s+/g, '')}@customer.local`,
-                        phone: formData.phone,
-                        password: formData.password,
-                        role: 'customer',
-                        designation: 'Customer',
-                        customerId: newCustomer?.uuid
-                    })
+                    try {
+                        await addUser({
+                            name: formData.name,
+                            email: formData.email || `${formData.phone.replace(/\s+/g, '')}@customer.local`,
+                            phone: formData.phone,
+                            password: formData.password,
+                            role: 'customer',
+                            designation: 'Customer',
+                            customerId: newCustomer?.uuid
+                        })
+                    } catch (userError) {
+                        // Don't block customer creation if user account fails (e.g. duplicate email)
+                        console.warn('User account creation failed (customer still saved):', userError.message)
+                    }
                 }
             }
 
-            console.log('Submission successful, closing modal')
             setShowAddModal(false)
             setEditingCustomer(null)
             // Clear cache on successful save
@@ -430,7 +429,7 @@ function Customers() {
             setFormData(getEmptyFormData())
         } catch (error) {
             console.error('Error submitting customer form:', error)
-            alert('Failed to save customer. Please try again. Error: ' + (error.message || 'Unknown error'))
+            alert('Failed to save customer: ' + (error.message || 'Unknown error'))
         }
     }
 
@@ -1119,17 +1118,9 @@ function Customers() {
                             <Button variant="secondary" onClick={resetForm}>
                                 Cancel
                             </Button>
-                            <button type="submit" form="customerForm" style={{
-                                padding: '10px 20px',
-                                background: '#06b6d4',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontWeight: '600'
-                            }}>
+                            <Button type="submit" variant="primary" form="customerForm">
                                 {editingCustomer ? 'Update Customer' : 'Add Customer'}
-                            </button>
+                            </Button>
                         </div>
                     </GlassCard>
                 </div>

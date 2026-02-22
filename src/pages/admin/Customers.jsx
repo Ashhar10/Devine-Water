@@ -869,242 +869,249 @@ function Customers() {
                                 </button>
                             </div>
                         </div>
-                        <form onSubmit={handleSubmit}>
-                            <div className={styles.formGroup}>
-                                <label>Full Name *</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Enter customer name"
-                                    required
-                                />
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Email</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="Enter email address"
-                                />
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Phone Number *</label>
-                                <input
-                                    type="tel"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+92 300 1234567"
-                                    required
-                                />
-                            </div>
-
-                            {editingCustomer && (
+                        <div className={styles.modalBody}>
+                            <form id="customerForm" onSubmit={handleSubmit}>
                                 <div className={styles.formGroup}>
-                                    <label>Account Status</label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        style={{
-                                            borderColor: formData.status === 'active' ? '#10b981' : '#ef4444',
-                                            color: formData.status === 'active' ? '#10b981' : '#ef4444',
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
+                                    <label>Full Name *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="Enter customer name"
+                                        required
+                                    />
                                 </div>
-                            )}
-
-                            {/* Password field for new customers */}
-                            {!editingCustomer && (
                                 <div className={styles.formGroup}>
-                                    <label>Login Password *</label>
-                                    <div className={styles.inputWithIcon}>
-                                        <Lock size={16} className={styles.inputIcon} />
+                                    <label>Email</label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        placeholder="Enter email address"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Phone Number *</label>
+                                    <input
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        placeholder="+92 300 1234567"
+                                        required
+                                    />
+                                </div>
+
+                                {editingCustomer && (
+                                    <div className={styles.formGroup}>
+                                        <label>Account Status</label>
+                                        <select
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                            style={{
+                                                borderColor: formData.status === 'active' ? '#10b981' : '#ef4444',
+                                                color: formData.status === 'active' ? '#10b981' : '#ef4444',
+                                                fontWeight: 500
+                                            }}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Password field for new customers */}
+                                {!editingCustomer && (
+                                    <div className={styles.formGroup}>
+                                        <label>Login Password *</label>
+                                        <div className={styles.inputWithIcon}>
+                                            <Lock size={16} className={styles.inputIcon} />
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                placeholder="Password for customer login"
+                                                required
+                                                minLength={6}
+                                            />
+                                            <button
+                                                type="button"
+                                                className={styles.passwordToggle}
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                tabIndex="-1"
+                                            >
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
+                                        <small className={styles.inputHint}>Customer will use phone + this password to login</small>
+                                    </div>
+                                )}
+
+                                <div className={styles.formGroup}>
+                                    <label>Address *</label>
+                                    <div className={styles.addressInput}>
                                         <input
-                                            type={showPassword ? "text" : "password"}
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            placeholder="Password for customer login"
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            placeholder="Enter full address"
                                             required
-                                            minLength={6}
                                         />
                                         <button
                                             type="button"
-                                            className={styles.passwordToggle}
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            tabIndex="-1"
+                                            className={styles.locationBtn}
+                                            onClick={getCurrentLocation}
+                                            disabled={gettingLocation}
+                                            title="Get current location"
                                         >
-                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            <Crosshair size={18} className={gettingLocation ? styles.spinning : ''} />
                                         </button>
                                     </div>
-                                    <small className={styles.inputHint}>Customer will use phone + this password to login</small>
+                                    {formData.latitude && formData.longitude && (
+                                        <small className={styles.coordsText}>
+                                            📍 {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                                        </small>
+                                    )}
                                 </div>
-                            )}
 
-                            <div className={styles.formGroup}>
-                                <label>Address *</label>
-                                <div className={styles.addressInput}>
-                                    <input
-                                        type="text"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                        placeholder="Enter full address"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.locationBtn}
-                                        onClick={getCurrentLocation}
-                                        disabled={gettingLocation}
-                                        title="Get current location"
+                                {/* Area Selection */}
+                                <div className={styles.formGroup}>
+                                    <label>Delivery Area</label>
+                                    <select
+                                        value={formData.areaId}
+                                        onChange={(e) => {
+                                            const selectedAreaId = e.target.value
+                                            const selectedArea = areas.find(a => a.uuid === selectedAreaId)
+                                            setFormData({
+                                                ...formData,
+                                                areaId: selectedAreaId,
+                                                // Auto-select delivery days from area if available
+                                                deliveryDays: selectedArea?.deliveryDays || formData.deliveryDays
+                                            })
+                                        }}
                                     >
-                                        <Crosshair size={18} className={gettingLocation ? styles.spinning : ''} />
-                                    </button>
+                                        <option value="">Select Area</option>
+                                        {areas.map(area => (
+                                            <option key={area.id} value={area.uuid}>{area.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                                {formData.latitude && formData.longitude && (
-                                    <small className={styles.coordsText}>
-                                        📍 {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-                                    </small>
-                                )}
-                            </div>
 
-                            {/* Area Selection */}
-                            <div className={styles.formGroup}>
-                                <label>Delivery Area</label>
-                                <select
-                                    value={formData.areaId}
-                                    onChange={(e) => {
-                                        const selectedAreaId = e.target.value
-                                        const selectedArea = areas.find(a => a.uuid === selectedAreaId)
-                                        setFormData({
-                                            ...formData,
-                                            areaId: selectedAreaId,
-                                            // Auto-select delivery days from area if available
-                                            deliveryDays: selectedArea?.deliveryDays || formData.deliveryDays
-                                        })
-                                    }}
-                                >
-                                    <option value="">Select Area</option>
-                                    {areas.map(area => (
-                                        <option key={area.id} value={area.uuid}>{area.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Delivery Days */}
-                            <div className={styles.formGroup}>
-                                <label>Delivery Days</label>
-                                <div className={styles.daysGrid}>
-                                    {DAYS_OF_WEEK.map(day => (
-                                        <button
-                                            key={day}
-                                            type="button"
-                                            className={`${styles.dayBtn} ${formData.deliveryDays.includes(day) ? styles.selected : ''}`}
-                                            onClick={() => toggleDeliveryDay(day)}
-                                        >
-                                            {day.slice(0, 3)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Assigned Products Only */}
-                            <div className={styles.formGroup}>
-                                <label>Assigned Products (Optional)</label>
-                                <div className={styles.daysGrid}>
-                                    {products.filter(p => p.status === 'active').map(product => (
-                                        <button
-                                            key={product.id}
-                                            type="button"
-                                            className={`${styles.dayBtn} ${formData.assignedProducts?.includes(product.uuid) ? styles.selected : ''}`}
-                                            onClick={() => {
-                                                if (!product.uuid) {
-                                                    console.error('Product missing UUID:', product)
-                                                    return
-                                                }
-                                                setFormData(prev => {
-                                                    const current = prev.assignedProducts || []
-                                                    const newAssigned = current.includes(product.uuid)
-                                                        ? current.filter(id => id !== product.uuid)
-                                                        : [...current, product.uuid]
-                                                    console.log('Updating assigned products:', newAssigned)
-                                                    return { ...prev, assignedProducts: newAssigned }
-                                                })
-                                            }}
-                                            style={{ minWidth: 'auto', padding: '8px 12px' }}
-                                        >
-                                            {product.name}
-                                        </button>
-                                    ))}
-                                </div>
-                                <small className={styles.inputHint}>Select products visible to this customer. Leave empty to allow all.</small>
-                            </div>
-
-                            {/* Required Bottles */}
-                            <div className={styles.formRow}>
+                                {/* Delivery Days */}
                                 <div className={styles.formGroup}>
-                                    <label>Required Bottles</label>
-                                    <input
-                                        type="number"
-                                        value={formData.requiredBottles}
-                                        onChange={(e) => setFormData({ ...formData, requiredBottles: parseInt(e.target.value) || 1 })}
-                                        min="1"
-                                    />
+                                    <label>Delivery Days</label>
+                                    <div className={styles.daysGrid}>
+                                        {DAYS_OF_WEEK.map(day => (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                className={`${styles.dayBtn} ${formData.deliveryDays.includes(day) ? styles.selected : ''}`}
+                                                onClick={() => toggleDeliveryDay(day)}
+                                            >
+                                                {day.slice(0, 3)}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>Opening Bottles</label>
-                                    <input
-                                        type="number"
-                                        value={formData.openingBottles}
-                                        onChange={(e) => setFormData({ ...formData, openingBottles: parseInt(e.target.value) || 0 })}
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
 
-                            {/* Security Deposit */}
-                            <div className={styles.formSection}>
-                                <h4><Wallet size={16} /> Security Deposit</h4>
+                                {/* Assigned Products Only */}
+                                <div className={styles.formGroup}>
+                                    <label>Assigned Products (Optional)</label>
+                                    <div className={styles.daysGrid}>
+                                        {products.filter(p => p.status === 'active').map(product => (
+                                            <button
+                                                key={product.id}
+                                                type="button"
+                                                className={`${styles.dayBtn} ${formData.assignedProducts?.includes(product.uuid) ? styles.selected : ''}`}
+                                                onClick={() => {
+                                                    if (!product.uuid) {
+                                                        console.error('Product missing UUID:', product)
+                                                        return
+                                                    }
+                                                    setFormData(prev => {
+                                                        const current = prev.assignedProducts || []
+                                                        const newAssigned = current.includes(product.uuid)
+                                                            ? current.filter(id => id !== product.uuid)
+                                                            : [...current, product.uuid]
+                                                        console.log('Updating assigned products:', newAssigned)
+                                                        return { ...prev, assignedProducts: newAssigned }
+                                                    })
+                                                }}
+                                                style={{ minWidth: 'auto', padding: '8px 12px' }}
+                                            >
+                                                {product.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <small className={styles.inputHint}>Select products visible to this customer. Leave empty to allow all.</small>
+                                </div>
+
+                                {/* Required Bottles */}
                                 <div className={styles.formRow}>
                                     <div className={styles.formGroup}>
-                                        <label>Deposit Amount (Rs)</label>
+                                        <label>Required Bottles</label>
                                         <input
                                             type="number"
-                                            value={formData.securityDeposit}
-                                            onChange={(e) => setFormData({ ...formData, securityDeposit: parseFloat(e.target.value) || 0 })}
-                                            placeholder="0"
+                                            value={formData.requiredBottles}
+                                            onChange={(e) => setFormData({ ...formData, requiredBottles: parseInt(e.target.value) || 1 })}
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Opening Bottles</label>
+                                        <input
+                                            type="number"
+                                            value={formData.openingBottles}
+                                            onChange={(e) => setFormData({ ...formData, openingBottles: parseInt(e.target.value) || 0 })}
                                             min="0"
                                         />
                                     </div>
+                                </div>
+
+                                {/* Security Deposit */}
+                                <div className={styles.formSection}>
+                                    <h4><Wallet size={16} /> Security Deposit</h4>
+                                    <div className={styles.formRow}>
+                                        <div className={styles.formGroup}>
+                                            <label>Deposit Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                value={formData.securityDeposit}
+                                                onChange={(e) => setFormData({ ...formData, securityDeposit: parseFloat(e.target.value) || 0 })}
+                                                placeholder="0"
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Opening Balance (Rs)</label>
+                                            <input
+                                                type="number"
+                                                value={formData.openingBalance}
+                                                onChange={(e) => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0 })}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
                                     <div className={styles.formGroup}>
-                                        <label>Opening Balance (Rs)</label>
+                                        <label>Deposit Remarks</label>
                                         <input
-                                            type="number"
-                                            value={formData.openingBalance}
-                                            onChange={(e) => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0 })}
-                                            placeholder="0"
+                                            type="text"
+                                            value={formData.securityRemarks}
+                                            onChange={(e) => setFormData({ ...formData, securityRemarks: e.target.value })}
+                                            placeholder="e.g., 2 bottles security"
                                         />
                                     </div>
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>Deposit Remarks</label>
-                                    <input
-                                        type="text"
-                                        value={formData.securityRemarks}
-                                        onChange={(e) => setFormData({ ...formData, securityRemarks: e.target.value })}
-                                        placeholder="e.g., 2 bottles security"
-                                    />
-                                </div>
-                            </div>
 
-                            <Button type="submit" variant="primary" fullWidth>
+                            </form>
+                        </div>
+                        <div className={styles.modalActions}>
+                            <Button variant="secondary" onClick={resetForm}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" variant="primary" form="customerForm">
                                 {editingCustomer ? 'Update Customer' : 'Add Customer'}
                             </Button>
-                        </form>
+                        </div>
                     </GlassCard>
                 </div>
             )}

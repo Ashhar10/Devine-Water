@@ -16,6 +16,7 @@ function Button({
     loading = false,
     onClick,
     type = 'button',
+    form,
     className = ''
 }) {
     const variantClass = styles[variant] || styles.primary
@@ -26,6 +27,7 @@ function Button({
     return (
         <motion.button
             type={type}
+            form={form}
             className={`${styles.button} ${variantClass} ${sizeClass} ${fullWidthClass} ${disabledClass} ${className}`}
             onClick={onClick}
             disabled={disabled || loading}

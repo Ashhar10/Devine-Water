@@ -394,33 +394,44 @@ function Customers() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        console.log('Submitting customer form...', formData)
 
-        if (editingCustomer) {
-            await updateCustomer(editingCustomer.id, formData)
-        } else {
-            // Add customer
-            const newCustomer = await addCustomer(formData)
+        try {
+            if (editingCustomer) {
+                console.log('Updating customer:', editingCustomer.id)
+                await updateCustomer(editingCustomer.id, formData)
+            } else {
+                console.log('Adding new customer')
+                // Add customer
+                const newCustomer = await addCustomer(formData)
+                console.log('New customer added:', newCustomer)
 
-            // Also create user account for customer login
-            if (formData.password) {
-                await addUser({
-                    name: formData.name,
-                    email: formData.email || `${formData.phone.replace(/\s+/g, '')}@customer.local`,
-                    phone: formData.phone,
-                    password: formData.password,
-                    role: 'customer',
-                    designation: 'Customer',
-                    customerId: newCustomer?.uuid
-                })
+                // Also create user account for customer login
+                if (formData.password) {
+                    console.log('Creating user account for customer')
+                    await addUser({
+                        name: formData.name,
+                        email: formData.email || `${formData.phone.replace(/\s+/g, '')}@customer.local`,
+                        phone: formData.phone,
+                        password: formData.password,
+                        role: 'customer',
+                        designation: 'Customer',
+                        customerId: newCustomer?.uuid
+                    })
+                }
             }
-        }
 
-        setShowAddModal(false)
-        setEditingCustomer(null)
-        // Clear cache on successful save
-        localStorage.removeItem(CACHE_KEY)
-        setHasCachedData(false)
-        setFormData(getEmptyFormData())
+            console.log('Submission successful, closing modal')
+            setShowAddModal(false)
+            setEditingCustomer(null)
+            // Clear cache on successful save
+            localStorage.removeItem(CACHE_KEY)
+            setHasCachedData(false)
+            setFormData(getEmptyFormData())
+        } catch (error) {
+            console.error('Error submitting customer form:', error)
+            alert('Failed to save customer. Please try again. Error: ' + (error.message || 'Unknown error'))
+        }
     }
 
     const handleEdit = (customer) => {
@@ -1108,9 +1119,17 @@ function Customers() {
                             <Button variant="secondary" onClick={resetForm}>
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="primary" form="customerForm">
+                            <button type="submit" form="customerForm" style={{
+                                padding: '10px 20px',
+                                background: '#06b6d4',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                            }}>
                                 {editingCustomer ? 'Update Customer' : 'Add Customer'}
-                            </Button>
+                            </button>
                         </div>
                     </GlassCard>
                 </div>

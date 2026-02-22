@@ -780,130 +780,127 @@ function Shopkeeper() {
                             </Button>
                         </div>
                     </GlassCard>
-                </div >
-            )
-            }
+                </div>
+            )}
 
             {/* Water Sale Modal */}
-            {
-                showWaterModal && (
-                    <div className={styles.modalOverlay} onClick={resetWaterForm}>
-                        <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
-                            <div className={styles.modalHeader}>
-                                <h3>{editingEntry ? 'Edit Water Sale' : 'Add Water Sale'}</h3>
-                                <div className={styles.headerActions}>
-                                    {!editingEntry && (
-                                        <button
-                                            type="button"
-                                            className={styles.clearBtn}
-                                            onClick={clearWaterDraft}
-                                            title="Clear form"
-                                        >
-                                            <RotateCcw size={16} />
-                                        </button>
-                                    )}
-                                    <button className={styles.closeBtn} onClick={resetWaterForm}>
-                                        <X size={20} />
+            {showWaterModal && (
+                <div className={styles.modalOverlay} onClick={resetWaterForm}>
+                    <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>{editingEntry ? 'Edit Water Sale' : 'Add Water Sale'}</h3>
+                            <div className={styles.headerActions}>
+                                {!editingEntry && (
+                                    <button
+                                        type="button"
+                                        className={styles.clearBtn}
+                                        onClick={clearWaterDraft}
+                                        title="Clear form"
+                                    >
+                                        <RotateCcw size={16} />
                                     </button>
-                                </div>
+                                )}
+                                <button className={styles.closeBtn} onClick={resetWaterForm}>
+                                    <X size={20} />
+                                </button>
                             </div>
-                            <div className={styles.modalBody}>
-                                <form id="shopkeeperWaterForm" onSubmit={handleWaterSubmit}>
-                                    <div className={styles.formGroup}>
-                                        <label>Water Product *</label>
-                                        <select
-                                            value={waterForm.productId}
-                                            onChange={(e) => handleWaterProductSelect(e.target.value)}
-                                            required
-                                        >
-                                            <option value="">Choose water product...</option>
-                                            {waterProducts.map(product => (
-                                                <option key={product.id} value={product.id}>
-                                                    {product.name} - {product.bottleType} - Rs {product.price}
-                                                </option>
-                                            ))}
-                                            <option value="custom">Custom Liters</option>
-                                        </select>
-                                    </div>
+                        </div>
+                        <div className={styles.modalBody}>
+                            <form id="shopkeeperWaterForm" onSubmit={handleWaterSubmit}>
+                                <div className={styles.formGroup}>
+                                    <label>Water Product *</label>
+                                    <select
+                                        value={waterForm.productId}
+                                        onChange={(e) => handleWaterProductSelect(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">Choose water product...</option>
+                                        {waterProducts.map(product => (
+                                            <option key={product.id} value={product.id}>
+                                                {product.name} - {product.bottleType} - Rs {product.price}
+                                            </option>
+                                        ))}
+                                        <option value="custom">Custom Liters</option>
+                                    </select>
+                                </div>
 
-                                    {waterForm.productId === 'custom' && (
-                                        <div className={styles.formGroup}>
-                                            <label>Custom Liters *</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0.01"
-                                                value={waterForm.customLiters}
-                                                onChange={(e) => handleCustomLitersChange(e.target.value)}
-                                                placeholder="Enter liters..."
-                                                required
-                                            />
-                                            <small className={styles.helpText}>
-                                                Avg price: Rs {(waterForm.unitPrice || 0).toFixed(2)}/liter
-                                            </small>
-                                        </div>
-                                    )}
-
-                                    <div className={styles.formRow}>
-                                        <div className={styles.formGroup}>
-                                            <label>Per Liter Amount (Rs)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={waterForm.unitPrice}
-                                                onChange={(e) => handleUnitPriceChange(e.target.value)}
-                                                placeholder="0.00"
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Liters</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={(waterForm.liters || 0).toFixed(2)}
-                                                readOnly
-                                                className={styles.readOnlyInput}
-                                                placeholder="0.00"
-                                            />
-                                        </div>
-                                    </div>
+                                {waterForm.productId === 'custom' && (
                                     <div className={styles.formGroup}>
-                                        <label>Total Amount (Rs)</label>
+                                        <label>Custom Liters *</label>
                                         <input
                                             type="number"
                                             step="0.01"
-                                            value={(waterForm.amount || 0).toFixed(2)}
+                                            min="0.01"
+                                            value={waterForm.customLiters}
+                                            onChange={(e) => handleCustomLitersChange(e.target.value)}
+                                            placeholder="Enter liters..."
+                                            required
+                                        />
+                                        <small className={styles.helpText}>
+                                            Avg price: Rs {(waterForm.unitPrice || 0).toFixed(2)}/liter
+                                        </small>
+                                    </div>
+                                )}
+
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Per Liter Amount (Rs)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={waterForm.unitPrice}
+                                            onChange={(e) => handleUnitPriceChange(e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Liters</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={(waterForm.liters || 0).toFixed(2)}
                                             readOnly
                                             className={styles.readOnlyInput}
                                             placeholder="0.00"
                                         />
-                                        <small className={styles.helpText}>
-                                            Calculated: {(waterForm.liters || 0).toFixed(2)}L × Rs {(waterForm.unitPrice || 0).toFixed(2)}
-                                        </small>
                                     </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Remarks</label>
-                                        <textarea
-                                            value={waterForm.remarks}
-                                            onChange={(e) => setWaterForm({ ...waterForm, remarks: e.target.value })}
-                                            placeholder="Optional notes..."
-                                            rows={3}
-                                        />
-                                    </div>
-                                </form>
-                            </div>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Total Amount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={(waterForm.amount || 0).toFixed(2)}
+                                        readOnly
+                                        className={styles.readOnlyInput}
+                                        placeholder="0.00"
+                                    />
+                                    <small className={styles.helpText}>
+                                        Calculated: {(waterForm.liters || 0).toFixed(2)}L × Rs {(waterForm.unitPrice || 0).toFixed(2)}
+                                    </small>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Remarks</label>
+                                    <textarea
+                                        value={waterForm.remarks}
+                                        onChange={(e) => setWaterForm({ ...waterForm, remarks: e.target.value })}
+                                        placeholder="Optional notes..."
+                                        rows={3}
+                                    />
+                                </div>
+                            </form>
+                        </div>
 
-                            <div className={styles.modalActions}>
-                                <Button variant="ghost" onClick={resetWaterForm}>Cancel</Button>
-                                <Button variant="primary" type="submit" form="shopkeeperWaterForm">
-                                    {editingEntry ? 'Update' : 'Add'} Sale
-                                </Button>
-                            </div>
-                        </GlassCard >
-                    </div >
-                )
-            }
+                        <div className={styles.modalActions}>
+                            <Button variant="ghost" onClick={resetWaterForm}>Cancel</Button>
+                            <Button variant="primary" type="submit" form="shopkeeperWaterForm">
+                                {editingEntry ? 'Update' : 'Add'} Sale
+                            </Button>
+                        </div>
+                    </GlassCard >
+                </div >
+            )}
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={showDeleteDialog}

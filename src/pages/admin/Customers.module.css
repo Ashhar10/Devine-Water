@@ -600,6 +600,39 @@
     background: rgba(0, 0, 0, 0.5);
 }
 
+.modalBody {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 20px;
+}
+
+.modalBody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Fix for browser autofill background */
 .formGroup input:-webkit-autofill,
 .formGroup input:-webkit-autofill:hover,

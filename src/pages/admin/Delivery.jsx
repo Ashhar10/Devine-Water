@@ -21,6 +21,7 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { useDisableBodyScroll } from '../../hooks/useDisableBodyScroll'
 import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -85,6 +86,9 @@ function Delivery() {
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteOrder = useDataStore(state => state.deleteOrder)
     const deleteDelivery = useDataStore(state => state.deleteDelivery)
+
+    // Handle body scroll locking
+    useDisableBodyScroll(showDeliveryModal || confirmModal.isOpen || rowActionModal.isOpen)
 
     // Draft persistence effects
     useEffect(() => {
@@ -306,6 +310,11 @@ function Delivery() {
         const unitPrice = selectedProduct.price || 0
         const total = bottlesDelivered * unitPrice
 
+        // Derive delivery day from submissionDate
+        const subDateObj = new Date(submissionDate)
+        const subDayIndex = subDateObj.getDay()
+        const subDay = DAYS_OF_WEEK[subDayIndex === 0 ? 6 : subDayIndex - 1]
+
         // Helper function to process submission logic
         const processSubmission = async () => {
             // Update or Create delivery
@@ -415,7 +424,7 @@ function Delivery() {
                     bottlesDelivered: bottlesDelivered,
                     receiveBottles: receiveBottles,
                     notes: deliveryForm.notes,
-                    deliveryDay: selectedDay,
+                    deliveryDay: subDay,
                     status: 'delivered'
                 })
             } // End processSubmission
@@ -1007,113 +1016,117 @@ function Delivery() {
                                     </div>
                                 </div>
                             ) : (
-                                <form onSubmit={handleDeliverySubmit} className={styles.modalBody}>
-                                    <div className={styles.customerInfo}>
-                                        <div className={styles.infoRow}>
-                                            <User size={18} />
-                                            <div>
-                                                <span className={styles.infoLabel}>Customer</span>
-                                                <span className={styles.infoValue}>{selectedCustomer.name}</span>
+                                <>
+                                    <div className={styles.modalBody}>
+                                        <form id="deliveryForm" onSubmit={handleDeliverySubmit}>
+                                            <div className={styles.customerInfo}>
+                                                <div className={styles.infoRow}>
+                                                    <User size={18} />
+                                                    <div>
+                                                        <span className={styles.infoLabel}>Customer</span>
+                                                        <span className={styles.infoValue}>{selectedCustomer.name}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.infoRow}>
+                                                    <MapPin size={18} />
+                                                    <div>
+                                                        <span className={styles.infoLabel}>Address</span>
+                                                        <span className={styles.infoValue}>{selectedCustomer.address}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.infoRow}>
+                                                    <Phone size={18} />
+                                                    <div>
+                                                        <span className={styles.infoLabel}>Contact</span>
+                                                        <span className={styles.infoValue}>{selectedCustomer.phone}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.infoRow}>
-                                            <MapPin size={18} />
-                                            <div>
-                                                <span className={styles.infoLabel}>Address</span>
-                                                <span className={styles.infoValue}>{selectedCustomer.address}</span>
+
+                                            <div className={styles.formGroup}>
+                                                <label>Delivery Date</label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <Calendar size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                                                    <input
+                                                        type="date"
+                                                        className={styles.formInput}
+                                                        style={{ paddingLeft: '35px' }}
+                                                        value={deliveryForm.deliveryDate}
+                                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryDate: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.infoRow}>
-                                            <Phone size={18} />
-                                            <div>
-                                                <span className={styles.infoLabel}>Contact</span>
-                                                <span className={styles.infoValue}>{selectedCustomer.phone}</span>
+
+                                            <div className={styles.formGroup}>
+                                                <label>Select Product</label>
+                                                <select
+                                                    value={deliveryForm.productId}
+                                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
+                                                    className={styles.formInput}
+                                                    required
+                                                >
+                                                    <option value="" disabled>Select Product</option>
+                                                    {products.map(p => (
+                                                        <option key={p.id} value={p.id}>
+                                                            {p.name} - Rs {p.price}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    <div className={styles.formGroup}>
-                                        <label>Delivery Date</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Calendar size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-                                            <input
-                                                type="date"
-                                                className={styles.formInput}
-                                                style={{ paddingLeft: '35px' }}
-                                                value={deliveryForm.deliveryDate}
-                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryDate: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className={styles.formGroup}>
-                                        <label>Select Product</label>
-                                        <select
-                                            value={deliveryForm.productId}
-                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, productId: e.target.value })}
-                                            className={styles.formInput}
-                                            required
-                                        >
-                                            <option value="" disabled>Select Product</option>
-                                            {products.map(p => (
-                                                <option key={p.id} value={p.id}>
-                                                    {p.name} - Rs {p.price}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className={styles.formRow}>
-                                        <div className={styles.formGroup}>
-                                            <label>Bottles Delivered</label>
-                                            <input
-                                                type="number"
-                                                value={deliveryForm.bottlesDelivered}
-                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
-                                                className={styles.formInput}
-                                                required
-                                                min="0"
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Empty Received</label>
-                                            <input
-                                                type="number"
-                                                value={deliveryForm.receiveBottles}
-                                                onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
-                                                className={styles.formInput}
-                                                min="0"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className={styles.formGroup}>
-                                        <label>Notes</label>
-                                        <textarea
-                                            value={deliveryForm.notes}
-                                            onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
-                                            className={styles.formTextarea}
-                                            placeholder="Any delivery notes..."
-                                            rows="3"
-                                        />
-                                    </div>
-
-                                    {/* Total Display */}
-                                    {deliveryForm.productId && deliveryForm.bottlesDelivered && (
-                                        <div className={styles.totalSection}>
-                                            <div className={styles.totalRow}>
-                                                <span className={styles.totalLabel}>Total Amount:</span>
-                                                <span className={styles.totalAmount}>Rs {deliveryTotal.toLocaleString()}</span>
+                                            <div className={styles.formRow}>
+                                                <div className={styles.formGroup}>
+                                                    <label>Bottles Delivered</label>
+                                                    <input
+                                                        type="number"
+                                                        value={deliveryForm.bottlesDelivered}
+                                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, bottlesDelivered: e.target.value })}
+                                                        className={styles.formInput}
+                                                        required
+                                                        min="0"
+                                                    />
+                                                </div>
+                                                <div className={styles.formGroup}>
+                                                    <label>Empty Received</label>
+                                                    <input
+                                                        type="number"
+                                                        value={deliveryForm.receiveBottles}
+                                                        onChange={(e) => setDeliveryForm({ ...deliveryForm, receiveBottles: e.target.value })}
+                                                        className={styles.formInput}
+                                                        min="0"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+
+                                            <div className={styles.formGroup}>
+                                                <label>Notes</label>
+                                                <textarea
+                                                    value={deliveryForm.notes}
+                                                    onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                                                    className={styles.formTextarea}
+                                                    placeholder="Any delivery notes..."
+                                                    rows="3"
+                                                />
+                                            </div>
+
+                                            {/* Total Display */}
+                                            {deliveryForm.productId && deliveryForm.bottlesDelivered && (
+                                                <div className={styles.totalSection}>
+                                                    <div className={styles.totalRow}>
+                                                        <span className={styles.totalLabel}>Total Amount:</span>
+                                                        <span className={styles.totalAmount}>Rs {deliveryTotal.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </form>
+                                    </div>
 
                                     <div className={styles.modalActions}>
                                         <button type="button" className={styles.cancelBtn} onClick={handleCloseModal}>
                                             Cancel
                                         </button>
-                                        <button type="submit" className={styles.submitBtn}>
+                                        <button type="submit" className={styles.submitBtn} form="deliveryForm">
                                             <CheckCircle size={18} />
                                             Confirm Delivery
                                         </button>
@@ -1132,7 +1145,7 @@ function Delivery() {
                                             </button>
                                         )}
                                     </div>
-                                </form>
+                                </>
                             )}
                         </div>
                     </div>

@@ -279,7 +279,33 @@
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalBody {
+    flex: 1;
     overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 20px;
+}
+
+.modalBody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .modalHeader {
@@ -580,6 +606,15 @@
 .actionBtn:hover {
     background: rgba(255, 255, 255, 0.2);
     color: var(--text-primary);
+}
+
+.modalActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--glass-border);
 }
 
 .deleteBtn:hover {

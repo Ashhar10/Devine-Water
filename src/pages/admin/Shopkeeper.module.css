@@ -356,10 +356,12 @@
 }
 
 .modal {
-    width: 100%;
     max-width: 500px;
+    width: 90%;
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
 }
 
 .modalHeader {
@@ -469,6 +471,31 @@
 
 .checkboxLabel span {
     color: rgba(255, 255, 255, 0.8);
+}
+
+.modalBody {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 20px;
+}
+
+.modalBody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .modalActions {

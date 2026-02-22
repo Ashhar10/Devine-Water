@@ -30,6 +30,7 @@ import {
     ChevronDown
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { useDisableBodyScroll } from '../../hooks/useDisableBodyScroll'
 import { downloadAsExcel, downloadAsSQL } from '../../utils/exportUtils'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -108,6 +109,9 @@ function Customers() {
     const updateCustomer = useDataStore(state => state.updateCustomer)
     const deleteCustomer = useDataStore(state => state.deleteCustomer)
     const addUser = useDataStore(state => state.addUser)
+
+    // Handle body scroll locking
+    useDisableBodyScroll(showAddModal || showAreaModal || selectedCustomerDetails)
 
     // Check for cached data on mount
     useEffect(() => {

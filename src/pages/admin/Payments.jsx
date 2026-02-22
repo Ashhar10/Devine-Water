@@ -18,6 +18,7 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { useDisableBodyScroll } from '../../hooks/useDisableBodyScroll'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
@@ -66,6 +67,9 @@ function Payments() {
     const addPayment = useDataStore(state => state.addPayment)
     const updatePayment = useDataStore(state => state.updatePayment)
     const deletePayment = useDataStore(state => state.deletePayment)
+
+    // Handle body scroll locking
+    useDisableBodyScroll(showPaymentModal || confirmModal.isOpen)
 
     const location = useLocation()
 
@@ -433,165 +437,174 @@ function Payments() {
                                 </button>
                             </div>
                         </div>
-                        <form onSubmit={handleSubmit}>
-                            {/* Payment Type */}
-                            <div className={styles.formGroup}>
-                                <label>Payment Type</label>
-                                <div className={styles.typeSelector}>
-                                    <button
-                                        type="button"
-                                        className={`${styles.typeBtn} ${formData.paymentType === 'customer' ? styles.activeReceive : ''}`}
-                                        onClick={() => setFormData({ ...formData, paymentType: 'customer', referenceId: '' })}
-                                    >
-                                        <TrendingUp size={18} />
-                                        Receive from Customer
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`${styles.typeBtn} ${formData.paymentType === 'vendor' ? styles.activePay : ''}`}
-                                        onClick={() => setFormData({ ...formData, paymentType: 'vendor', referenceId: '' })}
-                                    >
-                                        <Wallet size={18} />
-                                        Pay to Vendor
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Reference Selection */}
-                            <div className={styles.formGroup}>
-                                <label>{formData.paymentType === 'customer' ? 'Customer' : 'Vendor'} *</label>
-                                <select
-                                    value={formData.referenceId}
-                                    onChange={handleReferenceChange}
-                                    required
-                                >
-                                    <option value="">Select {formData.paymentType}</option>
-                                    {referenceList.filter(r => r.status === 'active').map(r => (
-                                        <option key={r.id} value={r.uuid}>
-                                            {r.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Current Balance Display */}
-                            {formData.referenceId && (
-                                <div className={styles.balanceDisplay}>
-                                    <div className={styles.balanceInfo}>
-                                        <span className={styles.balanceLabel}>Current Balance:</span>
-                                        <span className={styles.balanceAmount}>Rs {selectedBalance.toLocaleString()}</span>
+                        <div className={styles.modalBody}>
+                            <form id="paymentForm" onSubmit={handleSubmit}>
+                                <div className={styles.formRow}>
+                                    {/* Payment Type */}
+                                    <div className={styles.formGroup}>
+                                        <label>Payment Type</label>
+                                        <div className={styles.typeSelector}>
+                                            <button
+                                                type="button"
+                                                className={`${styles.typeBtn} ${formData.paymentType === 'customer' ? styles.activeReceive : ''}`}
+                                                onClick={() => setFormData({ ...formData, paymentType: 'customer', referenceId: '' })}
+                                            >
+                                                <TrendingUp size={18} />
+                                                Receive from Customer
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`${styles.typeBtn} ${formData.paymentType === 'vendor' ? styles.activePay : ''}`}
+                                                onClick={() => setFormData({ ...formData, paymentType: 'vendor', referenceId: '' })}
+                                            >
+                                                <Wallet size={18} />
+                                                Pay to Vendor
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* Amount */}
-                            <div className={styles.formGroup}>
-                                <label>Amount (Rs) *</label>
-                                <input
-                                    type="number"
-                                    value={formData.amount}
-                                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                    placeholder="Enter amount"
-                                    required
-                                    min="1"
-                                />
-                            </div>
+                                    {/* Reference Selection */}
+                                    <div className={styles.formGroup}>
+                                        <label>{formData.paymentType === 'customer' ? 'Customer' : 'Vendor'} *</label>
+                                        <select
+                                            value={formData.referenceId}
+                                            onChange={handleReferenceChange}
+                                            required
+                                        >
+                                            <option value="">Select {formData.paymentType}</option>
+                                            {referenceList.filter(r => r.status === 'active').map(r => (
+                                                <option key={r.id} value={r.uuid}>
+                                                    {r.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            {/* Change/Remaining Display for Customer Payments */}
-                            {formData.paymentType === 'customer' && formData.amount && formData.referenceId && (
-                                <div className={styles.calculationDisplay}>
-                                    {changeAmount > 0 ? (
-                                        <div className={styles.changeInfo}>
-                                            <span className={styles.changeLabel}>Change to Return:</span>
-                                            <span className={styles.changeAmount}>Rs {changeAmount.toLocaleString()}</span>
-                                        </div>
-                                    ) : parseFloat(formData.amount) < selectedBalance ? (
-                                        <div className={styles.remainingInfo}>
-                                            <span className={styles.remainingLabel}>Remaining Balance:</span>
-                                            <span className={styles.remainingAmount}>
-                                                Rs {(selectedBalance - parseFloat(formData.amount)).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <div className={styles.paidInfo}>
-                                            <span className={styles.paidLabel}>✓ Fully Paid</span>
+                                    {/* Current Balance Display */}
+                                    {formData.referenceId && (
+                                        <div className={styles.balanceDisplay}>
+                                            <div className={styles.balanceInfo}>
+                                                <span className={styles.balanceLabel}>Current Balance:</span>
+                                                <span className={styles.balanceAmount}>Rs {selectedBalance.toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     )}
-                                </div>
-                            )}
 
-                            {/* Payment Mode */}
-                            <div className={styles.formGroup}>
-                                <label>Payment Mode</label>
-                                <div className={styles.modeGrid}>
-                                    {PAYMENT_MODES.map(mode => (
-                                        <button
-                                            key={mode.id}
-                                            type="button"
-                                            className={`${styles.modeBtn} ${formData.paymentMode === mode.id ? styles.selected : ''}`}
-                                            onClick={() => setFormData({ ...formData, paymentMode: mode.id })}
-                                        >
-                                            <mode.icon size={16} />
-                                            {mode.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                                    {/* Amount */}
+                                    <div className={styles.formGroup}>
+                                        <label>Amount (Rs) *</label>
+                                        <input
+                                            type="number"
+                                            value={formData.amount}
+                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                            placeholder="Enter amount"
+                                            required
+                                            min="1"
+                                        />
+                                    </div>
 
-                            {/* Bank Selection for non-cash */}
-                            {formData.paymentMode !== 'cash' && (
-                                <div className={styles.formGroup}>
-                                    <label>Bank Account</label>
-                                    <select
-                                        value={formData.bankId}
-                                        onChange={(e) => setFormData({ ...formData, bankId: e.target.value })}
-                                    >
-                                        <option value="">Select bank</option>
-                                        {banks.map(bank => (
-                                            <option key={bank.id} value={bank.id}>{bank.bankName} - {bank.accountTitle}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
+                                    {/* Change/Remaining Display for Customer Payments */}
+                                    {formData.paymentType === 'customer' && formData.amount && formData.referenceId && (
+                                        <div className={styles.calculationDisplay}>
+                                            {changeAmount > 0 ? (
+                                                <div className={styles.changeInfo}>
+                                                    <span className={styles.changeLabel}>Change to Return:</span>
+                                                    <span className={styles.changeAmount}>Rs {changeAmount.toLocaleString()}</span>
+                                                </div>
+                                            ) : parseFloat(formData.amount) < selectedBalance ? (
+                                                <div className={styles.remainingInfo}>
+                                                    <span className={styles.remainingLabel}>Remaining Balance:</span>
+                                                    <span className={styles.remainingAmount}>
+                                                        Rs {(selectedBalance - parseFloat(formData.amount)).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className={styles.paidInfo}>
+                                                    <span className={styles.paidLabel}>✓ Fully Paid</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
-                            {/* Cheque Number */}
-                            {formData.paymentMode === 'cheque' && (
-                                <div className={styles.formGroup}>
-                                    <label>Cheque Number</label>
-                                    <input
-                                        type="text"
-                                        value={formData.chequeNo}
-                                        onChange={(e) => setFormData({ ...formData, chequeNo: e.target.value })}
-                                        placeholder="Enter cheque number"
-                                    />
-                                </div>
-                            )}
+                                    {/* Payment Mode */}
+                                    <div className={styles.formGroup}>
+                                        <label>Payment Mode</label>
+                                        <div className={styles.modeGrid}>
+                                            {PAYMENT_MODES.map(mode => (
+                                                <button
+                                                    key={mode.id}
+                                                    type="button"
+                                                    className={`${styles.modeBtn} ${formData.paymentMode === mode.id ? styles.selected : ''}`}
+                                                    onClick={() => setFormData({ ...formData, paymentMode: mode.id })}
+                                                >
+                                                    <mode.icon size={16} />
+                                                    {mode.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                            {/* Payment Date */}
-                            <div className={styles.formGroup}>
-                                <label>Payment Date</label>
-                                <input
-                                    type="date"
-                                    value={formData.paymentDate}
-                                    onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
-                                />
-                            </div>
+                                    {/* Bank Selection for non-cash */}
+                                    {formData.paymentMode !== 'cash' && (
+                                        <div className={styles.formGroup}>
+                                            <label>Bank Account</label>
+                                            <select
+                                                value={formData.bankId}
+                                                onChange={(e) => setFormData({ ...formData, bankId: e.target.value })}
+                                            >
+                                                <option value="">Select bank</option>
+                                                {banks.map(bank => (
+                                                    <option key={bank.id} value={bank.id}>{bank.bankName} - {bank.accountTitle}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
-                            {/* Remarks */}
-                            <div className={styles.formGroup}>
-                                <label>Remarks</label>
-                                <input
-                                    type="text"
-                                    value={formData.remarks}
-                                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                                    {/* Cheque Number */}
+                                    {formData.paymentMode === 'cheque' && (
+                                        <div className={styles.formGroup}>
+                                            <label>Cheque Number</label>
+                                            <input
+                                                type="text"
+                                                value={formData.chequeNo}
+                                                onChange={(e) => setFormData({ ...formData, chequeNo: e.target.value })}
+                                                placeholder="Enter cheque number"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Payment Date */}
+                                    <div className={styles.formGroup}>
+                                        <label>Payment Date</label>
+                                        <input
+                                            type="date"
+                                            value={formData.paymentDate}
+                                            onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                                        />
+                                    </div>
+
                                     placeholder="Optional notes"
                                 />
-                            </div>
+                                </div>
+                            </form>
+                        </div>
 
-                            <Button type="submit" variant="primary" fullWidth disabled={isSubmitting}>
+                        <div className={styles.modalActions}>
+                            <Button
+                                variant="secondary"
+                                onClick={resetForm}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                form="paymentForm"
+                                disabled={isSubmitting}
+                            >
                                 {isSubmitting ? 'Processing...' : (formData.paymentType === 'customer' ? 'Receive Payment' : 'Make Payment')}
                             </Button>
-                        </form>
+                        </div>
                     </GlassCard>
                 </div>
             )}

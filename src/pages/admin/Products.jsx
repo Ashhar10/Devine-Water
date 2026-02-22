@@ -16,6 +16,7 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { useDataStore } from '../../store/dataStore'
+import { useDisableBodyScroll } from '../../hooks/useDisableBodyScroll'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
@@ -55,6 +56,9 @@ function Products() {
     const updateProduct = useDataStore(state => state.updateProduct)
     const deleteProduct = useDataStore(state => state.deleteProduct)
     const updateProductStock = useDataStore(state => state.updateProductStock)
+
+    // Handle body scroll locking
+    useDisableBodyScroll(showAddModal || showStockModal || showDeleteDialog)
 
     // Product designations - simplified to only relevant ones
     const DESIGNATIONS = ['Shopkeeper', 'Delivery Boy']
@@ -511,201 +515,220 @@ function Products() {
                                 </button>
                             </div>
                         </div>
-                        <form onSubmit={handleSubmit}>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label>Product Name *</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="e.g., 19 Liter Bottle"
-                                        required
-                                    />
+                        <div className={styles.modalBody}>
+                            <form id="productForm" onSubmit={handleSubmit}>
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Product Name *</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            placeholder="e.g., 19 Liter Bottle"
+                                            required
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Bottle Type *</label>
+                                        <select
+                                            value={formData.bottleType}
+                                            onChange={(e) => setFormData({ ...formData, bottleType: e.target.value })}
+                                            required
+                                        >
+                                            {BOTTLE_TYPES.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>Bottle Type *</label>
-                                    <select
-                                        value={formData.bottleType}
-                                        onChange={(e) => setFormData({ ...formData, bottleType: e.target.value })}
-                                        required
-                                    >
-                                        {BOTTLE_TYPES.map(type => (
-                                            <option key={type} value={type}>{type}</option>
-                                        ))}
-                                    </select>
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Sale Price (Rs) *</label>
+                                        <input
+                                            type="number"
+                                            value={formData.price}
+                                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                            placeholder="100"
+                                            required
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>{formData.bottleType === '19L' ? 'Consume Cost' : 'Purchase Price'} (Rs)</label>
+                                        <input
+                                            type="number"
+                                            value={formData.purchasePrice}
+                                            onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                                            placeholder="50"
+                                            min="0"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label>Sale Price (Rs) *</label>
-                                    <input
-                                        type="number"
-                                        value={formData.price}
-                                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                        placeholder="100"
-                                        required
-                                        min="0"
-                                    />
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
+                                        <label>Current Stock</label>
+                                        <input
+                                            type="number"
+                                            value={formData.currentStock}
+                                            onChange={(e) => setFormData({ ...formData, currentStock: parseInt(e.target.value) || 0 })}
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Min Stock Alert</label>
+                                        <input
+                                            type="number"
+                                            value={formData.minStockAlert}
+                                            onChange={(e) => setFormData({ ...formData, minStockAlert: parseInt(e.target.value) || 10 })}
+                                            placeholder="10"
+                                            min="0"
+                                        />
+                                    </div>
                                 </div>
-                                <div className={styles.formGroup}>
-                                    <label>{formData.bottleType === '19L' ? 'Consume Cost' : 'Purchase Price'} (Rs)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.purchasePrice}
-                                        onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-                                        placeholder="50"
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
-                            <div className={styles.formRow}>
-                                <div className={styles.formGroup}>
-                                    <label>Current Stock</label>
-                                    <input
-                                        type="number"
-                                        value={formData.currentStock}
-                                        onChange={(e) => setFormData({ ...formData, currentStock: parseInt(e.target.value) || 0 })}
-                                        placeholder="0"
-                                        min="0"
-                                    />
-                                </div>
-                                <div className={styles.formGroup}>
-                                    <label>Min Stock Alert</label>
-                                    <input
-                                        type="number"
-                                        value={formData.minStockAlert}
-                                        onChange={(e) => setFormData({ ...formData, minStockAlert: parseInt(e.target.value) || 10 })}
-                                        placeholder="10"
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
 
-                            {/* Designations */}
-                            <div className={styles.formGroup}>
-                                <label>Product Designations</label>
-                                <div className={styles.checkboxGroup}>
-                                    {DESIGNATIONS.map(designation => (
-                                        <label key={designation} className={styles.checkboxLabel}>
+                                {/* Designations */}
+                                <div className={styles.formGroup}>
+                                    <label>Product Designations</label>
+                                    <div className={styles.checkboxGroup}>
+                                        {DESIGNATIONS.map(designation => (
+                                            <label key={designation} className={styles.checkboxLabel}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.designations?.includes(designation)}
+                                                    onChange={(e) => handleDesignationToggle(designation, e.target.checked)}
+                                                />
+                                                <span>{designation}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <small className={styles.fieldHelp}>Select which user designations can access this product</small>
+                                </div>
+
+                                {/* Visibility Toggle */}
+                                <div className={styles.formGroup}>
+                                    <label className={styles.toggleContainer}>
+                                        <span className={styles.toggleLabel}>Product Visibility</span>
+                                        <div className={styles.visibilityToggle}>
                                             <input
                                                 type="checkbox"
-                                                checked={formData.designations?.includes(designation)}
-                                                onChange={(e) => handleDesignationToggle(designation, e.target.checked)}
+                                                checked={formData.visibility === 'private'}
+                                                onChange={(e) => setFormData({
+                                                    ...formData,
+                                                    visibility: e.target.checked ? 'private' : 'public'
+                                                })}
                                             />
-                                            <span>{designation}</span>
-                                        </label>
-                                    ))}
+                                            <span className={styles.toggleSlider}></span>
+                                            <span className={styles.toggleText}>
+                                                {formData.visibility === 'private' ? '🔒 Private (Admin Only)' : '🌐 Public (Designated Users)'}
+                                            </span>
+                                        </div>
+                                    </label>
+                                    <small className={styles.fieldHelp}>
+                                        {formData.visibility === 'private'
+                                            ? 'Only admins can see this product, regardless of designation'
+                                            : 'Users with matching designation can see this product'}
+                                    </small>
                                 </div>
-                                <small className={styles.fieldHelp}>Select which user designations can access this product</small>
-                            </div>
+                            </form>
+                        </div>
 
-                            {/* Visibility Toggle */}
-                            <div className={styles.formGroup}>
-                                <label className={styles.toggleContainer}>
-                                    <span className={styles.toggleLabel}>Product Visibility</span>
-                                    <div className={styles.visibilityToggle}>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.visibility === 'private'}
-                                            onChange={(e) => setFormData({
-                                                ...formData,
-                                                visibility: e.target.checked ? 'private' : 'public'
-                                            })}
-                                        />
-                                        <span className={styles.toggleSlider}></span>
-                                        <span className={styles.toggleText}>
-                                            {formData.visibility === 'private' ? '🔒 Private (Admin Only)' : '🌐 Public (Designated Users)'}
-                                        </span>
-                                    </div>
-                                </label>
-                                <small className={styles.fieldHelp}>
-                                    {formData.visibility === 'private'
-                                        ? 'Only admins can see this product, regardless of designation'
-                                        : 'Users with matching designation can see this product'}
-                                </small>
-                            </div>
-
-                            <Button type="submit" variant="primary" fullWidth>
+                        <div className={styles.modalActions}>
+                            <Button
+                                variant="secondary"
+                                onClick={resetForm}
+                                fullWidth
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                form="productForm"
+                                fullWidth
+                            >
                                 {editingProduct ? 'Update Product' : 'Add Product'}
                             </Button>
-                        </form>
+                        </div>
                     </GlassCard>
-                </div>
-            )}
+                </div >
+            )
+            }
 
             {/* Stock Movement Modal */}
-            {showStockModal && selectedProduct && (
-                <div className={styles.modalOverlay} onClick={() => setShowStockModal(false)}>
-                    <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h3>Stock IN/OUT - {selectedProduct.name}</h3>
-                            <button className={styles.closeBtn} onClick={() => setShowStockModal(false)}>
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className={styles.currentStockDisplay}>
-                            <span>Current Stock:</span>
-                            <span className={styles.stockNumber}>{selectedProduct.currentStock} units</span>
-                        </div>
-                        <form onSubmit={handleStockUpdate}>
-                            <div className={styles.formGroup}>
-                                <label>Movement Type</label>
-                                <div className={styles.movementTypes}>
-                                    <button
-                                        type="button"
-                                        className={`${styles.movementBtn} ${stockMovement.type === 'in' ? styles.activeIn : ''}`}
-                                        onClick={() => setStockMovement({ ...stockMovement, type: 'in' })}
-                                    >
-                                        <TrendingUp size={18} />
-                                        Stock IN
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`${styles.movementBtn} ${stockMovement.type === 'out' ? styles.activeOut : ''}`}
-                                        onClick={() => setStockMovement({ ...stockMovement, type: 'out' })}
-                                    >
-                                        <TrendingDown size={18} />
-                                        Stock OUT
-                                    </button>
+            {
+                showStockModal && selectedProduct && (
+                    <div className={styles.modalOverlay} onClick={() => setShowStockModal(false)}>
+                        <GlassCard className={styles.modal} onClick={e => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h3>Stock IN/OUT - {selectedProduct.name}</h3>
+                                <button className={styles.closeBtn} onClick={() => setShowStockModal(false)}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className={styles.currentStockDisplay}>
+                                <span>Current Stock:</span>
+                                <span className={styles.stockNumber}>{selectedProduct.currentStock} units</span>
+                            </div>
+                            <form onSubmit={handleStockUpdate}>
+                                <div className={styles.formGroup}>
+                                    <label>Movement Type</label>
+                                    <div className={styles.movementTypes}>
+                                        <button
+                                            type="button"
+                                            className={`${styles.movementBtn} ${stockMovement.type === 'in' ? styles.activeIn : ''}`}
+                                            onClick={() => setStockMovement({ ...stockMovement, type: 'in' })}
+                                        >
+                                            <TrendingUp size={18} />
+                                            Stock IN
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`${styles.movementBtn} ${stockMovement.type === 'out' ? styles.activeOut : ''}`}
+                                            onClick={() => setStockMovement({ ...stockMovement, type: 'out' })}
+                                        >
+                                            <TrendingDown size={18} />
+                                            Stock OUT
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Quantity *</label>
-                                <input
-                                    type="number"
-                                    value={stockMovement.quantity}
-                                    onChange={(e) => setStockMovement({ ...stockMovement, quantity: parseInt(e.target.value) || 0 })}
-                                    placeholder="Enter quantity"
-                                    required
-                                    min="1"
-                                />
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label>Remarks</label>
-                                <input
-                                    type="text"
-                                    value={stockMovement.remarks}
-                                    onChange={(e) => setStockMovement({ ...stockMovement, remarks: e.target.value })}
-                                    placeholder="e.g., New filling, Damaged bottles"
-                                />
-                            </div>
-                            <div className={styles.newStockPreview}>
-                                <span>New Stock:</span>
-                                <span className={stockMovement.type === 'in' ? styles.increased : styles.decreased}>
-                                    {stockMovement.type === 'in'
-                                        ? selectedProduct.currentStock + (stockMovement.quantity || 0)
-                                        : selectedProduct.currentStock - (stockMovement.quantity || 0)
-                                    } units
-                                </span>
-                            </div>
-                            <Button type="submit" variant="primary" fullWidth>
-                                Update Stock
-                            </Button>
-                        </form>
-                    </GlassCard>
-                </div>
-            )}
+                                <div className={styles.formGroup}>
+                                    <label>Quantity *</label>
+                                    <input
+                                        type="number"
+                                        value={stockMovement.quantity}
+                                        onChange={(e) => setStockMovement({ ...stockMovement, quantity: parseInt(e.target.value) || 0 })}
+                                        placeholder="Enter quantity"
+                                        required
+                                        min="1"
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Remarks</label>
+                                    <input
+                                        type="text"
+                                        value={stockMovement.remarks}
+                                        onChange={(e) => setStockMovement({ ...stockMovement, remarks: e.target.value })}
+                                        placeholder="e.g., New filling, Damaged bottles"
+                                    />
+                                </div>
+                                <div className={styles.newStockPreview}>
+                                    <span>New Stock:</span>
+                                    <span className={stockMovement.type === 'in' ? styles.increased : styles.decreased}>
+                                        {stockMovement.type === 'in'
+                                            ? selectedProduct.currentStock + (stockMovement.quantity || 0)
+                                            : selectedProduct.currentStock - (stockMovement.quantity || 0)
+                                        } units
+                                    </span>
+                                </div>
+                                <Button type="submit" variant="primary" fullWidth>
+                                    Update Stock
+                                </Button>
+                            </form>
+                        </GlassCard>
+                    </div>
+                )
+            }
 
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
@@ -718,7 +741,7 @@ function Products() {
                 cancelText="Cancel"
                 variant="danger"
             />
-        </div>
+        </div >
     )
 }
 

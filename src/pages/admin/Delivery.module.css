@@ -516,7 +516,8 @@
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     animation: slideUp 0.3s ease;
 }
 
@@ -561,10 +562,32 @@
 }
 
 /* Delivery Form */
-.deliveryForm {
+.modalBody {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
     gap: var(--space-lg);
+}
+
+.modalBody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .customerInfo {
@@ -715,7 +738,9 @@
     display: flex;
     gap: var(--space-md);
     justify-content: flex-end;
-    margin-top: var(--space-md);
+    margin-top: auto;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--glass-border);
 }
 
 .cancelBtn,

@@ -1163,6 +1163,50 @@ function Delivery() {
                                 </button>
                             </div>
                             <div className={styles.modalBody} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {/* Show linked Order ID and status for each delivery */}
+                                {rowActionModal.deliveries?.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '6px' }}>
+                                        {rowActionModal.deliveries.map((del, idx) => (
+                                            <div key={del.id || idx} style={{
+                                                padding: '10px 14px',
+                                                borderRadius: '10px',
+                                                background: del.status === 'delivered'
+                                                    ? 'rgba(34, 197, 94, 0.12)'
+                                                    : del.status === 'skipped'
+                                                        ? 'rgba(239, 68, 68, 0.10)'
+                                                        : 'rgba(251, 191, 36, 0.10)',
+                                                border: del.status === 'delivered'
+                                                    ? '1px solid rgba(34, 197, 94, 0.3)'
+                                                    : del.status === 'skipped'
+                                                        ? '1px solid rgba(239, 68, 68, 0.25)'
+                                                        : '1px solid rgba(251, 191, 36, 0.25)',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                flexWrap: 'wrap',
+                                                gap: '6px'
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '0.85em', fontWeight: 600, color: 'var(--text-primary, #e2e8f0)' }}>
+                                                        {del.bottlesDelivered} Bottles
+                                                        {del.orderId && (
+                                                            <span style={{ marginLeft: '8px', fontSize: '0.85em', color: '#60a5fa', fontWeight: 500 }}>
+                                                                📦 {del.orderId}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {del.notes && (
+                                                        <span style={{ fontSize: '0.78em', color: 'var(--text-secondary, #94a3b8)', fontStyle: 'italic' }}>
+                                                            {del.notes}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <StatusBadge status={del.status || 'pending'} size="sm" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <Button
                                     variant="primary"
                                     icon={Plus}
@@ -1219,19 +1263,26 @@ function Delivery() {
                                     </Button>
                                 )}
 
-                                {/* Show Mark Delivered button if no deliveries (pending) */}
-                                {rowActionModal.deliveries?.length === 0 && (
-                                    <Button
-                                        variant="primary"
-                                        icon={CheckCircle}
-                                        onClick={() => {
-                                            setRowActionModal({ ...rowActionModal, isOpen: false })
-                                            handleMarkDelivered(rowActionModal.customer)
-                                        }}
-                                    >
-                                        Mark Delivered
-                                    </Button>
-                                )}
+                                {/* Show Mark Delivered button if no deliveries (pending) OR if single delivery with pending status */}
+                                {(rowActionModal.deliveries?.length === 0 ||
+                                    (rowActionModal.deliveries?.length === 1 && rowActionModal.deliveries[0].status === 'pending')) && (
+                                        <Button
+                                            variant="primary"
+                                            icon={CheckCircle}
+                                            style={{ backgroundColor: '#16a34a', borderColor: '#15803d' }}
+                                            onClick={() => {
+                                                setRowActionModal({ ...rowActionModal, isOpen: false })
+                                                if (rowActionModal.deliveries?.length === 1) {
+                                                    // Edit the existing pending delivery to mark it as delivered
+                                                    handleEditDelivery(rowActionModal.customer, rowActionModal.deliveries[0])
+                                                } else {
+                                                    handleMarkDelivered(rowActionModal.customer)
+                                                }
+                                            }}
+                                        >
+                                            Mark as Delivered
+                                        </Button>
+                                    )}
                             </div>
                         </div>
                     </div>

@@ -1546,6 +1546,10 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
 
     const deliveryId = generateId('DEL')
 
+    // Derive delivery_day from the date if not explicitly provided
+    const deliveryDay = deliveryData.deliveryDay ||
+        new Date(deliveryData.deliveryDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
+
     const { data, error } = await supabase
         .from('deliveries')
         .insert({
@@ -1555,7 +1559,7 @@ export const addDeliveryToDb = async (deliveryData, customerUuid) => {
             bottles_delivered: deliveryData.bottlesDelivered,
             receive_bottles: deliveryData.receiveBottles || 0,
             notes: deliveryData.notes || null,
-            delivery_day: deliveryData.deliveryDay,
+            delivery_day: deliveryDay,
             status: deliveryData.status || 'delivered',
             order_id: deliveryData.orderId || null
         })

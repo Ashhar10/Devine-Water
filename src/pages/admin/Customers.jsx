@@ -459,8 +459,21 @@ function Customers() {
     }
 
     const handleDelete = (id) => {
-        // Delete without confirmation (can add custom modal later)
-        deleteCustomer(id)
+        const customer = customers.find(c => c.id === id)
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Delete Customer',
+            message: `Are you sure you want to delete "${customer?.name || 'this customer'}"? This action cannot be undone.`,
+            onConfirm: async () => {
+                try {
+                    await deleteCustomer(id)
+                } catch (error) {
+                    console.error('Failed to delete customer:', error)
+                    alert('Failed to delete customer. Please check your connection and try again.')
+                }
+            },
+            variant: 'danger'
+        })
     }
 
     const resetForm = () => {

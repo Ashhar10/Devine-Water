@@ -395,11 +395,15 @@ export const useDataStore = create(
 
                                 if (totalBottles > 0) {
                                     console.log('Auto-creating delivery for order:', dbOrder.id)
+                                    // Derive delivery day name from order date
+                                    const orderDateStr = data.orderDate || new Date().toISOString().split('T')[0]
+                                    const dayName = new Date(orderDateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
                                     // Use get().addDelivery to ensure we use the store action
                                     await get().addDelivery({
                                         customerId: data.customerId,
                                         customerUuid: customerUuid,
-                                        deliveryDate: data.orderDate || new Date().toISOString().split('T')[0],
+                                        deliveryDate: orderDateStr,
+                                        deliveryDay: dayName,
                                         bottlesDelivered: totalBottles,
                                         receiveBottles: 0,
                                         productId: mainProductId,
